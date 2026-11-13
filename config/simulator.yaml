@@ -6,6 +6,7 @@ seed: 7
 start: "2026-03-02T00:00:00Z"   # a Monday, UTC
 duration_h: 48
 tick_s: 60                      # simulation step in seconds
+calibration: default            # config/calibration/<name>.yaml (see `soc calibrate`)
 
 org:
   name: Example Corp

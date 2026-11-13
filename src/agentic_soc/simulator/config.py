@@ -172,6 +172,9 @@ class SimulatorConfig(_Cfg):
     )
     duration_h: float = Field(48.0, gt=0)
     tick_s: int = Field(60, ge=1, le=3600, description="Simulation step.")
+    calibration: str = Field(
+        "default", description="Name in config/calibration/ or path of a calibration YAML."
+    )
     org: OrgConfig = Field(default_factory=OrgConfig)
 
     @property

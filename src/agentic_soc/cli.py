@@ -49,5 +49,26 @@ def schemas(
     console.print(f"wrote {len(documents)} schemas to {out}")
 
 
+@app.command()
+def calibrate(
+    lanl_auth: Path | None = typer.Option(None, help="LANL auth.txt[.gz]"),
+    lanl_flows: Path | None = typer.Option(None, help="LANL flows.txt[.gz]"),
+    lanl_proc: Path | None = typer.Option(None, help="LANL proc.txt[.gz]"),
+    rba: Path | None = typer.Option(None, help="RBA login dataset (rba-dataset.csv)"),
+    base: str = typer.Option("default", help="Calibration to start from."),
+    max_rows: int = typer.Option(5_000_000, help="Records to read from each file."),
+    out: Path = typer.Option(Path("config/calibration/fitted.yaml")),
+) -> None:
+    """Fit the simulator's activity model on the LANL and RBA datasets."""
+    from agentic_soc.simulator.calibration import calibrate as fit
+    from agentic_soc.simulator.calibration import dump_calibration, load_calibration
+
+    if not any([lanl_auth, lanl_flows, lanl_proc, rba]):
+        raise typer.BadParameter("pass at least one dataset file")
+    result = fit(load_calibration(base), lanl_auth, lanl_flows, lanl_proc, rba, max_rows)
+    dump_calibration(result, out)
+    console.print(f"[green]calibration written to {out}[/green]: {result.source}")
+
+
 if __name__ == "__main__":
     app()

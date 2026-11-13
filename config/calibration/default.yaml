@@ -1,0 +1,26 @@
+# Default calibration of the benign activity model.
+#
+# These are hand-set priors shaped like typical enterprise telemetry (strong diurnal and
+# weekly cycles as in the LANL multi-source data, heavy-tailed flow sizes, a few percent of
+# failed logins). Refit them from local copies of the public datasets with
+#
+#   uv run soc calibrate --lanl-auth auth.txt.gz --lanl-flows flows.txt.gz \
+#       --lanl-proc proc.txt.gz --rba rba-dataset.csv --out config/calibration/fitted.yaml
+#
+# and select the result with `calibration: fitted` in config/simulator.yaml.
+source: default priors (hand-set, not fitted)
+# Relative activity of employees by local hour (00..23); normalised to mean 1 on load.
+user_hourly: [0.10, 0.06, 0.05, 0.05, 0.06, 0.12, 0.35, 0.90, 1.70, 2.05, 2.10, 1.95,
+              1.45, 1.75, 2.00, 1.95, 1.70, 1.25, 0.70, 0.45, 0.35, 0.28, 0.20, 0.14]
+# Server-side load by local hour (batch jobs keep nights busy).
+server_hourly: [0.55, 0.50, 0.48, 0.48, 0.50, 0.55, 0.70, 0.95, 1.25, 1.40, 1.45, 1.40,
+                1.30, 1.35, 1.40, 1.38, 1.30, 1.15, 0.95, 0.80, 0.72, 0.66, 0.62, 0.58]
+# Relative activity by weekday, Monday..Sunday.
+weekly: [1.00, 1.03, 1.03, 1.00, 0.92, 0.22, 0.18]
+# Bytes per flow: log-normal body with a Pareto tail (self-similar traffic).
+flow_bytes: {median: 4500, sigma: 1.6, tail_prob: 0.04, tail_alpha: 1.3, tail_xmin: 400000}
+flow_duration_ms: {median: 900, sigma: 1.4, tail_prob: 0.04, tail_alpha: 1.4, tail_xmin: 60000}
+signin_failure_rate: 0.04     # typos, expired passwords, MFA timeouts
+mobile_share: 0.25            # share of SSO sign-ins from phones
+new_country_rate: 0.01        # logins from a country the user has not used before
+processes_per_host_hour: 28   # process launches per active workstation hour
