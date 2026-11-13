@@ -165,6 +165,56 @@ class OrgConfig(_Cfg):
         return sum(group.count for group in self.servers)
 
 
+class SigninActivity(_Cfg):
+    sso_per_hour: float = Field(1.4, ge=0, description="Cloud SSO sign-ins per active user hour.")
+    network_logons_per_hour: float = Field(1.0, ge=0, description="Kerberos logons to servers.")
+    mobile_checks_per_evening: float = Field(1.5, ge=0)
+    admin_rdp_per_day: float = Field(3.0, ge=0, description="RDP sessions per IT admin and day.")
+    mfa_prob: float = Field(0.35, ge=0, le=1)
+    monitor_logons_per_hour: float = Field(20, ge=0, description="svc_monitor health-check logons.")
+
+
+class FlowActivity(_Cfg):
+    web_per_hour: float = Field(40, ge=0, description="Internet flows per active workstation hour.")
+    internal_per_hour: float = Field(18, ge=0, description="Intranet flows per active hour.")
+    app_db_per_hour: float = Field(25, ge=0, description="App-to-database flows per server hour.")
+    dmz_inbound_per_hour: float = Field(
+        120, ge=0, description="Inbound requests per web server hour."
+    )
+    heartbeat_s: float = Field(900, gt=0, description="EDR agent heartbeat period of every host.")
+    monitoring_s: float = Field(600, gt=0, description="Monitoring poll period per server.")
+    edr_cloud_s: float = Field(60, gt=0, description="EDR server to vendor cloud sync period.")
+
+
+class ProcessActivity(_Cfg):
+    server_per_hour: float = Field(12, ge=0, description="Background launches per server hour.")
+
+
+class ActivityConfig(_Cfg):
+    signin: SigninActivity = Field(default_factory=SigninActivity)
+    flow: FlowActivity = Field(default_factory=FlowActivity)
+    process: ProcessActivity = Field(default_factory=ProcessActivity)
+    weekday_attendance: float = Field(
+        0.94, ge=0, le=1, description="Share of staff working a weekday."
+    )
+
+
+class LookalikeConfig(_Cfg):
+    """Benign behaviour that resembles attack steps (the hard negatives)."""
+
+    typos: bool = True
+    travel: bool = True
+    remote_vpn: bool = True
+    admin_rdp: bool = True
+    admin_maintenance_weekday: int = Field(1, ge=0, le=6, description="Patch night (0=Monday).")
+    nightly_backup: bool = True
+    backup_start_h: float = Field(1.0, ge=0, lt=24)
+    backup_internal_gb: tuple[float, float] = (5.0, 15.0)
+    backup_offsite_gb: tuple[float, float] = (2.0, 6.0)
+    dev_hosting: bool = True
+    edr_cloud_sync: bool = True
+
+
 class SimulatorConfig(_Cfg):
     seed: int = 7
     start: AwareDatetime = Field(
@@ -176,6 +226,8 @@ class SimulatorConfig(_Cfg):
         "default", description="Name in config/calibration/ or path of a calibration YAML."
     )
     org: OrgConfig = Field(default_factory=OrgConfig)
+    activity: ActivityConfig = Field(default_factory=ActivityConfig)
+    lookalikes: LookalikeConfig = Field(default_factory=LookalikeConfig)
 
     @property
     def end(self) -> datetime:
