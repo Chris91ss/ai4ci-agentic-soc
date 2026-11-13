@@ -1,0 +1,104 @@
+{
+  "additionalProperties": false,
+  "description": "Sign-in record from the legacy VPN appliance (schema 0.9).",
+  "properties": {
+    "schema_version": {
+      "const": "0.9",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "event_id": {
+      "maxLength": 64,
+      "minLength": 8,
+      "title": "Event Id",
+      "type": "string"
+    },
+    "ts": {
+      "description": "Epoch milliseconds.",
+      "minimum": 0,
+      "title": "Ts",
+      "type": "integer"
+    },
+    "username": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Username",
+      "type": "string"
+    },
+    "ip": {
+      "title": "Ip",
+      "type": "string"
+    },
+    "result": {
+      "enum": [
+        "ok",
+        "fail"
+      ],
+      "title": "Result",
+      "type": "string"
+    },
+    "reason": {
+      "anyOf": [
+        {
+          "enum": [
+            "bad_password",
+            "unknown_user",
+            "account_disabled",
+            "mfa_denied",
+            "mfa_timeout",
+            "password_expired",
+            "blocked_ip",
+            "session_revoked"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Reason"
+    },
+    "ua": {
+      "default": "",
+      "maxLength": 512,
+      "title": "Ua",
+      "type": "string"
+    },
+    "country": {
+      "anyOf": [
+        {
+          "pattern": "^[A-Z]{2}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Country"
+    },
+    "vpn_ip": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Vpn Ip"
+    }
+  },
+  "required": [
+    "schema_version",
+    "event_id",
+    "ts",
+    "username",
+    "ip",
+    "result"
+  ],
+  "title": "LegacySignInEventV09",
+  "type": "object"
+}

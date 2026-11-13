@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
 import typer
 from rich.console import Console
 
@@ -25,6 +28,25 @@ def main() -> None:
 def version() -> None:
     """Print the package version."""
     console.print(f"agentic-soc {__version__}")
+
+
+@app.command()
+def schemas(
+    out: Path = typer.Option(Path("docs/schemas"), help="Directory for the JSON Schema files."),
+) -> None:
+    """Export JSON Schemas of the telemetry events and the agent decision."""
+    from agentic_soc.schemas import Action, Alert, Decision, Incident, json_schemas
+
+    out.mkdir(parents=True, exist_ok=True)
+    documents = json_schemas() | {
+        "alert": Alert.model_json_schema(),
+        "incident": Incident.model_json_schema(),
+        "action": Action.model_json_schema(),
+        "decision": Decision.model_json_schema(),
+    }
+    for name, schema in documents.items():
+        (out / f"{name}.schema.json").write_text(json.dumps(schema, indent=2) + "\n")
+    console.print(f"wrote {len(documents)} schemas to {out}")
 
 
 if __name__ == "__main__":

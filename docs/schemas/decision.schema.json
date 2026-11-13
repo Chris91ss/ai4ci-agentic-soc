@@ -1,0 +1,126 @@
+{
+  "$defs": {
+    "EvidenceRef": {
+      "additionalProperties": false,
+      "description": "Pointer to the data behind a verdict, cited by ID in the explanation.",
+      "properties": {
+        "id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "event",
+            "alert",
+            "tool_call",
+            "baseline"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "note": {
+          "default": "",
+          "maxLength": 300,
+          "title": "Note",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "kind"
+      ],
+      "title": "EvidenceRef",
+      "type": "object"
+    },
+    "ProposedAction": {
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "enum": [
+            "none",
+            "revoke_sessions",
+            "disable_account",
+            "isolate_host",
+            "block_ip"
+          ],
+          "title": "Type",
+          "type": "string"
+        },
+        "target": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Target"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "ProposedAction",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Structured verdict returned by the triage agent (validated against this JSON Schema).",
+  "properties": {
+    "incident_id": {
+      "title": "Incident Id",
+      "type": "string"
+    },
+    "verdict": {
+      "enum": [
+        "malicious",
+        "suspicious",
+        "benign"
+      ],
+      "title": "Verdict",
+      "type": "string"
+    },
+    "techniques": {
+      "items": {
+        "pattern": "^T\\d{4}(\\.\\d{3})?$",
+        "type": "string"
+      },
+      "title": "Techniques",
+      "type": "array"
+    },
+    "evidence": {
+      "items": {
+        "$ref": "#/$defs/EvidenceRef"
+      },
+      "title": "Evidence",
+      "type": "array"
+    },
+    "action": {
+      "$ref": "#/$defs/ProposedAction"
+    },
+    "confidence": {
+      "maximum": 1.0,
+      "minimum": 0.0,
+      "title": "Confidence",
+      "type": "number"
+    },
+    "rationale": {
+      "default": "",
+      "maxLength": 1500,
+      "title": "Rationale",
+      "type": "string"
+    }
+  },
+  "required": [
+    "incident_id",
+    "verdict",
+    "action",
+    "confidence"
+  ],
+  "title": "Decision",
+  "type": "object"
+}

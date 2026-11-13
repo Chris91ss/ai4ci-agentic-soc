@@ -1,0 +1,163 @@
+{
+  "$defs": {
+    "EntityRefs": {
+      "additionalProperties": false,
+      "properties": {
+        "users": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Users",
+          "type": "array"
+        },
+        "hosts": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Hosts",
+          "type": "array"
+        },
+        "ips": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Ips",
+          "type": "array"
+        }
+      },
+      "title": "EntityRefs",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Alerts linked by shared entities and time, with a risk score.",
+  "properties": {
+    "incident_id": {
+      "title": "Incident Id",
+      "type": "string"
+    },
+    "status": {
+      "default": "open",
+      "enum": [
+        "open",
+        "logged",
+        "queued",
+        "triaging",
+        "awaiting_approval",
+        "contained",
+        "dismissed",
+        "closed"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "risk": {
+      "maximum": 1.0,
+      "minimum": 0.0,
+      "title": "Risk",
+      "type": "number"
+    },
+    "priority": {
+      "description": "1 = most urgent.",
+      "maximum": 4,
+      "minimum": 1,
+      "title": "Priority",
+      "type": "integer"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "updated_at": {
+      "format": "date-time",
+      "title": "Updated At",
+      "type": "string"
+    },
+    "first_seen": {
+      "format": "date-time",
+      "title": "First Seen",
+      "type": "string"
+    },
+    "last_seen": {
+      "format": "date-time",
+      "title": "Last Seen",
+      "type": "string"
+    },
+    "entities": {
+      "$ref": "#/$defs/EntityRefs"
+    },
+    "alert_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Alert Ids",
+      "type": "array"
+    },
+    "detectors": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Detectors",
+      "type": "array"
+    },
+    "streams": {
+      "items": {
+        "enum": [
+          "signin",
+          "flow",
+          "process"
+        ],
+        "type": "string"
+      },
+      "title": "Streams",
+      "type": "array"
+    },
+    "techniques": {
+      "items": {
+        "pattern": "^T\\d{4}(\\.\\d{3})?$",
+        "type": "string"
+      },
+      "title": "Techniques",
+      "type": "array"
+    },
+    "route": {
+      "anyOf": [
+        {
+          "enum": [
+            "log",
+            "agent",
+            "playbook",
+            "analyst"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Route"
+    },
+    "summary": {
+      "default": "",
+      "title": "Summary",
+      "type": "string"
+    }
+  },
+  "required": [
+    "incident_id",
+    "risk",
+    "priority",
+    "created_at",
+    "updated_at",
+    "first_seen",
+    "last_seen",
+    "entities",
+    "alert_ids",
+    "detectors",
+    "streams"
+  ],
+  "title": "Incident",
+  "type": "object"
+}

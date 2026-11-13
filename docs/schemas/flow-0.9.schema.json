@@ -1,0 +1,101 @@
+{
+  "additionalProperties": false,
+  "description": "Flow record from the NetFlow v5 collector (schema 0.9).",
+  "properties": {
+    "schema_version": {
+      "const": "0.9",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "event_id": {
+      "maxLength": 64,
+      "minLength": 8,
+      "title": "Event Id",
+      "type": "string"
+    },
+    "start": {
+      "description": "Epoch seconds.",
+      "minimum": 0,
+      "title": "Start",
+      "type": "number"
+    },
+    "end": {
+      "minimum": 0,
+      "title": "End",
+      "type": "number"
+    },
+    "src": {
+      "title": "Src",
+      "type": "string"
+    },
+    "sport": {
+      "maximum": 65535,
+      "minimum": 0,
+      "title": "Sport",
+      "type": "integer"
+    },
+    "dst": {
+      "title": "Dst",
+      "type": "string"
+    },
+    "dport": {
+      "maximum": 65535,
+      "minimum": 0,
+      "title": "Dport",
+      "type": "integer"
+    },
+    "proto": {
+      "enum": [
+        1,
+        6,
+        17
+      ],
+      "title": "Proto",
+      "type": "integer"
+    },
+    "bytes_fwd": {
+      "minimum": 0,
+      "title": "Bytes Fwd",
+      "type": "integer"
+    },
+    "bytes_rev": {
+      "minimum": 0,
+      "title": "Bytes Rev",
+      "type": "integer"
+    },
+    "pkts_fwd": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Pkts Fwd",
+      "type": "integer"
+    },
+    "pkts_rev": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Pkts Rev",
+      "type": "integer"
+    },
+    "sensor": {
+      "maxLength": 64,
+      "minLength": 1,
+      "title": "Sensor",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "event_id",
+    "start",
+    "end",
+    "src",
+    "sport",
+    "dst",
+    "dport",
+    "proto",
+    "bytes_fwd",
+    "bytes_rev",
+    "sensor"
+  ],
+  "title": "LegacyFlowEventV09",
+  "type": "object"
+}

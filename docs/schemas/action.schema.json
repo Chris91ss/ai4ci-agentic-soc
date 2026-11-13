@@ -1,0 +1,120 @@
+{
+  "additionalProperties": false,
+  "description": "Containment action; executed actions are published on the ``actions`` topic.",
+  "properties": {
+    "action_id": {
+      "title": "Action Id",
+      "type": "string"
+    },
+    "incident_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Incident Id"
+    },
+    "type": {
+      "enum": [
+        "revoke_sessions",
+        "disable_account",
+        "isolate_host",
+        "block_ip"
+      ],
+      "title": "Type",
+      "type": "string"
+    },
+    "target": {
+      "title": "Target",
+      "type": "string"
+    },
+    "impact": {
+      "enum": [
+        "low",
+        "high"
+      ],
+      "title": "Impact",
+      "type": "string"
+    },
+    "status": {
+      "default": "proposed",
+      "enum": [
+        "proposed",
+        "pending_approval",
+        "approved",
+        "rejected",
+        "denied",
+        "executed",
+        "failed"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "requested_by": {
+      "enum": [
+        "agent",
+        "playbook",
+        "analyst"
+      ],
+      "title": "Requested By",
+      "type": "string"
+    },
+    "approved_by": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Approved By"
+    },
+    "justification": {
+      "default": "",
+      "maxLength": 2000,
+      "title": "Justification",
+      "type": "string"
+    },
+    "evidence_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Evidence Ids",
+      "type": "array"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "executed_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Executed At"
+    }
+  },
+  "required": [
+    "action_id",
+    "type",
+    "target",
+    "impact",
+    "requested_by",
+    "created_at"
+  ],
+  "title": "Action",
+  "type": "object"
+}

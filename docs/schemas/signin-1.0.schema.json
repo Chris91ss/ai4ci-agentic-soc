@@ -1,0 +1,190 @@
+{
+  "additionalProperties": false,
+  "description": "Authentication event from the identity provider, VPN or a domain controller (OCSF 3002).",
+  "properties": {
+    "event_id": {
+      "maxLength": 64,
+      "minLength": 8,
+      "title": "Event Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "event_time": {
+      "description": "Time recorded by the source clock (may be skewed).",
+      "format": "date-time",
+      "title": "Event Time",
+      "type": "string"
+    },
+    "source": {
+      "description": "Producing system or sensor.",
+      "maxLength": 64,
+      "minLength": 1,
+      "title": "Source",
+      "type": "string"
+    },
+    "user": {
+      "description": "Account as presented (UPN).",
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "User",
+      "type": "string"
+    },
+    "src_ip": {
+      "title": "Src Ip",
+      "type": "string"
+    },
+    "app": {
+      "maxLength": 64,
+      "minLength": 1,
+      "title": "App",
+      "type": "string"
+    },
+    "dst_host": {
+      "anyOf": [
+        {
+          "maxLength": 128,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Dst Host"
+    },
+    "logon_type": {
+      "enum": [
+        "interactive",
+        "remote_interactive",
+        "network",
+        "vpn",
+        "sso",
+        "service"
+      ],
+      "title": "Logon Type",
+      "type": "string"
+    },
+    "auth_protocol": {
+      "enum": [
+        "kerberos",
+        "ntlm",
+        "saml",
+        "oauth",
+        "password"
+      ],
+      "title": "Auth Protocol",
+      "type": "string"
+    },
+    "outcome": {
+      "enum": [
+        "success",
+        "failure"
+      ],
+      "title": "Outcome",
+      "type": "string"
+    },
+    "failure_reason": {
+      "anyOf": [
+        {
+          "enum": [
+            "bad_password",
+            "unknown_user",
+            "account_disabled",
+            "mfa_denied",
+            "mfa_timeout",
+            "password_expired",
+            "blocked_ip",
+            "session_revoked"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Failure Reason"
+    },
+    "mfa": {
+      "default": false,
+      "title": "Mfa",
+      "type": "boolean"
+    },
+    "user_agent": {
+      "default": "",
+      "maxLength": 512,
+      "title": "User Agent",
+      "type": "string"
+    },
+    "device_id": {
+      "anyOf": [
+        {
+          "maxLength": 64,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Device Id"
+    },
+    "country": {
+      "anyOf": [
+        {
+          "pattern": "^[A-Z]{2}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Country"
+    },
+    "city": {
+      "anyOf": [
+        {
+          "maxLength": 64,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "City"
+    },
+    "assigned_ip": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Address leased by the VPN.",
+      "title": "Assigned Ip"
+    }
+  },
+  "required": [
+    "event_id",
+    "event_time",
+    "source",
+    "user",
+    "src_ip",
+    "app",
+    "logon_type",
+    "auth_protocol",
+    "outcome"
+  ],
+  "title": "SignInEvent",
+  "type": "object"
+}

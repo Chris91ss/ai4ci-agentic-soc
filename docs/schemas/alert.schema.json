@@ -1,0 +1,165 @@
+{
+  "$defs": {
+    "EntityRefs": {
+      "additionalProperties": false,
+      "properties": {
+        "users": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Users",
+          "type": "array"
+        },
+        "hosts": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Hosts",
+          "type": "array"
+        },
+        "ips": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Ips",
+          "type": "array"
+        }
+      },
+      "title": "EntityRefs",
+      "type": "object"
+    },
+    "FeatureContribution": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "title": "Value"
+        },
+        "contribution": {
+          "title": "Contribution",
+          "type": "number"
+        }
+      },
+      "required": [
+        "name",
+        "value",
+        "contribution"
+      ],
+      "title": "FeatureContribution",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "A detector (M1-M3) or rule firing on one entity window.",
+  "properties": {
+    "alert_id": {
+      "title": "Alert Id",
+      "type": "string"
+    },
+    "detector": {
+      "description": "M1, M2, M3 or rule:<id>.",
+      "title": "Detector",
+      "type": "string"
+    },
+    "model_version": {
+      "default": "",
+      "title": "Model Version",
+      "type": "string"
+    },
+    "stream": {
+      "enum": [
+        "signin",
+        "flow",
+        "process"
+      ],
+      "title": "Stream",
+      "type": "string"
+    },
+    "window_start": {
+      "format": "date-time",
+      "title": "Window Start",
+      "type": "string"
+    },
+    "window_end": {
+      "format": "date-time",
+      "title": "Window End",
+      "type": "string"
+    },
+    "score": {
+      "maximum": 1.0,
+      "minimum": 0.0,
+      "title": "Score",
+      "type": "number"
+    },
+    "threshold": {
+      "maximum": 1.0,
+      "minimum": 0.0,
+      "title": "Threshold",
+      "type": "number"
+    },
+    "severity": {
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ],
+      "title": "Severity",
+      "type": "string"
+    },
+    "entities": {
+      "$ref": "#/$defs/EntityRefs"
+    },
+    "event_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Event Ids",
+      "type": "array"
+    },
+    "top_features": {
+      "items": {
+        "$ref": "#/$defs/FeatureContribution"
+      },
+      "title": "Top Features",
+      "type": "array"
+    },
+    "techniques": {
+      "items": {
+        "pattern": "^T\\d{4}(\\.\\d{3})?$",
+        "type": "string"
+      },
+      "title": "Techniques",
+      "type": "array"
+    },
+    "summary": {
+      "default": "",
+      "title": "Summary",
+      "type": "string"
+    }
+  },
+  "required": [
+    "alert_id",
+    "detector",
+    "stream",
+    "window_start",
+    "window_end",
+    "score",
+    "threshold",
+    "severity",
+    "entities"
+  ],
+  "title": "Alert",
+  "type": "object"
+}
