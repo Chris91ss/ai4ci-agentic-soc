@@ -1,0 +1,41 @@
+# Agentic SOC simulator configuration.
+# Every value has a default in agentic_soc/simulator/config.py; scenario overlays in
+# config/scenarios/ only contain what they change. Runs are deterministic under `seed`.
+
+seed: 7
+start: "2026-03-02T00:00:00Z"   # a Monday, UTC
+duration_h: 48
+tick_s: 60                      # simulation step in seconds
+
+org:
+  name: Example Corp
+  domain: corp.example
+  netbios: CORP
+  timezone: Europe/Bucharest
+  home_country: RO
+  users: 200                    # one workstation per user + 50 servers = 250 hosts
+  weak_password_share: 0.04     # accounts that fall to a password spray
+  offices:
+    - {name: HQ, city: Cluj-Napoca, country: RO, lat: 46.77, lon: 23.60, egress_netblock: 193.226.51.0/24, share: 0.65}
+    - {name: Bucharest, city: Bucharest, country: RO, lat: 44.43, lon: 26.10, egress_netblock: 82.77.140.0/24, share: 0.35}
+  servers:
+    - {role: dc, count: 3, criticality: 5}
+    - {role: file, count: 4, criticality: 4}
+    - {role: db, count: 5, criticality: 5}
+    - {role: app, count: 12, os: linux, criticality: 3}
+    - {role: erp, count: 2, criticality: 5}
+    - {role: mail, count: 2, criticality: 4}
+    - {role: backup, count: 2, criticality: 4}
+    - {role: jump, count: 2, criticality: 4}
+    - {role: edr, count: 1, criticality: 4}
+    - {role: wsus, count: 1, criticality: 2}
+    - {role: print, count: 2, criticality: 1}
+    - {role: monitoring, count: 2, os: linux, criticality: 3}
+    - {role: build, count: 4, os: linux, criticality: 3}
+    - {role: web, count: 5, zone: dmz, os: linux, criticality: 3}
+    - {role: proxy, count: 2, zone: dmz, os: linux, criticality: 3}
+    - {role: vpn, count: 1, zone: dmz, os: linux, criticality: 5}
+  # Roles (share of employees, remote/travel habits, SSO apps and desktop tools) use the
+  # defaults from config.py; override a role here to change it, e.g.
+  # roles:
+  #   engineering: {share: 0.3, department: Engineering, remote_prob: 0.5, apps: [...], tools: [...]}
