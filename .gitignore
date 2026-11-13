@@ -218,3 +218,21 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# --- Agentic SOC project ---
+# generated data, trained models, run outputs (reproducible from seeds)
+/data/
+/models/
+/runs/
+*.duckdb
+*.duckdb.wal
+*.sqlite
+*.sqlite3
+.DS_Store
+# web console (Next.js)
+web/node_modules/
+web/.next/
+web/out/
+web/next-env.d.ts
+web/*.tsbuildinfo
+!web/src/lib/
