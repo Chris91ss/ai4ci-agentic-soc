@@ -33,6 +33,7 @@ class InMemoryBroker:
         self._cond = threading.Condition()
         self._topics: dict[str, list[_Partition]] = {}
         self._committed: dict[tuple[str, str, int], int] = {}
+        self._subscribers: dict[str, set[str]] = {}  # topic -> consumer groups
         self._round_robin = count()
         self.ensure_topics(partitions)
 
@@ -111,14 +112,16 @@ class InMemoryBroker:
             return out
 
     def trim(self) -> int:
-        """Drop messages every known consumer group has committed (bounded memory)."""
+        """Drop messages every group subscribed to their topic has committed (bounded memory)."""
         dropped = 0
         with self._cond:
-            groups = {g for g, _, _ in self._committed}
             for topic, parts in self._topics.items():
+                groups = self._subscribers.get(topic)
+                if not groups:
+                    continue
                 for i, part in enumerate(parts):
                     offsets = [self._committed.get((g, topic, i)) for g in groups]
-                    if not offsets or any(o is None for o in offsets):
+                    if any(o is None for o in offsets):
                         continue
                     upto = min(offsets) - part.base  # type: ignore[type-var,operator]
                     if upto > 0:
@@ -162,6 +165,7 @@ class InMemoryConsumer:
         self.positions: dict[tuple[str, int], int] = {}
         with broker._cond:
             for topic in self.topics:
+                broker._subscribers.setdefault(topic, set()).add(group)
                 for i, part in enumerate(broker._parts(topic)):
                     committed = broker._committed.get((group, topic, i))
                     if committed is not None:

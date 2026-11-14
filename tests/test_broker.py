@@ -60,6 +60,22 @@ def test_trim_drops_only_committed_messages() -> None:
     assert broker.lag("a", ["t"]) == {"t": 2}
 
 
+def test_trim_ignores_groups_of_other_topics() -> None:
+    broker = InMemoryBroker({"raw": 1, "actions": 1})
+    producer = broker.producer()
+    ingest = broker.consumer("ingestion", ["raw"])
+    sim = broker.consumer("simulator", ["actions"], from_beginning=False)
+    for i in range(5):
+        producer.send("raw", b"%d" % i)
+    producer.send("actions", b"isolate")
+    assert len(sim.poll(timeout=0)) == 1
+    sim.commit()
+    assert len(ingest.poll(timeout=0)) == 5
+    ingest.commit()
+    assert broker.trim() == 6
+    assert broker.messages("raw") == [] and broker.messages("actions") == []
+
+
 def test_blocking_poll_wakes_up_on_new_messages() -> None:
     broker = InMemoryBroker({"t": 1})
     consumer = broker.consumer("g", ["t"])
