@@ -662,6 +662,182 @@ def demo(
         (out / "truth.json").write_text(json.dumps(sim.truth(), indent=2, default=str) + "\n")
 
 
+eval_app = typer.Typer(
+    help="Evaluation: model level, end to end, S1 drift, S2 load (results in docs/evaluation).",
+    no_args_is_help=True,
+)
+app.add_typer(eval_app, name="evaluate")
+EVAL_DIR = Path("docs/evaluation")
+
+
+def _seeds(text: str) -> list[int]:
+    out: list[int] = []
+    for part in text.split(","):
+        if "-" in part:
+            lo, hi = part.split("-")
+            out += list(range(int(lo), int(hi) + 1))
+        elif part.strip():
+            out.append(int(part))
+    return out
+
+
+def _update_results(section: str, value, out: Path) -> Path:
+    from datetime import UTC, datetime
+
+    from agentic_soc.evaluation.report import write
+
+    path = out / "results.json"
+    results = json.loads(path.read_text()) if path.exists() else {}
+    results[section] = value
+    results["generated"] = datetime.now(UTC).strftime("%Y-%m-%d %H:%M UTC")
+    return write(results, out)
+
+
+def _progress(row: dict, done: int, total: int) -> None:
+    if "error" in row:
+        console.print(f"[red]{done}/{total} {row['name']} failed: {row['error']}[/red]")
+        return
+    console.print(f"{done}/{total} {row['name']}: stage {row['furthest_stage']}, exfil {row['exfil_gb']} GB, "
+                  f"false containments {row['false_containments']}, MTTC {row['mttc_min']} min ({row['wall_s']:.0f}s)")  # fmt: skip
+
+
+@eval_app.command("models")
+def evaluate_models_cmd(
+    data: Path = typer.Option(Path("data"), help="Data root built by `soc etl build`."),
+    models: Path = typer.Option(Path("models"), help="Model registry."),
+    out: Path = typer.Option(EVAL_DIR, help="Results directory."),
+) -> None:
+    """PR-AUC, recall at 1% FPR, FP/day and detection delay of M1-M3 on the test weeks."""
+    from agentic_soc.evaluation import evaluate_models
+
+    result = evaluate_models(data / "features", models, data / "lake")
+    for kind, m in result["kinds"].items():
+        console.print(f"{kind}: PR-AUC {m['pr_auc']}, recall@1%FPR {m['recall_at_1pct_fpr']}, "
+                      f"recall@thr {m['recall_at_threshold']}, FP/day {m['false_positives_per_day']}")  # fmt: skip
+    console.print(f"report: {_update_results('models', result, out)}")
+
+
+@eval_app.command("e2e")
+def evaluate_e2e(
+    seeds: str = typer.Option("401-410", help="Seeds, e.g. 401-410 or 401,402."),
+    modes: str = typer.Option("agent,detectors,rules", help="Configurations to run."),
+    hours: float = typer.Option(48.0),
+    workers: int = typer.Option(4, help="Parallel worker processes."),
+    models: Path = typer.Option(Path("models")),
+    out: Path = typer.Option(EVAL_DIR),
+) -> None:
+    """Closed-loop runs of the agent and the baselines on the same seeds."""
+    from agentic_soc.evaluation import aggregate, compare, run_many, specs_for
+
+    specs = specs_for(modes.split(","), _seeds(seeds), hours, str(models))
+    console.print(f"{len(specs)} runs on {workers} workers")
+    rows = run_many(specs, workers, _progress)
+    # Runs of other configurations or seeds from an earlier call are kept.
+    path = out / "results.json"
+    earlier = json.loads(path.read_text()).get("e2e", {}).get("runs", []) if path.exists() else []
+    fresh = {(r.get("config"), r.get("seed")) for r in rows}
+    rows = [r for r in earlier if (r.get("config"), r.get("seed")) not in fresh] + rows
+    rows.sort(key=lambda r: (r.get("config", ""), r.get("seed", 0)))
+    result = {"runs": rows, "summary": aggregate(rows), "tests": compare(rows)}
+    console.print(f"report: {_update_results('e2e', result, out)}")
+
+
+@eval_app.command("llm")
+def evaluate_llm(
+    seeds: str = typer.Option("401-403", help="Seeds (same as the end-to-end runs)."),
+    llm: str = typer.Option("ollama:gpt-oss:20b"),
+    hours: float = typer.Option(48.0),
+    workers: int = typer.Option(1, help="Parallel runs (one local LLM serves them all)."),
+    models: Path = typer.Option(Path("models")),
+    out: Path = typer.Option(EVAL_DIR),
+) -> None:
+    """The agent on a local LLM through Ollama (latency charged in simulated time)."""
+    from agentic_soc.evaluation import aggregate, run_many
+    from agentic_soc.evaluation.e2e import RunSpec, seed_start
+
+    seed_list = _seeds(seeds)
+    all_seeds = _seeds("401-410")
+    specs = [RunSpec(mode="agent", seed=s, hours=hours, llm=llm, models=str(models),
+                     start=seed_start(all_seeds.index(s) if s in all_seeds else i))
+             for i, s in enumerate(seed_list)]  # fmt: skip
+    rows = run_many(specs, workers, _progress)
+    # The scripted analyst on the same seeds (from `soc evaluate e2e`), for a paired comparison.
+    path = out / "results.json"
+    e2e_runs = json.loads(path.read_text()).get("e2e", {}).get("runs", []) if path.exists() else []
+    scripted = [r for r in e2e_runs if r.get("config") == "agent" and r["seed"] in seed_list]
+    result = {"runs": rows, "summary": aggregate(rows + scripted)}
+    console.print(f"report: {_update_results('llm', result, out)}")
+
+
+@eval_app.command("s1")
+def evaluate_s1(
+    seeds: str = typer.Option("301-303"),
+    workers: int = typer.Option(4),
+    models: Path = typer.Option(Path("models")),
+    out: Path = typer.Option(EVAL_DIR),
+) -> None:
+    """Scenario S1: the move to remote work, without and with M1 retraining on drift."""
+    from agentic_soc.evaluation import aggregate, run_many
+    from agentic_soc.evaluation.e2e import RunSpec
+
+    scenario = ("config/scenarios/s1-remote-work.yaml",)
+    specs = [RunSpec(mode="agent", seed=s, hours=72, scenarios=scenario, retrain_on_drift=retrain,
+                     models=str(models), start="2026-03-09T00:00:00Z")
+             for s in _seeds(seeds) for retrain in (False, True)]  # fmt: skip
+    rows = run_many(specs, workers, _progress)
+    for row in rows:
+        if row.get("drift"):
+            d = row["drift"]
+            console.print(f"{row['name']}: alarm after {d['alarm_delay_h']} h, false M1 alerts/h "
+                          f"{d['false_alerts_per_h_before']} -> {d['false_alerts_per_h_next_day']}, recovered after {d['recovery_h']} h")  # fmt: skip
+    console.print(
+        f"report: {_update_results('s1', {'runs': rows, 'summary': aggregate(rows)}, out)}"
+    )
+
+
+@eval_app.command("s2")
+def evaluate_s2(
+    broker: str = typer.Option("kafka://localhost:19092", help="Event broker (make up)."),
+    speed: float = typer.Option(60.0, help="Simulated seconds per wall-clock second."),
+    hours: float = typer.Option(6.0),
+    factor: float = typer.Option(
+        11.5, help="User-activity multiplier (about 10x the total event rate)."
+    ),
+    triage_s: float = typer.Option(
+        60.0, help="Simulated seconds per agent triage (local-LLM latency)."
+    ),
+    slowdowns: str = typer.Option(
+        "1,4", help="LLM slowdown factors during the burst, one run each."
+    ),
+    models: Path = typer.Option(Path("models")),
+    out: Path = typer.Option(EVAL_DIR),
+) -> None:
+    """Scenario S2: a 10x event burst through Redpanda; consumer lag, latency and load shedding."""
+    from agentic_soc.evaluation.load import run_s2
+
+    variants = []
+    for slowdown in [float(x) for x in slowdowns.split(",")]:
+        console.print(f"S2 at {speed:g}x, LLM x{slowdown:g} during the burst ...")
+        result = run_s2(str(models), broker, speed=speed, hours=hours, factor=factor, triage_s=triage_s,
+                        llm_slowdown=slowdown)  # fmt: skip
+        samples = result.pop("samples")
+        out.mkdir(parents=True, exist_ok=True)
+        (out / f"s2-samples-x{slowdown:g}.json").write_text(json.dumps(samples) + "\n")
+        burst = result["phases"].get("burst", {})
+        console.print(f"  event rate x{result['event_rate_multiplier']}, stream lag p95 {burst.get('stream_lag_s_p95')} sim s, "
+                      f"consumer lag max {burst.get('consumer_lag_max')}, shed {result['shed_to_playbooks']}")  # fmt: skip
+        variants.append(result)
+    console.print(f"report: {_update_results('s2', variants, out)}")
+
+
+@eval_app.command("report")
+def evaluate_report(out: Path = typer.Option(EVAL_DIR)) -> None:
+    """Re-render the Markdown report from results.json."""
+    from agentic_soc.evaluation.report import write
+
+    console.print(f"report: {write(json.loads((out / 'results.json').read_text()), out)}")
+
+
 @app.command()
 def calibrate(
     lanl_auth: Path | None = typer.Option(None, help="LANL auth.txt[.gz]"),

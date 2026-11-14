@@ -22,7 +22,7 @@ RFC: [docs/rfc/0001-agentic-soc.pdf](docs/rfc/0001-agentic-soc.pdf) (source: [do
 | Closed-loop pipeline (in-process and live on the broker) | `agentic_soc.pipeline` | done |
 | Evidence bundles behind every verdict, analyst feedback and FP statistics | `agentic_soc.evidence` | done |
 | FastAPI backend (REST + server-sent events) and Next.js SOC console | `agentic_soc.api`, `web/` | done |
-| Evaluation (model level, end to end, S1 drift, S2 load) | `agentic_soc.evaluation` | planned |
+| Evaluation (model level, end to end, S1 drift, S2 load) | `agentic_soc.evaluation` | done |
 
 ## Development
 
@@ -94,3 +94,21 @@ Live mode streams through Redpanda instead (`make up` starts it and TimescaleDB)
 uv run soc simulate --broker kafka://localhost:19092 --speed 60 --out data/runs/live
 uv run soc pipeline --inventory data/runs/live/inventory.json --db $SOC_DB --api-port 8000
 ```
+
+## Evaluation
+
+`soc evaluate` runs the experiments of the RFC's evaluation plan and collects them in
+`docs/evaluation/` (`results.json` plus a Markdown report):
+
+```bash
+uv run soc evaluate models                    # M1-M3 on the held-out test weeks: PR-AUC, recall at 1% FPR, FP/day
+uv run soc evaluate e2e --seeds 401-410       # agent vs detectors + playbooks vs rules, paired over seeds
+uv run soc evaluate llm --seeds 401-403       # the agent on gpt-oss:20b through Ollama, same seeds
+uv run soc evaluate s1 --seeds 301-303        # S1 drift, with and without retraining
+uv run soc evaluate s2                        # S2 burst through Redpanda (make up): lag, latency, shedding
+```
+
+End-to-end runs are 48-hour closed loops on successive weeks; each reports the time to detect and
+to contain (from the start of the intrusion), how far the attacker got, exfiltrated data, false
+containments (executed actions on entities outside the attack) and the agent's verdict quality.
+Paired Wilcoxon signed-rank tests compare the agent with each baseline on the same seeds.
