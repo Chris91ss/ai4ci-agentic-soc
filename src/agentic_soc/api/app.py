@@ -154,6 +154,11 @@ def create_app(service: ConsoleService, cors_origins: list[str] | None = None) -
     def verify_audit() -> dict[str, Any]:
         return service.verify_audit()
 
+    @app.get("/api/log")
+    def log(kinds: list[str] | None = Query(None), limit: int = Query(20_000, ge=1, le=200_000)):
+        """The pipeline log, e.g. to replay a recorded run in the console."""
+        return service.log(kinds, limit)
+
     @app.get("/api/events")
     async def events(
         cursor: int = Query(0, ge=0),

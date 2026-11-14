@@ -211,7 +211,9 @@ class SocPipeline:
             gone = self.store.get_incident(merged)
             if gone is not None:
                 note = f"merged into {state.incident_id}"
-                self.store.upsert_incident(gone | {"status": "closed", "summary": note})
+                self.store.upsert_incident(
+                    gone | {"status": "closed", "route": "merged", "summary": note}
+                )
             self._log("merge", incident_id=state.incident_id, merged=merged)
         record = state.to_record()
         if update.created:

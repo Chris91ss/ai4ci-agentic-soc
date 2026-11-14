@@ -64,6 +64,7 @@ class ConsoleService:
         pipeline: SocPipeline | None = None,
         broker: Broker | None = None,
         run: dict[str, Any] | None = None,
+        log: list[dict[str, Any]] | None = None,
     ) -> None:
         self.store = store
         self.pipeline = pipeline
@@ -71,6 +72,7 @@ class ConsoleService:
         self.profiles = profiles or (pipeline.features.profiles if pipeline else None)
         self.broker = broker
         self.run = run or {}
+        self.recorded_log = log or []  # pipeline log of a recorded run (replayed by the console)
         self.feedback_service = FeedbackService(store)
 
     @property
@@ -81,10 +83,11 @@ class ConsoleService:
     def now(self) -> datetime:
         if self.pipeline is not None and self.pipeline.clock is not None:
             return self.pipeline.now()
+        # The newest arrival, not the newest event time: hosts with drifted clocks log the future.
         latest = []
         with self.store.engine.connect() as conn:
             for table in s.EVENT_TABLES.values():
-                value = conn.execute(select(func.max(table.c.event_time))).scalar()
+                value = conn.execute(select(func.max(table.c.ingest_time))).scalar()
                 if value is not None:
                     if isinstance(value, str):
                         value = datetime.fromisoformat(value)
@@ -153,6 +156,8 @@ class ConsoleService:
         actions = Counter(a["incident_id"] for a in self.store.list_actions(limit=100_000))
         out = []
         for row in rows:
+            if row["route"] == "merged":
+                continue
             out.append({
                 "incident_id": row["incident_id"], "status": row["status"], "risk": row["risk"],
                 "priority": row["priority"], "created_at": row["created_at"], "updated_at": row["updated_at"],
@@ -293,7 +298,7 @@ class ConsoleService:
 
     # ------------------------------------------------------------------ metrics and audit
     def metrics(self) -> dict[str, Any]:
-        incidents = self.store.list_incidents(limit=100_000)
+        incidents = [i for i in self.store.list_incidents(limit=100_000) if i["route"] != "merged"]
         decisions = self.store.recent_decisions(limit=100_000)
         actions = self.store.list_actions(limit=100_000)
         alerts = sum(int(r["alerts"]) for r in self.store.alert_counts())
@@ -351,6 +356,13 @@ class ConsoleService:
         return {"ok": ok, "first_broken": broken}
 
     # ------------------------------------------------------------------ live events
+    def log(self, kinds: list[str] | None = None, limit: int = 20_000) -> list[dict[str, Any]]:
+        """The whole pipeline log (a recorded run's, or the live pipeline's so far)."""
+        entries = self.pipeline.log if self.pipeline is not None else self.recorded_log
+        if kinds:
+            entries = [e for e in entries if e["kind"] in kinds]
+        return jsonable(entries[-limit:])
+
     def log_since(self, cursor: int) -> tuple[list[dict[str, Any]], int]:
         """Pipeline events after ``cursor`` (an index into the pipeline log)."""
         if self.pipeline is None:

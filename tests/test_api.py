@@ -130,3 +130,16 @@ def test_server_sent_events_stream_pipeline_events(live, recorded) -> None:
     ) as response:
         quiet = "".join(response.iter_text())
     assert "event: hello" in quiet and "event: decision" not in quiet
+
+
+def test_recorded_runs_replay_their_log_and_hide_merged_incidents(agent_run) -> None:
+    pipeline = agent_run.pipeline
+    log = [{"time": "2026-03-02T09:00:00Z", "kind": "incident", "incident_id": "INC-00001"},
+           {"time": "2026-03-02T09:05:00Z", "kind": "decision", "incident_id": "INC-00001"}]  # fmt: skip
+    client = TestClient(create_app(ConsoleService(pipeline.store, log=log)))
+    assert [e["kind"] for e in client.get("/api/log").json()] == ["incident", "decision"]
+    assert client.get("/api/log", params={"kinds": ["decision"]}).json() == log[1:]
+    merged = [e["merged"] for e in pipeline.log if e["kind"] == "merge"]
+    listed = {i["incident_id"] for i in client.get("/api/incidents", params={"limit": 5000}).json()}
+    assert merged and not set(merged) & listed
+    assert client.get("/api/metrics").json()["incidents"] == len(pipeline.correlation.incidents)

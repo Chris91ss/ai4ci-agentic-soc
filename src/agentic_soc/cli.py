@@ -587,9 +587,13 @@ def api(
         db = f"sqlite:///{run_dir / 'soc.db'}"
     inventory = profiles = None
     run_info: dict = {}
+    log: list = []
     if run_dir is not None:
         if (run_dir / "inventory.json").exists():
             inventory = Inventory.from_file(run_dir / "inventory.json")
+        if (run_dir / "log.jsonl").exists():
+            with (run_dir / "log.jsonl").open() as fh:
+                log = [json.loads(line) for line in fh if line.strip()]
         if (run_dir / "summary.json").exists():
             summary = json.loads((run_dir / "summary.json").read_text())
             run_info = {"name": run_dir.name} | {
@@ -597,7 +601,7 @@ def api(
             }
     if models.exists():
         profiles = ModelRegistry(models).load_set().profiles
-    service = ConsoleService(Store(db), inventory, profiles, run=run_info)
+    service = ConsoleService(Store(db), inventory, profiles, run=run_info, log=log)
     console.print(f"console API on http://{host}:{port}/api (read-only {run_info.get('name', db)})")
     _serve(service, host, port, cors)
 
