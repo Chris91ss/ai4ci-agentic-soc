@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import time
-
 import pytest
 
 from agentic_soc.pipeline import InProcessRun, PipelineConfig, RunOutcome
@@ -153,29 +151,30 @@ def test_live_mode_on_the_broker_with_a_threaded_agent(mini_soc) -> None:
     broker = InMemoryBroker()
     sim = Simulator(load_config(overrides=RUN | {"duration_h": 12}))
     live = LiveSimulator(sim, broker, speed=7200)
+    # Timeouts have their own test: here the agent gets longer than the run, because at 7200x a
+    # busy runner can starve its tool calls of the pipeline lock while the stream races ahead.
     config = PipelineConfig(mode="agent", worker="threaded",
-                            router=RouterConfig(agent_timeout_s=6 * 3600))  # fmt: skip
+                            router=RouterConfig(agent_timeout_s=24 * 3600))  # fmt: skip
     soc = SocPipeline(Inventory.from_enterprise(sim.ent), LocalDetectorClient(mini_soc.detectors),
                       mini_soc.profiles, Store.memory(), broker, config)  # fmt: skip
     assert soc.ctx.lock is soc.lock
     producer = threading.Thread(target=live.run)
     producer.start()
-    stop = threading.Event()
-    consumer = threading.Thread(
-        target=run_live, args=(soc,), kwargs={"stop": stop, "poll_timeout": 0.05}
-    )
+    stop, drained = threading.Event(), threading.Event()
+    streams = ["signin", "flow", "process"]
+
+    def check(pipeline: SocPipeline) -> None:
+        # Called on the pipeline's thread between steps, so no batch is half-processed: lag drops
+        # to zero as soon as a batch is consumed, before its incidents are routed to the agent.
+        if (not producer.is_alive() and broker.lag("ingestion", streams) == dict.fromkeys(streams, 0)
+                and not pipeline.router.queue_length and not pipeline.worker.busy):  # fmt: skip
+            drained.set()
+
+    consumer = threading.Thread(target=run_live, args=(soc,),
+                                kwargs={"stop": stop, "poll_timeout": 0.05, "report_every_s": 0.0, "on_report": check})  # fmt: skip
     consumer.start()
     producer.join(timeout=120)
-    # Drained: the topics are consumed and the agent has nothing queued or in progress (on a
-    # loaded machine the agent thread may not have picked up the last incidents yet).
-    deadline = time.monotonic() + 300
-    while time.monotonic() < deadline and (
-        broker.lag("ingestion", ["signin", "flow", "process"])
-        != dict.fromkeys(["signin", "flow", "process"], 0)
-        or soc.router.queue_length
-        or (soc.worker is not None and soc.worker.busy)
-    ):
-        threading.Event().wait(0.2)
+    assert drained.wait(timeout=300), "the pipeline did not drain"
     stop.set()
     consumer.join(timeout=60)
     summary = soc.summary()
