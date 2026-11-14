@@ -196,3 +196,60 @@ def test_c2_needs_an_external_destination() -> None:
         external["action"],
         *external["extra_actions"],
     ]
+
+
+def _signin_incident() -> dict[str, Any]:
+    """A spray from an anonymiser that got into one account, next to two staff signing in through
+    the company's ZTNA egress (a cloud address), one of them after a typo."""
+    spray = {
+        "alert_id": "AL-1",
+        "detector": "M1",
+        "kind": "M1-ip",
+        "score": 1.0,
+        "techniques": ["T1110.003"],
+        "entities": {
+            "users": ["anna.novak", "lukas.dumitru"],
+            "hosts": [],
+            "ips": ["185.220.102.90"],
+        },
+    }
+    egress = {
+        "alert_id": "AL-2",
+        "detector": "M1",
+        "kind": "M1-ip",
+        "score": 0.99,
+        "techniques": ["T1110", "T1078"],
+        "entities": {"users": ["florin.tudor", "anna.novak"], "hosts": [], "ips": ["165.225.67.6"]},
+    }
+    victim = {
+        "alert_id": "AL-3",
+        "detector": "M1",
+        "kind": "M1-user",
+        "score": 1.0,
+        "techniques": ["T1078", "T1133"],
+        "entities": {"users": ["lukas.dumitru"], "hosts": [], "ips": ["185.220.102.90"]},
+    }
+    return {"incident_id": "INC-00058", "risk": 0.87, "detectors": ["M1"], "alerts": [spray, egress, victim],
+            "techniques": [{"id": t} for t in ("T1078", "T1110", "T1110.003", "T1133")],
+            "first_seen": "2026-03-11T08:15:00Z", "last_seen": "2026-03-11T08:45:00Z", "now": "2026-03-11T08:47:00Z"}  # fmt: skip
+
+
+def test_valid_account_use_needs_an_attacker_like_source() -> None:
+    llm = ScriptedLLM()
+    incident = _signin_incident()
+    looked_up = {args["entity"] for name, args in llm.plan(incident) if name == "get_asset_context"}
+    assert {"ip:185.220.102.90", "ip:165.225.67.6"} <= looked_up
+    history = [
+        ("get_asset_context", {"entity": "ip:185.220.102.90"}, {"geo": {"category": "anonymizer"}}),
+        (
+            "get_asset_context",
+            {"entity": "ip:165.225.67.6"},
+            {"geo": {"category": "cloud", "org": "Zscaler"}},
+        ),
+    ]
+    decision = llm.decide("INC-00058", incident, history)
+    actions = [decision["action"], *decision["extra_actions"]]
+    assert decision["verdict"] == "malicious"
+    assert {"type": "block_ip", "target": "185.220.102.90"} in actions
+    assert {"type": "revoke_sessions", "target": "lukas.dumitru"} in actions
+    assert not any(a["target"] in {"florin.tudor", "anna.novak"} for a in actions)

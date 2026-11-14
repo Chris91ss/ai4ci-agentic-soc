@@ -122,7 +122,15 @@ class ScriptedLLM:
                         {"entity": f"host:{host}", "streams": ["process"], "limit": 60} | window,
                     )
                 )
-        for ip in ips[:2]:
+        # Where did the suspicious successful sign-ins come from?
+        valid_account_sources = [
+            ip
+            for a in alerts
+            if a["detector"] == "M1" and "T1078" in a["techniques"]
+            for ip in a["entities"].get("ips", [])
+            if not PRIVATE.match(ip)
+        ]
+        for ip in list(dict.fromkeys(ips[:2] + valid_account_sources))[:4]:
             calls.append(("get_asset_context", {"entity": f"ip:{ip}"}))
         for alert in alerts:
             sources = alert["entities"].get("ips", [])
@@ -254,6 +262,30 @@ class ScriptedLLM:
         def protected_host(host: str) -> bool:
             return bool(context.get(f"host:{host}", {}).get("protected_infrastructure"))
 
+        spray_sources = {
+            ip
+            for a in incident["alerts"]
+            if "T1110.003" in a["techniques"]
+            for ip in a["entities"].get("ips", [])
+        }
+
+        def attacker_source(ips: list[str]) -> bool:
+            """Signed in from attacker-like infrastructure: a hosting or anonymiser network or an
+            address that sprayed. A success through an ISP or the company's own cloud egress is
+            the user; unknown or internal sources still count, to err towards containment."""
+            public = [ip for ip in ips if not PRIVATE.match(ip)]
+            if not public:
+                return True
+            for ip in public:
+                category = (context.get(f"ip:{ip}") or {}).get("geo", {}).get("category")
+                if (
+                    ip in spray_sources
+                    or f"ip:{ip}" not in context
+                    or category in {"hosting", "anonymizer"}
+                ):
+                    return True
+            return False
+
         def blockable(ip: str) -> bool:
             ctx = context.get(f"ip:{ip}")
             category = (ctx or {}).get("geo", {}).get("category")
@@ -284,7 +316,7 @@ class ScriptedLLM:
                     if not protected_host(host):
                         candidates.append((0, "isolate_host", host))
                 candidates += [(2, "disable_account", u) for u in users if u.startswith("adm-")]
-            if alert["detector"] == "M1" and "T1078" in t:
+            if alert["detector"] == "M1" and "T1078" in t and attacker_source(ips):
                 for user in users:
                     kind = context.get(f"user:{user}", {}).get("account_kind", "user")
                     candidates.append(
