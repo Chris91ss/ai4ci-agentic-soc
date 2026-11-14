@@ -1,0 +1,149 @@
+<!doctype html>
+<!-- The link preview (1200x630). scripts/capture.mjs fills #shot with a screenshot of an incident
+     and saves the result as public/social.png. -->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      html,
+      body {
+        margin: 0;
+        width: 1200px;
+        height: 630px;
+        overflow: hidden;
+        background: #090c12;
+        color: #e7ebf3;
+        font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Inter, sans-serif;
+      }
+      .grid {
+        position: absolute;
+        inset: 0;
+        background-image: linear-gradient(#ffffff09 1px, transparent 1px), linear-gradient(90deg, #ffffff09 1px, transparent 1px);
+        background-size: 34px 34px;
+        mask-image: radial-gradient(ellipse at 28% 42%, #000 25%, transparent 72%);
+      }
+      .glow {
+        position: absolute;
+        width: 760px;
+        height: 760px;
+        left: -260px;
+        top: -300px;
+        background: radial-gradient(circle, #22d3ee2e, transparent 62%);
+      }
+      .glow.red {
+        left: 760px;
+        top: 260px;
+        background: radial-gradient(circle, #f43f5e1f, transparent 60%);
+      }
+      .left {
+        position: absolute;
+        left: 64px;
+        top: 58px;
+        width: 500px;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        font-size: 24px;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+      }
+      .brand small {
+        display: block;
+        font-size: 14px;
+        font-weight: 400;
+        color: #64708a;
+        letter-spacing: 0;
+      }
+      .icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 13px;
+        display: grid;
+        place-items: center;
+        color: #22d3ee;
+        background: #22d3ee1a;
+        box-shadow: inset 0 0 0 1px #22d3ee55;
+      }
+      h1 {
+        margin: 40px 0 18px;
+        font-size: 44px;
+        line-height: 1.1;
+        letter-spacing: -0.025em;
+        font-weight: 700;
+      }
+      h1 span {
+        background: linear-gradient(90deg, #e7ebf3, #22d3ee);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+      p {
+        margin: 0;
+        font-size: 19px;
+        line-height: 1.5;
+        color: #9aa5b8;
+      }
+      .stats {
+        display: flex;
+        gap: 12px;
+        margin-top: 36px;
+      }
+      .stat {
+        padding: 12px 16px;
+        border-radius: 12px;
+        background: #0f141ccc;
+        box-shadow: inset 0 0 0 1px #222b3a;
+      }
+      .stat b {
+        display: block;
+        font: 600 25px ui-monospace, "SF Mono", Menlo, monospace;
+      }
+      .stat b.ok {
+        color: #10b981;
+      }
+      .stat small {
+        font-size: 13px;
+        color: #64708a;
+      }
+      #shot {
+        position: absolute;
+        left: 610px;
+        top: 66px;
+        width: 680px;
+        border-radius: 16px;
+        box-shadow:
+          0 30px 90px #000c,
+          0 0 0 1px #2e394c;
+        transform: perspective(1800px) rotateY(-9deg) rotateX(3deg);
+        transform-origin: left center;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="grid"></div>
+    <div class="glow"></div>
+    <div class="glow red"></div>
+    <div class="left">
+      <div class="brand">
+        <span class="icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path
+              d="M11.998 2l.032 .002l.086 .005a1 1 0 0 1 .342 .104l.105 .062l.097 .076l.016 .015l.247 .21a11 11 0 0 0 7.189 2.537l.342 -.01a1 1 0 0 1 1.005 .717a13 13 0 0 1 -9.208 16.25a1 1 0 0 1 -.502 0a13 13 0 0 1 -9.209 -16.25a1 1 0 0 1 1.005 -.717a11 11 0 0 0 7.791 -2.75l.046 -.036l.053 -.041a1 1 0 0 1 .217 -.112l.075 -.023l.036 -.01a1 1 0 0 1 .12 -.022l.086 -.005zm.002 2.296l-.176 .135a13 13 0 0 1 -7.288 2.572l-.264 .006l-.064 .31a11 11 0 0 0 1.064 7.175l.17 .314a11 11 0 0 0 6.49 5.136l.068 .019z"
+            />
+          </svg>
+        </span>
+        <div>Agentic SOC<small>AI4CI · simulated enterprise</small></div>
+      </div>
+      <h1>A local-LLM analyst that <span>investigates, contains and shows its evidence</span></h1>
+      <p>Sign-ins, network flows and processes, scored by three detectors, correlated into incidents and triaged over MCP by gpt-oss:20b. Its containment flows back into the attack.</p>
+      <div class="stats">
+        <div class="stat"><b class="ok">10/10</b><small>intrusions stopped</small></div>
+        <div class="stat"><b>0 vs 46</b><small>false containments</small></div>
+        <div class="stat"><b>7</b><small>MCP tools</small></div>
+      </div>
+    </div>
+    <img id="shot" alt="" />
+  </body>
+</html>

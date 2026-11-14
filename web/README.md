@@ -42,12 +42,25 @@ uv run soc run --scenario config/scenarios/s1-remote-work.yaml --hours 72 --seed
 uv run soc export --run data/soc-runs/s1-retrain-seed301
 
 cd web
-STATIC_EXPORT=1 NEXT_PUBLIC_DATA=static NEXT_PUBLIC_BASE_PATH=/ai4ci-agentic-soc npm run build
-npx serve out           # the site, under out/
+STATIC_EXPORT=1 NEXT_PUBLIC_DATA=static npm run build   # the site, in out/
+npx serve out                                          # preview it on http://localhost:3000
 ```
 
-The export keeps the triaged incidents with their evidence and agent traces, and the entities
-involved in them with their newest events.
+The workflow builds with `NEXT_PUBLIC_BASE_PATH=/ai4ci-agentic-soc`, the path Pages serves the
+site under. The export keeps every incident with its evidence and agent trace, and the entities
+of triaged incidents and of containment actions with their newest events.
+
+## The README's images
+
+`npm run capture` regenerates the repository README's screenshots (`docs/assets/`), the demo GIF
+and the link preview (`public/social.png`, from `scripts/social-card.html`) from the static
+build, in headless Chrome. It uses puppeteer-core with the installed Chrome (`CHROME_PATH` to
+point elsewhere), and ffmpeg for the GIF:
+
+```bash
+STATIC_EXPORT=1 NEXT_PUBLIC_DATA=static npm run build
+npm run capture                       # or name some: node scripts/capture.mjs shots tour social
+```
 
 ## Layout
 
@@ -58,3 +71,4 @@ involved in them with their newest events.
 - `src/components/evaluation/`: evaluation views (end to end, detectors, S1 drift, S2 load, local LLM)
 - `src/components/ui/`: design-system primitives
 - `src/lib/`: API client (live or static), React Query hooks, live events (SSE or replay), formatting
+- `scripts/`: `capture.mjs` and the link preview's card
