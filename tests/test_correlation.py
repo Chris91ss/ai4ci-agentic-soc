@@ -96,6 +96,22 @@ def test_spray_targets_link_through_the_source_only(inventory) -> None:
     assert len(engine.incidents) == 1
 
 
+def test_alerts_of_an_incident_merged_in_the_same_batch_are_reported(inventory) -> None:
+    engine = CorrelationEngine(inventory)
+    engine.ingest([scored("M1-user", "user:a", 0, users=["a"])], T0)
+    batch = [
+        scored("M3", "host:WS-0009", 5, users=["b"], hosts=["WS-0009"]),
+        scored("M2", "bridge", 10, users=["a"], hosts=["WS-0009"]),
+    ]
+    updates = engine.ingest(batch, T0)
+    assert len(engine.incidents) == 1 and len(updates) == 1
+    update = updates[0]
+    assert update.merged == ["INC-00002"] and len(update.new_alerts) == 2
+    assert {a.alert_id for a in update.new_alerts} | {
+        next(iter(engine.incidents["INC-00001"].alerts))
+    } == set(engine.incidents["INC-00001"].alerts)
+
+
 def test_bridging_alert_merges_incidents_and_refires_update_in_place(inventory) -> None:
     engine = CorrelationEngine(inventory)
     engine.ingest([scored("M1-user", "user:a", 0, users=["a"])], T0)

@@ -259,13 +259,16 @@ class CorrelationEngine:
             if candidates:
                 target_id = min(candidates, key=lambda i: (self.incidents[i].created_at, i))
                 state = self.incidents[target_id]
-                merged = []
+                update = touched.setdefault(target_id, IncidentUpdate(state, [], False, []))
                 for other in sorted(candidates - {target_id}):
                     self._merge(state, self.incidents.pop(other))
-                    merged.append(other)
-                    touched.pop(other, None)
-                update = touched.setdefault(target_id, IncidentUpdate(state, [], False, []))
-                update.merged += merged
+                    update.merged.append(other)
+                    pending = touched.pop(other, None)
+                    if pending is not None:
+                        # Alerts that reached the merged incident earlier in this batch have not
+                        # been reported yet; they are now new alerts of the surviving incident.
+                        update.new_alerts += pending.new_alerts
+                        update.merged += pending.merged
             else:
                 target_id = self._new_id()
                 state = IncidentState(target_id, created_at=now)
