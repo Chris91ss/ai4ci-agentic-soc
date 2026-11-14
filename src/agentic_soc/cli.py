@@ -103,6 +103,8 @@ def simulate(
         from agentic_soc.simulator.live import LiveSimulator
 
         live = LiveSimulator(sim, connect(broker), speed=speed)
+        out.mkdir(parents=True, exist_ok=True)  # the SOC needs the asset inventory up front
+        (out / "inventory.json").write_text(json.dumps(sim.ent.inventory(), indent=1) + "\n")
         console.print(
             f"publishing to {broker} at {speed:g}x; actions are applied from the actions topic"
         )
@@ -396,6 +398,150 @@ def mcp(
         server.run(transport="streamable-http", host=host, port=port)
     else:
         server.run()
+
+
+def _progress_line(pipeline, sim=None) -> str:
+    executed = sum(1 for a in pipeline.actions.actions.values() if a.status == "executed")
+    line = (
+        f"{pipeline.now():%a %H:%M} events={pipeline.stats['events']:,} "
+        f"alerts={len(pipeline.correlation.alert_incident):,} "
+        f"incidents={len(pipeline.correlation.incidents)} queue={pipeline.router.queue_length} "
+        f"decisions={len(pipeline.decisions)} actions={executed}"
+    )
+    if sim is not None and sim.campaign.status != "disabled":
+        stage = next(reversed(sim.campaign.stage_times), "-")
+        line += f" | campaign {sim.campaign.status}: {stage}"
+    return line
+
+
+def _write_run(out: Path, summary: dict, truth: dict | None, pipeline) -> None:
+    out.mkdir(parents=True, exist_ok=True)
+    (out / "summary.json").write_text(json.dumps(summary, indent=2, default=str) + "\n")
+    if truth is not None:
+        (out / "truth.json").write_text(json.dumps(truth, indent=2, default=str) + "\n")
+    with (out / "log.jsonl").open("w") as fh:
+        for entry in pipeline.log:
+            fh.write(json.dumps(entry, default=str) + "\n")
+
+
+@app.command()
+def run(
+    config: Path | None = typer.Option(
+        None, help="Base YAML config (default config/simulator.yaml)."
+    ),
+    scenario: list[Path] | None = typer.Option(None, help="Scenario overlay(s), applied in order."),
+    seed: int = typer.Option(201, help="Activity seed of the run."),
+    org_seed: int = typer.Option(7, help="Company seed (the dataset and models use 7)."),
+    start: str = typer.Option(
+        "2026-03-09T00:00:00Z", help="Start time (after the dataset's test weeks)."
+    ),
+    hours: float = typer.Option(48.0, help="Duration in hours."),
+    no_campaign: bool = typer.Option(False, "--no-campaign", help="Benign activity only."),
+    mode: str = typer.Option("agent", help="agent (triage agent) or detectors (playbooks only)."),
+    llm: str = typer.Option(
+        "scripted", help="scripted or ollama[:model] (e.g. ollama:gpt-oss:20b)."
+    ),
+    models: Path = typer.Option(Path("models"), help="Model registry."),
+    out: Path | None = typer.Option(
+        None, help="Run directory (default data/soc-runs/<mode>-seed<seed>)."
+    ),
+    db: str | None = typer.Option(None, help="Store URL (default: soc.db in the run directory)."),
+    approval_delay: float = typer.Option(
+        0.0,
+        help="High-impact actions: 0 = auto-approved (unattended run), else seconds before a "
+        "simulated analyst approves them.",
+    ),
+) -> None:
+    """Closed-loop run: simulator and SOC in one process, containment flowing back to the attack."""
+    import time
+
+    from rich.table import Table
+
+    from agentic_soc.detectors.registry import ModelRegistry
+    from agentic_soc.pipeline import InProcessRun, PipelineConfig
+    from agentic_soc.simulator.engine import Simulator
+    from agentic_soc.storage import Store
+
+    if mode not in {"agent", "detectors"}:
+        raise typer.BadParameter("mode must be agent or detectors")
+    cfg = _sim_config(config, scenario, seed, hours, no_campaign,
+                      extra={"org_seed": org_seed, "start": start})  # fmt: skip
+    out = out or Path("data/soc-runs") / f"{mode}-seed{cfg.seed}"
+    db_path = out / "soc.db"
+    if db is None and db_path.exists():
+        db_path.unlink()
+    store = Store(db or f"sqlite:///{db_path}")
+    store.init_schema()
+    sim = Simulator(cfg)
+    pipeline_cfg = PipelineConfig(mode=mode, llm=llm, approval_delay_s=approval_delay)  # type: ignore[arg-type]
+    runner = InProcessRun(sim, ModelRegistry(models).load_set(), pipeline_cfg, store)
+    console.print(f"closed-loop run: {mode} ({llm if mode == 'agent' else 'playbooks'}), "
+                  f"seed {cfg.seed}, org {org_seed}, {cfg.duration_h:g}h from {cfg.start:%Y-%m-%d %H:%M} -> {out}")  # fmt: skip
+    started = time.perf_counter()
+    outcome = runner.run(lambda p, s: console.print(_progress_line(p, s)), every=180)
+    summary = outcome.summary | {"wall_s": round(time.perf_counter() - started, 1),
+                                 "seed": cfg.seed, "org_seed": org_seed}  # fmt: skip
+    _write_run(out, summary, outcome.truth, outcome.pipeline)
+    camp = outcome.truth["campaign"]
+    table = Table(title=f"{mode} run seed={cfg.seed}")
+    table.add_column("metric")
+    table.add_column("value", justify="right")
+    for key in ("events", "alerts", "incidents", "alert_to_incident_ratio"):
+        table.add_row(key, f"{summary[key]:,}")
+    table.add_row("decisions", ", ".join(f"{k}: {v}" for k, v in summary["decisions"].items()))
+    table.add_row("verdicts", ", ".join(f"{k}: {v}" for k, v in summary["verdicts"].items()))
+    for action in summary["actions"]:
+        if action["status"] == "executed":
+            when = (action["executed_at"] or "")[5:16].replace("T", " ")
+            table.add_row(f"  {action['type']}", f"{action['target']} @ {when}")
+    table.add_row("campaign", f"{camp['status']} {camp.get('stall_reason') or ''}".strip())
+    table.add_row("exfiltrated", f"{camp['exfil_bytes'] / 1e9:.2f} GB")
+    table.add_row("wall time", f"{summary['wall_s']:.0f}s")
+    console.print(table)
+
+
+@app.command()
+def pipeline(
+    broker: str = typer.Option("kafka://localhost:19092", help="Event broker URL."),
+    db: str | None = typer.Option(None, help="Hot store URL (default $SOC_DB)."),
+    models: Path = typer.Option(Path("models"), help="Model registry."),
+    inventory: Path = typer.Option(..., help="inventory.json of the monitored enterprise."),
+    mode: str = typer.Option("agent", help="agent or detectors (playbooks only)."),
+    llm: str = typer.Option("ollama", help="ollama[:model] or scripted."),
+    detectors_url: str | None = typer.Option(
+        None, help="Detector REST service (default: in-process models)."
+    ),
+    idle_exit: float | None = typer.Option(
+        None, help="Stop after the stream has been idle this many seconds."
+    ),
+    out: Path | None = typer.Option(None, help="Write summary.json and log.jsonl here at exit."),
+) -> None:
+    """Live SOC pipeline on the event broker (run the simulator with `soc simulate --broker`)."""
+    import logging
+
+    from agentic_soc.broker import connect
+    from agentic_soc.detectors.registry import ModelRegistry
+    from agentic_soc.detectors.service import HttpDetectorClient, LocalDetectorClient
+    from agentic_soc.ingestion import Inventory
+    from agentic_soc.pipeline import PipelineConfig, SocPipeline
+    from agentic_soc.pipeline.service import run_live
+    from agentic_soc.storage import Store
+
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
+    detectors = ModelRegistry(models).load_set()
+    client = HttpDetectorClient(detectors_url) if detectors_url else LocalDetectorClient(detectors)
+    store = Store(db)
+    store.init_schema()
+    config = PipelineConfig(mode=mode, llm=llm, worker="threaded", auto_approve=False)  # type: ignore[arg-type]
+    soc = SocPipeline(Inventory.from_file(inventory), client, detectors.profiles, store,
+                      connect(broker), config)  # fmt: skip
+    console.print(f"SOC pipeline ({mode}) consuming {broker}; Ctrl-C to stop")
+    try:
+        run_live(soc, on_report=lambda p: console.print(_progress_line(p)), idle_exit_s=idle_exit)
+    except KeyboardInterrupt:
+        console.print("[yellow]stopped[/yellow]")
+    if out is not None:
+        _write_run(out, soc.summary(), None, soc)
 
 
 @app.command()

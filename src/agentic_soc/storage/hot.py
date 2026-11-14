@@ -117,6 +117,46 @@ class SecurityObjects:
         with self.engine.connect() as conn:
             return [dict(r) for r in conn.execute(query).mappings()]
 
+    def reassign_alerts(self, from_incident: str, to_incident: str) -> None:
+        with self.engine.begin() as conn:
+            conn.execute(
+                s.alerts.update()
+                .where(s.alerts.c.incident_id == from_incident)
+                .values(incident_id=to_incident)
+            )
+
+    def add_decision(self, record: dict[str, Any]) -> None:
+        with self.engine.begin() as conn:
+            conn.execute(insert(s.decisions), [record])
+
+    def decisions_for(self, incident_id: str) -> list[dict[str, Any]]:
+        query = (
+            select(s.decisions)
+            .where(s.decisions.c.incident_id == incident_id)
+            .order_by(s.decisions.c.id)
+        )
+        with self.engine.connect() as conn:
+            return [dict(r) for r in conn.execute(query).mappings()]
+
+    def recent_decisions(self, limit: int = 100) -> list[dict[str, Any]]:
+        query = select(s.decisions).order_by(s.decisions.c.id.desc()).limit(limit)
+        with self.engine.connect() as conn:
+            return [dict(r) for r in conn.execute(query).mappings()]
+
+    def add_tool_calls(self, rows: list[dict[str, Any]]) -> None:
+        if rows:
+            with self.engine.begin() as conn:
+                conn.execute(insert(s.tool_calls), rows)
+
+    def tool_calls_for(self, incident_id: str) -> list[dict[str, Any]]:
+        query = (
+            select(s.tool_calls)
+            .where(s.tool_calls.c.incident_id == incident_id)
+            .order_by(s.tool_calls.c.id)
+        )
+        with self.engine.connect() as conn:
+            return [dict(r) for r in conn.execute(query).mappings()]
+
     def upsert_action(self, action: dict[str, Any]) -> None:
         self._upsert(s.actions, "action_id", action)
 

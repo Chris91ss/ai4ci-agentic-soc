@@ -99,7 +99,9 @@ class PolicyGate:
         requested_by: str,
         now: datetime,
         incident_actions: int = 0,
+        dry_run: bool = False,
     ) -> Verdict:
+        """``dry_run`` previews the verdict without counting against the automatic-action rate."""
         if action_type not in ACTION_IMPACT:
             return Verdict("deny", f"{action_type!r} is not on the action allow-list", target)
         normalised = self.normalise(action_type, target)
@@ -124,7 +126,8 @@ class PolicyGate:
                 "automatic action rate limit reached; analyst approval needed",
                 normalised,
             )
-        self._auto.append(now)
+        if not dry_run:
+            self._auto.append(now)
         reason = (
             "low-impact action"
             if impact == "low"

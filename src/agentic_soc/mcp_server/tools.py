@@ -75,6 +75,7 @@ class SocContext:
     resolver: EntityResolver | None = None
     feature_config: Any = None
     tool_calls: list[dict[str, Any]] = field(default_factory=list)
+    lock: Any = None  # live pipeline: tool calls wait while the pipeline updates its state
 
 
 class SocTools:
@@ -413,6 +414,8 @@ class SocTools:
             result["reason"] = action.justification.rsplit("[denied: ", 1)[-1].rstrip("]")
         elif action.status == "pending_approval":
             result["note"] = "high-impact action held for analyst approval"
+        elif action.status == "proposed":
+            result["note"] = "accepted by the policy gate; it executes when your triage completes"
         return result
 
 

@@ -7,6 +7,7 @@ connect with ``mcp.Client(server)``.
 from __future__ import annotations
 
 import time
+from contextlib import nullcontext
 from datetime import UTC, datetime
 from typing import Any
 
@@ -33,7 +34,8 @@ def build_server(tools: SocTools, name: str = "agentic-soc") -> MCPServer:
             "at": datetime.now(UTC).isoformat(),
         }
         try:
-            result = fn(**arguments)
+            with ctx.lock if ctx.lock is not None else nullcontext():
+                result = fn(**arguments)
             record |= {"ok": True}
             return result
         except ToolError as exc:
