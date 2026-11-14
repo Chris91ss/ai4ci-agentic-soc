@@ -103,3 +103,75 @@ def train_m2(
     }
     detector.meta["validation"] = report["validation"]
     return detector, report
+
+
+def _m3_windows(table: pa.Table) -> list[tuple[str, list[tuple[str, str]]]]:
+    windows = []
+    for context in table.column("context").to_pylist():
+        data = json.loads(context) if context else {}
+        windows.append(
+            (data.get("host_class", "unknown"), [tuple(p) for p in data.get("pairs", [])])
+        )
+    return windows
+
+
+def train_m3(
+    features_root: Path, lake_root: Path, fpr: float | None = None
+) -> tuple[Any, dict[str, Any]]:
+    """Host-day launch frequencies from the benign history in the lake; calibration on benign
+    windows of the training weeks; thresholds on the validation week."""
+    from collections import Counter
+
+    from agentic_soc.detectors.m3 import DEFAULT_FPR, KIND, M3Detector, PairRarity
+    from agentic_soc.etl import duck
+    from agentic_soc.etl.lake import Lake
+    from agentic_soc.features.extract import host_class_of
+
+    root = Path(features_root)
+    splits = load_splits(root)
+    history = splits["history"][0]
+    inventory = Lake(lake_root).inventory(history)
+    classes = {host_id: host_class_of(inventory, host_id) for host_id in inventory.hosts}
+    con = duck.connect(lake_root)
+    host_days = duck.rows(
+        con,
+        "SELECT host_id, count(DISTINCT CAST(event_time AS DATE)) AS n FROM process "
+        "WHERE run = ? AND host_id IS NOT NULL GROUP BY ALL",
+        [history],
+    )
+    launches = duck.rows(
+        con,
+        "SELECT host_id, parent_name, process_name, count(DISTINCT CAST(event_time AS DATE)) AS n "
+        "FROM process WHERE run = ? AND host_id IS NOT NULL GROUP BY ALL",
+        [history],
+    )
+    con.close()
+    days_by_class: Counter[str] = Counter()
+    for row in host_days:
+        days_by_class[classes.get(row["host_id"], "unknown")] += int(row["n"])
+    df: Counter[tuple[str, str, str]] = Counter()
+    for row in launches:
+        df[(classes.get(row["host_id"], "unknown"), row["parent_name"], row["process_name"])] += (
+            int(row["n"])
+        )
+    model = PairRarity()
+    model.add_counts(dict(days_by_class), ((c, p, ch, n) for (c, p, ch), n in df.items()))
+    train = benign(load_features(root, splits["train"], KIND))
+    detector = M3Detector.fit(model, _m3_windows(train))
+    validation = load_features(root, splits["validation"], KIND)
+    y_val = labels_of(validation)
+    detector.calibrate(_m3_windows(benign(validation)), fpr or DEFAULT_FPR)
+    scores = detector.window_scores(_m3_windows(validation))
+    alerts = scores >= detector.thresholds[KIND]
+    report = {
+        "host_days": model.days,
+        "validation": {
+            "rows": len(y_val),
+            "positives": int(y_val.sum()),
+            "threshold": detector.thresholds[KIND],
+            "true_positives": int((alerts & y_val).sum()),
+            "false_positives": int((alerts & ~y_val).sum()),
+        },
+    }
+    detector.meta["validation"] = report["validation"]
+    return detector, report

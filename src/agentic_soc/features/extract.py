@@ -85,6 +85,17 @@ class FeatureRow:
         return [self.features[name] for name in FEATURES[self.detector]]
 
 
+def host_class_of(inv: Inventory, host_id: str) -> str:
+    """Peer group of a host for process baselines: workstations by owner role, servers by role."""
+    info = inv.hosts.get(host_id)
+    if info is None:
+        return "unknown"
+    if info.kind == "workstation":
+        owner = inv.users.get(info.owner or "")
+        return f"ws:{owner.role}" if owner else "ws"
+    return f"srv:{info.role}"
+
+
 def _uniq(values: Any) -> list[str]:
     return list(dict.fromkeys(v for v in values if v))
 
@@ -330,13 +341,7 @@ class FeatureExtractor:
 
     # ------------------------------------------------------------------ M3
     def host_class(self, host_id: str) -> str:
-        info = self.inv.hosts.get(host_id)
-        if info is None:
-            return "unknown"
-        if info.kind == "workstation":
-            owner = self.inv.users.get(info.owner or "")
-            return f"ws:{owner.role}" if owner else "ws"
-        return f"srv:{info.role}"
+        return host_class_of(self.inv, host_id)
 
     def m3(self, window: Window) -> FeatureRow:
         events: list[NormProcess] = sorted(window.events, key=lambda e: (e.event_time, e.pid))

@@ -29,6 +29,7 @@ _CATALOG = [
     Technique("T1071.001", "Application Layer Protocol: Web Protocols", "command-and-control"),
     Technique("T1573", "Encrypted Channel", "command-and-control"),
     Technique("T1560.001", "Archive Collected Data: Archive via Utility", "collection"),
+    Technique("T1218.011", "System Binary Proxy Execution: Rundll32", "defense-evasion"),
     Technique("T1041", "Exfiltration Over C2 Channel", "exfiltration"),
 ]
 
@@ -40,6 +41,7 @@ TACTIC_ORDER = {
     "credential-access": 1,
     "discovery": 2,
     "execution": 3,
+    "defense-evasion": 3,
     "lateral-movement": 4,
     "collection": 5,
     "command-and-control": 6,
