@@ -99,6 +99,7 @@ class DeliveryModel:
             malformed = None
             if u[i, 2] < spec.malformed_prob:
                 value, malformed = self._corrupt(payload, rng)
+                self.stats.malformed += 1
             else:
                 if self._is_legacy(event.stream, payload, spec, float(u[i, 3])):
                     payload = self._to_legacy(event.stream, payload, observed)

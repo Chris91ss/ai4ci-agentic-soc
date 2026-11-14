@@ -49,6 +49,68 @@ def schemas(
     console.print(f"wrote {len(documents)} schemas to {out}")
 
 
+def _sim_config(
+    config: Path | None,
+    scenario: list[Path] | None,
+    seed: int | None,
+    hours: float | None,
+    no_campaign: bool,
+    extra: dict | None = None,
+):
+    from agentic_soc.simulator.config import load_config
+
+    overrides: dict = dict(extra or {})
+    if seed is not None:
+        overrides["seed"] = seed
+    if hours is not None:
+        overrides["duration_h"] = hours
+    if no_campaign:
+        overrides["campaign"] = {"enabled": False}
+    return load_config(config, *(scenario or []), overrides=overrides)
+
+
+@app.command()
+def simulate(
+    config: Path | None = typer.Option(
+        None, help="Base YAML config (default config/simulator.yaml)."
+    ),
+    scenario: list[Path] | None = typer.Option(None, help="Scenario overlay(s), applied in order."),
+    seed: int | None = typer.Option(None, help="Override the seed."),
+    hours: float | None = typer.Option(None, help="Override the duration in hours."),
+    no_campaign: bool = typer.Option(False, "--no-campaign", help="Benign activity only."),
+    out: Path | None = typer.Option(None, help="Run directory (default data/runs/seed<seed>)."),
+) -> None:
+    """Run the simulator offline and write raw messages and ground truth to a run directory."""
+    import time
+
+    from rich.table import Table
+
+    from agentic_soc.simulator.engine import Simulator
+    from agentic_soc.simulator.run_io import simulate_to_dir
+
+    cfg = _sim_config(config, scenario, seed, hours, no_campaign)
+    out = out or Path("data/runs") / f"seed{cfg.seed}"
+    started = time.perf_counter()
+    sim = Simulator(cfg)
+    writer = simulate_to_dir(sim, out)
+    elapsed = time.perf_counter() - started
+    truth = sim.truth()
+    table = Table(title=f"simulation seed={cfg.seed} {cfg.duration_h:g}h -> {out}")
+    table.add_column("metric")
+    table.add_column("value", justify="right")
+    for stream, count in sorted(truth["run"]["events"].items()):
+        table.add_row(f"events: {stream}", f"{count:,}")
+    for key, value in truth["run"]["delivery"].items():
+        table.add_row(f"delivery: {key}", f"{value:,}")
+    table.add_row("messages written", f"{writer.messages:,}")
+    camp = truth["campaign"]
+    table.add_row("campaign", f"{camp['status']} ({camp['events']:,} events)")
+    for stage, when in camp["stage_times"].items():
+        table.add_row(f"  {stage}", when)
+    table.add_row("wall time", f"{elapsed:.1f}s")
+    console.print(table)
+
+
 @app.command()
 def calibrate(
     lanl_auth: Path | None = typer.Option(None, help="LANL auth.txt[.gz]"),

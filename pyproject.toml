@@ -9,6 +9,7 @@ authors = [{ name = "Adi" }, { name = "Cristi" }, { name = "Dragos" }]
 dependencies = [
     "numpy>=2.0",
     "orjson>=3.13.0",
+    "pyarrow>=26.0.1",
     "pydantic>=2.9",
     "pyyaml>=6.0",
     "rich>=13.7",
