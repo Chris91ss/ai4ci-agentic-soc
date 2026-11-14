@@ -189,7 +189,21 @@ class CorrelationEngine:
 
     def link_keys(self, alert: Alert) -> set[str]:
         """Entities that link this alert to others. A network sweep (T1018) is evidence about
-        its source, not about every host it touched, so sweeps link through the source only."""
+        its source, not about every host it touched, so sweeps link through the source only.
+        Likewise an account that only saw failed sign-ins (a spray target) is a victim of the
+        attempt, not an attacker foothold: it links through the sources of the attempts, so the
+        account's unrelated activity is not pulled into the attack's incident. The servers an
+        account signed in to are shared by many users and do not link sign-in alerts either."""
+        if alert.model_version == "M1-user":
+            ips = {f"ip:{ip}" for ip in alert.entities.ips}
+            if "T1078" not in alert.techniques:
+                return ips - self.stop
+            workstations = {
+                f"host:{h}"
+                for h in alert.entities.hosts
+                if (info := self.inv.hosts.get(h)) is not None and info.kind == "workstation"
+            }
+            return ({f"user:{u}" for u in alert.entities.users} | ips | workstations) - self.stop
         if alert.detector == "M2" and "T1018" in alert.techniques and alert.entities.ips:
             src_ip = alert.entities.ips[0]
             keys = {f"user:{u}" for u in alert.entities.users} | {f"ip:{src_ip}"}

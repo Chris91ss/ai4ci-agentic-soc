@@ -190,19 +190,39 @@ class FeatureExtractor:
         }
         hosts = _uniq(e.dst_host for e in events)
         person = events[0].person
-        succeeded = len(fails) < n
-        if succeeded and person and person in self.inv.users and events[0].user_kind == "user":
-            # A successful sign-in puts the account's own workstation at risk; a failed one does not.
+
+        def risky(e: NormSignin) -> bool:
+            if e.src_category in {"hosting", "anonymizer"}:
+                return True
+            if profile is None:
+                return e.src_zone == "external"
+            return bool(
+                (e.src_country and e.src_country not in profile.countries)
+                or (e.src_asn is not None and str(e.src_asn) not in profile.asns)
+            )
+
+        # A success from an unusual source suggests someone else holds the credentials; failures
+        # next to the owner's routine sign-ins only make the account a target.
+        risky_success = any(e.outcome == "success" and risky(e) for e in events)
+        if risky_success and person and person in self.inv.users and events[0].user_kind == "user":
+            # ...and puts the account's own workstation at risk.
             hosts = _uniq([*hosts, self.inv.users[person].workstation])
+        # Addresses that matter: where a suspicious success came from, else where attempts failed.
+        external = [e for e in events if e.src_zone == "external"]
+        if risky_success:
+            ips = _uniq(e.src_ip for e in external if e.outcome == "success" and risky(e))
+        else:
+            ips = _uniq(e.src_ip for e in external if e.outcome == "failure")
         return FeatureRow(
             "M1-user", window.key, window.start, window.end,
-            users=[account], hosts=hosts, ips=_uniq(e.src_ip for e in events if e.src_zone == "external"),
+            users=[account], hosts=hosts, ips=ips,
             event_ids=[e.event_id for e in events], features=features, late=window.late,
             context={
                 "countries": _uniq(e.src_country for e in events),
                 "orgs": _uniq(e.src_org for e in events),
                 "logon_types": _uniq(e.logon_type for e in events),
                 "outcomes": {"success": n - len(fails), "failure": len(fails)},
+                "risky_success": risky_success,
             },
         )  # fmt: skip
 

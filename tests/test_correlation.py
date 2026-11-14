@@ -77,6 +77,25 @@ def test_infrastructure_and_time_horizon_do_not_link(inventory) -> None:
     )
 
 
+def test_spray_targets_link_through_the_source_only(inventory) -> None:
+    engine = CorrelationEngine(inventory)
+    spray = "45.32.9.9"
+    engine.ingest([scored("M1-ip", f"ip:{spray}", 0, ips=[spray], techniques=["T1110.003"])], T0)
+    engine.ingest(
+        [scored("M1-user", "user:a", 0, users=["a"], ips=[spray], techniques=["T1110"])], T0
+    )
+    assert len(engine.incidents) == 1
+    # The targeted account's own (unrelated) activity starts a separate incident...
+    engine.ingest([scored("M3", "host:WS-0009", 20, users=["a"], hosts=["WS-0009"])], T0)
+    assert len(engine.incidents) == 2
+    # ...unless the account is actually used by the attacker (a successful sign-in).
+    engine.ingest(
+        [scored("M1-user", "user:a", 30, users=["a"], ips=[spray], techniques=["T1110", "T1078"])],
+        T0,
+    )
+    assert len(engine.incidents) == 1
+
+
 def test_bridging_alert_merges_incidents_and_refires_update_in_place(inventory) -> None:
     engine = CorrelationEngine(inventory)
     engine.ingest([scored("M1-user", "user:a", 0, users=["a"])], T0)

@@ -69,9 +69,11 @@ class FeaturePipeline:
             "signin-user", cfg.signin_size_s, cfg.signin_delay_s,
             lambda e: [f"user:{e.user_id}"] if e.user_kind != "unknown" else [], cfg.retention_s,
         )  # fmt: skip
+        egress = set(inventory.office_egress.values())  # our own NAT: every employee's source
         self.signin_ip = Windower(
             "signin-ip", cfg.signin_size_s, cfg.signin_delay_s,
-            lambda e: [f"ip:{e.src_ip}"] if e.src_zone == "external" else [], cfg.retention_s,
+            lambda e: [f"ip:{e.src_ip}"] if e.src_zone == "external" and e.src_ip not in egress else [],
+            cfg.retention_s,
         )  # fmt: skip
         self.flow_src = Windower(
             "flow-src", cfg.flow_size_s, cfg.flow_delay_s, lambda e: [e.src_ip], cfg.retention_s

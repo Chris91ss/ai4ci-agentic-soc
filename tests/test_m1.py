@@ -117,3 +117,25 @@ def test_tail_calibration_is_monotonic() -> None:
     assert np.all(np.diff(ys) >= 0) and ys[0] >= 0 and ys[-1] < 1
     assert cal(np.array([raw.max() + 1]))[0] > cal(np.array([raw.max()]))[0]
     assert threshold_for_fpr(np.linspace(0, 1, 1001), 0.01) == pytest.approx(0.99)
+
+
+def _user_row(n: int, n_fail: int, outcomes: dict[str, int], risky: bool) -> FeatureRow:
+    features = dict.fromkeys(FEATURES["M1-user"], 0.0) | {
+        "n": float(n),
+        "n_fail": float(n_fail),
+        "fail_ratio": n_fail / n,
+    }
+    context = {"outcomes": outcomes, "risky_success": risky, "countries": ["US", "RO"]}
+    return FeatureRow("M1-user", "user:ana", T0, T0 + timedelta(minutes=15), ["ana"], [], [],
+                      ["e1"], features, context=context)  # fmt: skip
+
+
+def test_techniques_tell_spray_targets_from_used_accounts() -> None:
+    target = _user_row(3, 1, {"success": 2, "failure": 1}, risky=False)
+    assert M1Detector.describe(target)[0] == ["T1110"]
+    used = _user_row(3, 1, {"success": 2, "failure": 1}, risky=True)
+    assert M1Detector.describe(used)[0] == ["T1078"]
+    sprayed = _user_row(4, 4, {"success": 0, "failure": 4}, risky=False)
+    assert M1Detector.describe(sprayed)[0] == ["T1110"]
+    routine = _user_row(2, 0, {"success": 2, "failure": 0}, risky=False)
+    assert M1Detector.describe(routine)[0] == ["T1078"]

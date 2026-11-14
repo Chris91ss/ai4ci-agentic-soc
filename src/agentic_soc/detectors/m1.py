@@ -147,9 +147,12 @@ class M1Detector(Detector):
         account = row.users[0] if row.users else row.key
         techniques = []
         succeeded = ctx.get("outcomes", {}).get("success", 0) > 0
-        if (f["n_fail"] >= 3 and f["fail_ratio"] > 0.5) or not succeeded:
+        # Valid-account use needs a success from an unusual source; failures next to the
+        # owner's routine sign-ins make the account a brute-force target only.
+        used = bool(ctx.get("risky_success", succeeded))
+        if f["n_fail"] > 0 and ((f["n_fail"] >= 3 and f["fail_ratio"] > 0.5) or not used):
             techniques.append("T1110")
-        if succeeded:
+        if used:
             techniques.append("T1078")
         if "vpn" in ctx.get("logon_types", []) and (
             f["new_country_share"] > 0 or f["hosting_share"] > 0
