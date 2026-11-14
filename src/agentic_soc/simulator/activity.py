@@ -78,6 +78,7 @@ class ActivityPlanner:
         self._user_index = {u.user_id: i for i, u in enumerate(ent.users)}
         self.remote_override: list[tuple[datetime, float]] = []  # (from, remote_prob) for drift
         self.shift_override: list[tuple[datetime, float]] = []  # (from, extra shift hours)
+        self.remote_egress_override: list[tuple[datetime, list[str]]] = []  # (from, ZTNA egress)
         self.trips = self._plan_trips()
 
     # ------------------------------------------------------------------ trips
@@ -137,6 +138,13 @@ class ActivityPlanner:
                 shift = value
         return shift
 
+    def remote_egress(self, t: datetime) -> list[str] | None:
+        pool = None
+        for since, ips in self.remote_egress_override:
+            if t >= since:
+                pool = ips
+        return pool
+
     def plan(self, user: User, day: int) -> DayPlan:
         key = (user.user_id, day)
         cached = self._plans.get(key)
@@ -162,6 +170,8 @@ class ActivityPlanner:
         consumer_vpn = False
         if trip is not None:
             public_ip = trip.ip
+        elif remote and (egress := self.remote_egress(noon)):
+            public_ip = egress[int(u[7] * len(egress))]
         elif remote:
             public_ip = user.home_ip
             if self.consumer_vpn_enabled and user.consumer_vpn and u[5] < 0.6:

@@ -14,6 +14,7 @@ from agentic_soc.simulator.generators.flow import FlowGenerator
 from agentic_soc.simulator.generators.process import ProcessGenerator
 from agentic_soc.simulator.generators.signin import SigninGenerator
 from agentic_soc.simulator.model import IdFactory, SimEvent
+from agentic_soc.simulator.rng import rng_for
 
 __all__ = [
     "BenignActivity",
@@ -41,6 +42,14 @@ def build_context(
         travel=config.lookalikes.travel,
         consumer_vpn=config.lookalikes.consumer_vpn,
     )
+    if config.drift.enabled:
+        since = config.start + timedelta(hours=config.drift.at_h)
+        planner.remote_override.append((since, config.drift.remote_prob))
+        planner.shift_override.append((since, config.drift.shift_h))
+        if config.drift.remote_egress == "ztna":
+            rng = rng_for(config.enterprise_seed, "ztna-egress")
+            pool = ent.allocator.take(rng, config.drift.ztna_netblock, config.drift.ztna_ips)
+            planner.remote_egress_override.append((since, pool))
     return GenContext(
         config=config,
         ent=ent,

@@ -1,0 +1,13 @@
+# Scenario S1 (drift): a mid-run shift to remote work. From Tuesday 06:00 UTC most staff work
+# from home (sign-ins from home ISPs and the VPN instead of the office) and start later in the
+# day. The attack comes the evening after, once the M1 drift monitor has had time to alarm and
+# M1 has been retrained.
+duration_h: 72
+drift:
+  enabled: true
+  at_h: 30            # Tuesday 06:00 UTC (08:00 local)
+  remote_prob: 0.8
+  shift_h: 1.5
+campaign:
+  start_offset_h: 56  # Wednesday ~08:00 UTC, a working day under the new pattern
+  start_jitter_h: 2.0

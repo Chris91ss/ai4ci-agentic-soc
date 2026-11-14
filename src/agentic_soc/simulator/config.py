@@ -262,6 +262,24 @@ def _default_delivery() -> dict[str, DeliverySpec]:
     }  # fmt: skip
 
 
+class DriftConfig(_Cfg):
+    """Scenario S1: a mid-run shift to remote work changes sign-in locations and times."""
+
+    enabled: bool = False
+    at_h: float = Field(30.0, ge=0, description="Hours after the start when the shift happens.")
+    remote_prob: float = Field(
+        0.8, ge=0, le=1, description="Chance of working from home on a day, from then on."
+    )
+    shift_h: float = Field(1.5, ge=-6, le=6, description="Working hours move by this much.")
+    remote_egress: Literal["home", "ztna"] = Field(
+        "ztna",
+        description="Remote work through home ISPs (as before) or a newly adopted ZTNA service, "
+        "whose shared egress addresses abroad are new to every account.",
+    )
+    ztna_netblock: str = "165.225.0.0/17"
+    ztna_ips: int = Field(24, ge=1)
+
+
 class CampaignConfig(_Cfg):
     """The injected intrusion (see :mod:`agentic_soc.simulator.campaign`)."""
 
@@ -316,6 +334,7 @@ class SimulatorConfig(_Cfg):
     lookalikes: LookalikeConfig = Field(default_factory=LookalikeConfig)
     delivery: dict[str, DeliverySpec] = Field(default_factory=_default_delivery)
     campaign: CampaignConfig = Field(default_factory=CampaignConfig)
+    drift: DriftConfig = Field(default_factory=DriftConfig)
 
     @model_validator(mode="after")
     def _all_streams_delivered(self) -> SimulatorConfig:

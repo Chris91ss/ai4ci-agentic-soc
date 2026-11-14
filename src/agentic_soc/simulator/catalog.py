@@ -180,6 +180,8 @@ NETBLOCKS: list[Netblock] = [
     Netblock("170.114.0.0/16", "US", "San Jose", 37.34, -121.89, 30103, "Zoom", "cloud"),
     Netblock("13.108.0.0/14", "US", "San Francisco", 37.77, -122.42, 14340, "Salesforce", "cloud"),
     Netblock("104.192.136.0/21", "US", "Ashburn", 39.04, -77.49, 133530, "Atlassian", "cloud"),
+    # Secure access service edge (ZTNA): remote staff egress after a move to it (scenario S1).
+    Netblock("165.225.0.0/17", "DE", "Frankfurt", 50.11, 8.68, 22616, "Zscaler", "cloud"),
     # Hosting providers: used by developers (staging, mirrors) and by attackers.
     Netblock("159.89.0.0/16", "DE", "Frankfurt", 50.11, 8.68, 14061, "DigitalOcean", "hosting"),
     Netblock("95.216.0.0/16", "FI", "Helsinki", 60.17, 24.94, 24940, "Hetzner", "hosting"),

@@ -3,9 +3,11 @@ from __future__ import annotations
 from collections import Counter
 from datetime import timedelta
 
+import numpy as np
 import pytest
 
 from agentic_soc.schemas import parse_event
+from agentic_soc.simulator import Simulator
 from agentic_soc.simulator.config import load_config
 from agentic_soc.simulator.enterprise import is_internal
 from agentic_soc.simulator.generators import BenignActivity, build_context
@@ -130,3 +132,21 @@ def test_revoked_sessions_force_reauthentication() -> None:
         if e.stream == "signin" and account_of(e) == user.user_id
     ]
     assert reasons.count("session_revoked") == 1
+
+
+def test_remote_work_shift_moves_egress_and_hours() -> None:
+    config = load_config(
+        overrides={"org": {"users": 50}, "duration_h": 60, "drift": {"enabled": True, "at_h": 30}}
+    )
+    sim = Simulator(config)
+    planner = sim.ctx.planner
+    before = [planner.plan(u, 0) for u in sim.ent.users]
+    after = [planner.plan(u, 2) for u in sim.ent.users]
+    share = lambda plans: sum(p.remote for p in plans if p.works) / sum(p.works for p in plans)  # noqa: E731
+    assert share(after) > share(before) + 0.3
+    ztna = [p for p in after if p.remote and p.trip is None]
+    assert ztna and all(sim.ent.geo.lookup(p.public_ip).org == "Zscaler" for p in ztna)
+    assert (
+        np.mean([p.start.hour + p.start.minute / 60 for p in after if p.works])
+        > np.mean([p.start.hour + p.start.minute / 60 for p in before if p.works]) + 1.0
+    )
