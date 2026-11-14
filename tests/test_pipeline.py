@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import time
+
 import pytest
 
 from agentic_soc.pipeline import InProcessRun, PipelineConfig, RunOutcome
@@ -164,9 +166,15 @@ def test_live_mode_on_the_broker_with_a_threaded_agent(mini_soc) -> None:
     )
     consumer.start()
     producer.join(timeout=120)
-    while broker.lag("ingestion", ["signin", "flow", "process"]) != dict.fromkeys(
-        ["signin", "flow", "process"], 0
-    ) or (soc.worker is not None and soc.worker.busy):
+    # Drained: the topics are consumed and the agent has nothing queued or in progress (on a
+    # loaded machine the agent thread may not have picked up the last incidents yet).
+    deadline = time.monotonic() + 300
+    while time.monotonic() < deadline and (
+        broker.lag("ingestion", ["signin", "flow", "process"])
+        != dict.fromkeys(["signin", "flow", "process"], 0)
+        or soc.router.queue_length
+        or (soc.worker is not None and soc.worker.busy)
+    ):
         threading.Event().wait(0.2)
     stop.set()
     consumer.join(timeout=60)
