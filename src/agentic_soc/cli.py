@@ -79,20 +79,41 @@ def simulate(
     hours: float | None = typer.Option(None, help="Override the duration in hours."),
     no_campaign: bool = typer.Option(False, "--no-campaign", help="Benign activity only."),
     out: Path | None = typer.Option(None, help="Run directory (default data/runs/seed<seed>)."),
+    broker: str | None = typer.Option(
+        None, help="Publish live to a broker (kafka://localhost:19092) instead of writing files."
+    ),
+    speed: float = typer.Option(
+        60.0, help="Live mode: simulated seconds per wall second (0 = max)."
+    ),
 ) -> None:
-    """Run the simulator offline and write raw messages and ground truth to a run directory."""
+    """Run the simulator offline (run directory) or live (publishing to the event broker)."""
     import time
 
     from rich.table import Table
 
     from agentic_soc.simulator.engine import Simulator
-    from agentic_soc.simulator.run_io import simulate_to_dir
+    from agentic_soc.simulator.run_io import simulate_to_dir, write_ground_truth
 
     cfg = _sim_config(config, scenario, seed, hours, no_campaign)
     out = out or Path("data/runs") / f"seed{cfg.seed}"
     started = time.perf_counter()
     sim = Simulator(cfg)
-    writer = simulate_to_dir(sim, out)
+    if broker:
+        from agentic_soc.broker import connect
+        from agentic_soc.simulator.live import LiveSimulator
+
+        live = LiveSimulator(sim, connect(broker), speed=speed)
+        console.print(
+            f"publishing to {broker} at {speed:g}x; actions are applied from the actions topic"
+        )
+        try:
+            live.run()
+        except KeyboardInterrupt:
+            console.print("[yellow]stopped[/yellow]")
+        write_ground_truth(sim, out)
+        messages = live.published
+    else:
+        messages = simulate_to_dir(sim, out).messages
     elapsed = time.perf_counter() - started
     truth = sim.truth()
     table = Table(title=f"simulation seed={cfg.seed} {cfg.duration_h:g}h -> {out}")
@@ -102,7 +123,7 @@ def simulate(
         table.add_row(f"events: {stream}", f"{count:,}")
     for key, value in truth["run"]["delivery"].items():
         table.add_row(f"delivery: {key}", f"{value:,}")
-    table.add_row("messages written", f"{writer.messages:,}")
+    table.add_row("messages", f"{messages:,}")
     camp = truth["campaign"]
     table.add_row("campaign", f"{camp['status']} ({camp['events']:,} events)")
     for stage, when in camp["stage_times"].items():

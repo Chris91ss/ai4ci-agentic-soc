@@ -22,4 +22,15 @@ test: ## Fast unit tests
 test-all: ## All tests, including integration/LLM/slow ones
 	uv run pytest
 
-.PHONY: help install lint fmt test test-all
+COMPOSE := docker compose -f deploy/docker-compose.yml
+
+up: ## Start the infrastructure (Redpanda)
+	$(COMPOSE) up -d --wait
+
+down: ## Stop the infrastructure
+	$(COMPOSE) down
+
+test-integration: ## Integration tests against the docker compose stack
+	SOC_KAFKA_URL=kafka://localhost:19092 uv run pytest -m integration
+
+.PHONY: help install lint fmt test test-all up down test-integration

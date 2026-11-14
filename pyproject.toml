@@ -7,6 +7,7 @@ requires-python = ">=3.12"
 license = { text = "MIT" }
 authors = [{ name = "Adi" }, { name = "Cristi" }, { name = "Dragos" }]
 dependencies = [
+    "confluent-kafka>=2.16.1",
     "numpy>=2.0",
     "orjson>=3.13.0",
     "pyarrow>=26.0.1",

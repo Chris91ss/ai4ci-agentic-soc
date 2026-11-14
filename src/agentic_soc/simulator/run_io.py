@@ -48,11 +48,18 @@ class RunWriter:
     def close(self, sim: Simulator) -> None:
         for handle in self._files.values():
             handle.close()
-        sim.labels.write(self.dir / "labels.parquet")
-        (self.dir / "truth.json").write_text(json.dumps(sim.truth(), indent=2) + "\n")
-        (self.dir / "inventory.json").write_text(json.dumps(sim.ent.inventory(), indent=1) + "\n")
-        config = sim.config.model_dump(mode="json")
-        (self.dir / "config.yaml").write_text(yaml.safe_dump(config, sort_keys=False, width=100))
+        write_ground_truth(sim, self.dir)
+
+
+def write_ground_truth(sim: Simulator, out_dir: Path) -> None:
+    """Labels, truth, inventory and resolved config of a finished (or stopped) run."""
+    out = Path(out_dir)
+    out.mkdir(parents=True, exist_ok=True)
+    sim.labels.write(out / "labels.parquet")
+    (out / "truth.json").write_text(json.dumps(sim.truth(), indent=2) + "\n")
+    (out / "inventory.json").write_text(json.dumps(sim.ent.inventory(), indent=1) + "\n")
+    config = sim.config.model_dump(mode="json")
+    (out / "config.yaml").write_text(yaml.safe_dump(config, sort_keys=False, width=100))
 
 
 def read_raw(run_dir: Path, topic: str) -> Iterator[dict[str, Any]]:
