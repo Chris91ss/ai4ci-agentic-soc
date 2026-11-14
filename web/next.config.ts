@@ -6,8 +6,9 @@ const staticExport = process.env.STATIC_EXPORT === "1";
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH || undefined;
 
 const nextConfig: NextConfig = {
-  cacheComponents: true,
-  partialPrefetching: true,
+  // Cache Components (partial prerendering) needs a server; a static export renders plain pages.
+  cacheComponents: !staticExport,
+  partialPrefetching: !staticExport,
   allowedDevOrigins: ["127.0.0.1"],
   ...(staticExport ? { output: "export" as const, trailingSlash: true, images: { unoptimized: true } } : {}),
   ...(basePath ? { basePath } : {}),

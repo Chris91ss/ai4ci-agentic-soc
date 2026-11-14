@@ -4,6 +4,7 @@ import { IconDatabaseExport, IconMoodEmpty } from "@tabler/icons-react";
 import { motion } from "framer-motion";
 import type { ReactNode } from "react";
 
+import { DATA_MODE } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 export function Skeleton({ className }: { className?: string }) {
@@ -38,6 +39,13 @@ export function EmptyState({
 
 export function ErrorState({ error }: { error: unknown }) {
   const message = error instanceof Error ? error.message : String(error);
+  if (DATA_MODE === "static")
+    return (
+      <EmptyState icon={<IconDatabaseExport size={20} />} title="Not part of this demo">
+        The static demo includes the triaged incidents of one recorded run and the entities involved in them. Run the SOC locally (
+        <code className="font-mono">soc demo</code>) to explore everything.
+      </EmptyState>
+    );
   return (
     <EmptyState icon={<IconDatabaseExport size={20} />} title="Could not load data">
       {message}. Is the console API running (<code className="font-mono">soc demo</code> or{" "}

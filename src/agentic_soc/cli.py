@@ -572,16 +572,8 @@ def _serve(service, host: str, port: int, cors: list[str] | None) -> None:
     uvicorn.run(create_app(service, cors), host=host, port=port, log_level="warning")
 
 
-@app.command()
-def api(
-    run_dir: Path | None = typer.Option(None, "--run", help="Run directory written by `soc run`."),
-    db: str | None = typer.Option(None, help="Store URL (default: soc.db of --run, else $SOC_DB)."),
-    models: Path = typer.Option(Path("models"), help="Model registry (account baselines)."),
-    host: str = typer.Option("127.0.0.1"),
-    port: int = typer.Option(8000),
-    cors: list[str] | None = typer.Option(None, help="Allowed console origins."),
-) -> None:
-    """Serve the console API over a recorded run (read-only)."""
+def _recorded_service(run_dir: Path | None, db: str | None, models: Path):
+    """The console service over a recorded run (`soc run` output) or a store."""
     from agentic_soc.api import ConsoleService
     from agentic_soc.detectors.registry import ModelRegistry
     from agentic_soc.ingestion import Inventory
@@ -607,8 +599,39 @@ def api(
         profiles = ModelRegistry(models).load_set().profiles
     service = ConsoleService(Store(db), inventory, profiles, run=run_info, log=log,
                              evaluation_dir=Path("docs/evaluation"))  # fmt: skip
-    console.print(f"console API on http://{host}:{port}/api (read-only {run_info.get('name', db)})")
+    return service, run_info.get("name", db)
+
+
+@app.command()
+def api(
+    run_dir: Path | None = typer.Option(None, "--run", help="Run directory written by `soc run`."),
+    db: str | None = typer.Option(None, help="Store URL (default: soc.db of --run, else $SOC_DB)."),
+    models: Path = typer.Option(Path("models"), help="Model registry (account baselines)."),
+    host: str = typer.Option("127.0.0.1"),
+    port: int = typer.Option(8000),
+    cors: list[str] | None = typer.Option(None, help="Allowed console origins."),
+) -> None:
+    """Serve the console API over a recorded run (read-only)."""
+    service, name = _recorded_service(run_dir, db, models)
+    console.print(f"console API on http://{host}:{port}/api (read-only {name})")
     _serve(service, host, port, cors)
+
+
+@app.command("export")
+def export_run(
+    run_dir: Path = typer.Option(..., "--run", help="Run directory written by `soc run`."),
+    out: Path = typer.Option(Path("web/public/data"), help="Static data directory of the console."),
+    models: Path = typer.Option(Path("models"), help="Model registry (account baselines)."),
+    timeline_hours: float = typer.Option(72.0, help="Hours of entity timeline to include."),
+    timeline_limit: int = typer.Option(50, help="Newest events per entity timeline."),
+) -> None:
+    """Export a recorded run as static JSON for the console (the GitHub Pages demo)."""
+    from agentic_soc.api.export import export_static
+
+    service, name = _recorded_service(run_dir, None, models)
+    result = export_static(service, out, timeline_hours, timeline_limit)
+    console.print(f"exported {name}: {result['incidents']} incidents, {result['entities']} entities, "
+                  f"{result['bytes'] / 1e6:.1f} MB into {out}")  # fmt: skip
 
 
 @app.command()

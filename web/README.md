@@ -24,9 +24,29 @@ npm install
 npm run dev            # http://localhost:3000, API at http://127.0.0.1:8000/api
 ```
 
-Set `NEXT_PUBLIC_API_URL` to use another API address. With `NEXT_PUBLIC_DATA=static` the
-console reads a recorded run exported as JSON under `public/data/` instead of the API, which is
-how the GitHub Pages demo is built (`STATIC_EXPORT=1 NEXT_PUBLIC_BASE_PATH=/repo npm run build`).
+Set `NEXT_PUBLIC_API_URL` to use another API address.
+
+## Static demo (GitHub Pages)
+
+With `NEXT_PUBLIC_DATA=static` the console reads a recorded run exported as JSON under
+`public/data/` instead of the API, and replays its pipeline log; approvals and feedback are
+read-only. The Pages workflow (`.github/workflows/pages.yml`) builds it on every push to `main`
+that touches `web/`:
+
+```bash
+# from the repository root: the demo run (scenario S1 with retraining), exported with
+# docs/evaluation into web/public/data
+uv run soc run --scenario config/scenarios/s1-remote-work.yaml --hours 72 --seed 301 \
+  --retrain-on-drift --out data/soc-runs/s1-retrain-seed301
+uv run soc export --run data/soc-runs/s1-retrain-seed301
+
+cd web
+STATIC_EXPORT=1 NEXT_PUBLIC_DATA=static NEXT_PUBLIC_BASE_PATH=/ai4ci-agentic-soc npm run build
+npx serve out           # the site, under out/
+```
+
+The export keeps the triaged incidents with their evidence and agent traces, and the entities
+involved in them with their newest events.
 
 ## Layout
 

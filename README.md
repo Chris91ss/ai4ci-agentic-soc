@@ -85,6 +85,10 @@ analyst feedback, metrics with the drift monitor, the evaluation results and the
 cd web && npm install && npm run dev               # http://localhost:3000
 ```
 
+A static replay of one recorded run (scenario S1 with retraining) is published on GitHub Pages
+at https://chris91ss.github.io/ai4ci-agentic-soc/; `soc export` writes a run's data for it (see
+[web/README.md](web/README.md#static-demo-github-pages)).
+
 Endpoints: `/api/health`, `/api/stream-health`, `/api/incidents[/{id}[/evidence|/trace|/feedback]]`,
 `/api/entities/{entity}[/timeline]`, `/api/actions[/{id}/approve|/reject]`, `/api/metrics`,
 `/api/audit[/verify]`, `/api/evaluation` (the results in `docs/evaluation`) and `/api/events`

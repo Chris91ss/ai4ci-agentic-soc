@@ -162,3 +162,27 @@ def test_evaluation_results_with_thinned_load_samples(agent_run, tmp_path) -> No
     assert (
         500 <= len(found["s2_samples"]["4"]) <= 600 and found["s2_samples"]["4"][0]["wall_s"] == 0
     )
+
+
+def test_static_export_matches_the_console_files(agent_run, tmp_path) -> None:
+    from agentic_soc.api.export import entity_file, export_static
+
+    pipeline = agent_run.pipeline
+    service = ConsoleService(pipeline.store, pipeline.inv, pipeline.features.profiles,
+                             run={"name": "test"}, log=pipeline.log)  # fmt: skip
+    result = export_static(service, tmp_path, timeline_limit=20, alert_limit=5)
+    names = {p.name for p in tmp_path.iterdir()}
+    assert {"health.json", "stream-health.json", "incidents.json", "actions.json", "metrics.json",
+            "audit.json", "audit-verify.json", "log.json", "incidents", "entities"} <= names  # fmt: skip
+    assert "evaluation.json" not in names  # no evaluation directory configured
+    incidents = json.loads((tmp_path / "incidents.json").read_text())
+    assert len(incidents) == result["incidents"] > 0
+    first = json.loads((tmp_path / "incidents" / f"{incidents[0]['incident_id']}.json").read_text())
+    assert set(first) == {"detail", "evidence", "trace"} and first["detail"]["alerts"]
+    for action in json.loads((tmp_path / "actions.json").read_text()):
+        kind = {"block_ip": "ip", "isolate_host": "host"}.get(action["type"], "user")
+        path = tmp_path / "entities" / f"{entity_file(f'{kind}:{action["target"]}')}.json"
+        entity = json.loads(path.read_text())
+        assert len(entity["timeline"]["events"]) <= 20 and len(entity["timeline"]["alerts"]) <= 5
+        assert all(v is not None for e in entity["timeline"]["events"] for v in e.values())
+    assert entity_file("ip:10.0.0.1") == "ip_10.0.0.1" and entity_file("user:a b") == "user_a_b"
