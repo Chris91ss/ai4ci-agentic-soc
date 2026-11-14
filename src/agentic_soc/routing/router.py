@@ -1,7 +1,7 @@
 """Risk router: what deserves the agent's attention, and what happens when it is slow or down.
 
 Low-risk incidents are only logged. Others are queued for the triage agent by priority and
-re-triaged when their risk jumps or a new late-stage tactic appears. When the queue is full or
+re-triaged when their risk jumps or the attack reaches a new ATT&CK tactic. When the queue is full or
 the circuit breaker is open (repeated agent failures or timeouts), a deterministic playbook
 decides instead.
 """
@@ -16,7 +16,7 @@ from datetime import datetime, timedelta
 from typing import Literal
 
 from agentic_soc.correlation.engine import IncidentState, IncidentUpdate
-from agentic_soc.correlation.risk import LATE_TACTICS, priority_of
+from agentic_soc.correlation.risk import priority_of
 
 Route = Literal["none", "log", "agent", "playbook"]
 CLOSED_STATUSES = {"contained", "dismissed", "closed"}
@@ -28,6 +28,7 @@ class RouterConfig:
     retriage_delta: float = 0.15
     max_queue: int = 25
     agent_timeout_s: float = 180.0
+    agent: bool = True  # False: every routed incident goes to the playbooks (detectors baseline)
     breaker_failures: int = 3
     breaker_cooldown_s: float = 900.0
 
@@ -81,9 +82,10 @@ class RiskRouter:
 
     # ------------------------------------------------------------------ routing
     def _escalated(self, state: IncidentState) -> bool:
+        """Re-triage when the risk grew markedly or the attack reached a new ATT&CK tactic."""
         risk = state.risk.risk if state.risk else 0.0
-        new_late = (state.tactics() - state.triaged_tactics) & LATE_TACTICS
-        return risk >= state.triaged_risk + self.cfg.retriage_delta or bool(new_late)
+        new_tactics = state.tactics() - state.triaged_tactics
+        return risk >= state.triaged_risk + self.cfg.retriage_delta or bool(new_tactics)
 
     def route(self, update: IncidentUpdate, now: datetime) -> RouteDecision:
         state = update.incident
@@ -104,6 +106,8 @@ class RiskRouter:
         if risk < self.cfg.log_below:
             return RouteDecision(iid, "none", "low risk")
         reason = "escalated" if handled else f"risk {risk:.2f}"
+        if not self.cfg.agent:
+            return self._playbook(state, f"{reason}; playbook mode")
         if not self.breaker.allow(now):
             return self._playbook(state, f"{reason}; circuit breaker open")
         if len(self._queued) >= self.cfg.max_queue:
@@ -118,9 +122,16 @@ class RiskRouter:
         self.stats["playbook"] += 1
         return RouteDecision(state.incident_id, "playbook", reason)
 
-    def mark_triaged(self, state: IncidentState) -> None:
-        state.triaged_risk = state.risk.risk if state.risk else 0.0
-        state.triaged_tactics = state.tactics()
+    def mark_triaged(
+        self, state: IncidentState, risk: float | None = None, tactics: frozenset[str] | None = None
+    ) -> None:
+        """Record what the decision was based on (by default: the incident as it is now)."""
+        state.triaged_risk = risk if risk is not None else (state.risk.risk if state.risk else 0.0)
+        state.triaged_tactics = tactics if tactics is not None else state.tactics()
+
+    def recheck(self, state: IncidentState, now: datetime) -> RouteDecision:
+        """After a decision: evidence that arrived while it was being made may need a new look."""
+        return self.route(IncidentUpdate(state, [], False, []), now)
 
     # ------------------------------------------------------------------ queue
     def _push(self, state: IncidentState) -> None:
