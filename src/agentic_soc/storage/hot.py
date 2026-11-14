@@ -37,7 +37,92 @@ def _jsonable(value: Any) -> Any:
     return value
 
 
-class Store:
+class SecurityObjects:
+    """CRUD for alerts and incidents (mixed into :class:`Store`)."""
+
+    engine: Engine
+    dialect: str
+
+    def _upsert(self, table: Any, key: str, row: dict[str, Any]) -> None:
+        with self.engine.begin() as conn:
+            exists = conn.execute(select(table.c[key]).where(table.c[key] == row[key])).first()
+            if exists:
+                conn.execute(table.update().where(table.c[key] == row[key]).values(**row))
+            else:
+                conn.execute(insert(table), [row])
+
+    def upsert_alert(self, alert: dict[str, Any]) -> None:
+        self._upsert(s.alerts, "alert_id", alert)
+
+    def upsert_incident(self, incident: dict[str, Any]) -> None:
+        self._upsert(s.incidents, "incident_id", incident)
+
+    def get_incident(self, incident_id: str) -> dict[str, Any] | None:
+        with self.engine.connect() as conn:
+            row = (
+                conn.execute(select(s.incidents).where(s.incidents.c.incident_id == incident_id))
+                .mappings()
+                .first()
+            )
+            return dict(row) if row else None
+
+    def list_incidents(
+        self,
+        status: Iterable[str] | None = None,
+        min_risk: float = 0.0,
+        entity: str | None = None,
+        limit: int = 200,
+    ) -> list[dict[str, Any]]:
+        t = s.incidents.c
+        query = select(s.incidents).where(t.risk >= min_risk)
+        if status:
+            query = query.where(t.status.in_(list(status)))
+        if entity:
+            query = query.where(t.entity_keys.like(f"% {entity} %"))
+        query = query.order_by(t.priority, t.risk.desc(), t.updated_at.desc()).limit(limit)
+        with self.engine.connect() as conn:
+            return [dict(r) for r in conn.execute(query).mappings()]
+
+    def get_alert(self, alert_id: str) -> dict[str, Any] | None:
+        with self.engine.connect() as conn:
+            row = (
+                conn.execute(select(s.alerts).where(s.alerts.c.alert_id == alert_id))
+                .mappings()
+                .first()
+            )
+            return dict(row) if row else None
+
+    def list_alerts(
+        self,
+        incident_id: str | None = None,
+        detector: str | None = None,
+        entity: str | None = None,
+        start: datetime | None = None,
+        end: datetime | None = None,
+        limit: int = 500,
+    ) -> list[dict[str, Any]]:
+        t = s.alerts.c
+        query = select(s.alerts)
+        if incident_id:
+            query = query.where(t.incident_id == incident_id)
+        if detector:
+            query = query.where(t.detector == detector)
+        if entity:
+            query = query.where(t.entity_keys.like(f"% {entity} %"))
+        if start:
+            query = query.where(t.window_end >= start)
+        if end:
+            query = query.where(t.window_start < end)
+        query = query.order_by(t.window_end.desc()).limit(limit)
+        with self.engine.connect() as conn:
+            return [dict(r) for r in conn.execute(query).mappings()]
+
+    def count_alerts(self) -> int:
+        with self.engine.connect() as conn:
+            return int(conn.execute(select(func.count()).select_from(s.alerts)).scalar_one())
+
+
+class Store(SecurityObjects):
     def __init__(self, url: str | None = None, engine: Engine | None = None) -> None:
         self.url = url or os.environ.get("SOC_DB", DEFAULT_URL)
         if engine is None:
