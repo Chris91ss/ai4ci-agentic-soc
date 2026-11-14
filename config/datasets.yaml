@@ -7,11 +7,13 @@ org_seed: 7
 history: {name: history, seed: 900, start: "2026-01-19T00:00:00Z", hours: 168, campaign: false}
 profile_split_h: 96   # M1 training windows (after this point) are scored against earlier baselines
 
-# Weeks with one campaign each: supervised M2 training.
+# Weeks with one campaign each: supervised M2 training. Campaign start times are spread over
+# the whole day (19h +/- 10h after Monday 00:00 UTC) so that the classifier cannot learn the
+# simulator's default night-time timing as a shortcut (a simulator artefact, Arp et al. 2022).
 train:
-  - {name: train-1, seed: 101, start: "2026-01-26T00:00:00Z", hours: 48}
-  - {name: train-2, seed: 102, start: "2026-02-02T00:00:00Z", hours: 48}
-  - {name: train-3, seed: 103, start: "2026-02-09T00:00:00Z", hours: 48}
+  - {name: train-1, seed: 101, start: "2026-01-26T00:00:00Z", hours: 48, overrides: {campaign: {start_jitter_h: 10}}}
+  - {name: train-2, seed: 102, start: "2026-02-02T00:00:00Z", hours: 48, overrides: {campaign: {start_jitter_h: 10}}}
+  - {name: train-3, seed: 103, start: "2026-02-09T00:00:00Z", hours: 48, overrides: {campaign: {start_jitter_h: 10}}}
 
 # Threshold calibration (target false-positive rates) and model selection.
 validation:

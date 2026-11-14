@@ -2,5 +2,6 @@
 
 from agentic_soc.detectors.base import Detector, Score
 from agentic_soc.detectors.m1 import M1Detector
+from agentic_soc.detectors.m2 import M2Detector
 
-__all__ = ["Detector", "M1Detector", "Score"]
+__all__ = ["Detector", "M1Detector", "M2Detector", "Score"]

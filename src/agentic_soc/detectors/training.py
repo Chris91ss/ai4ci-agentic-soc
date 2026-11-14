@@ -72,3 +72,34 @@ def train_m1(features_root: Path, seed: int = 0) -> tuple[M1Detector, dict[str, 
         info["true_positives"] = int((alerts & y).sum())
     detector.meta["validation"] = report["validation"]
     return detector, report
+
+
+def train_m2(
+    features_root: Path, seed: int = 0, fpr: float | None = None
+) -> tuple[Any, dict[str, Any]]:
+    """LightGBM on the labelled training weeks, early stopping and thresholds on validation."""
+    from agentic_soc.detectors.m2 import DEFAULT_FPR, KIND, M2Detector
+
+    root = Path(features_root)
+    splits = load_splits(root)
+    train = load_features(root, splits["train"], KIND)
+    validation = load_features(root, splits["validation"], KIND)
+    X, y = table_matrix(train, KIND), labels_of(train)
+    X_val, y_val = table_matrix(validation, KIND), labels_of(validation)
+    detector = M2Detector.fit(X, y, X_val, y_val, seed=seed)
+    detector.calibrate(X_val[~y_val], fpr or DEFAULT_FPR)
+    scores = detector.raw_scores(X_val)
+    alerts = scores >= detector.thresholds[KIND]
+    report = {
+        "train_rows": len(y),
+        "train_positives": int(y.sum()),
+        "validation": {
+            "rows": len(y_val),
+            "positives": int(y_val.sum()),
+            "threshold": detector.thresholds[KIND],
+            "true_positives": int((alerts & y_val).sum()),
+            "false_positives": int((alerts & ~y_val).sum()),
+        },
+    }
+    detector.meta["validation"] = report["validation"]
+    return detector, report
