@@ -199,6 +199,7 @@ class SocPipeline:
     def close(self) -> None:
         if isinstance(self.worker, ThreadedAgentWorker):
             self.worker.close()
+        self.ingestion.close()
 
     def score(self, batch: FeatureBatch) -> list[tuple[FeatureRow, Score]]:
         scored: list[tuple[FeatureRow, Score]] = []

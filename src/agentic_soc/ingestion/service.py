@@ -193,6 +193,10 @@ class IngestionService:
             self.consumer.commit()
         return result
 
+    def close(self) -> None:
+        """Deliver the dead letters still buffered by the producer."""
+        self.producer.flush()
+
 
 def replay_run(run_dir: Path) -> Iterator[tuple[str, bytes, str | None, datetime]]:
     """Messages of an offline run directory, merged across topics in arrival order."""

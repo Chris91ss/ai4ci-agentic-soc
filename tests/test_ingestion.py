@@ -174,3 +174,9 @@ def test_service_consumes_the_broker_and_publishes_dead_letters() -> None:
         "flow": 0,
         "process": 0,
     }
+
+    # Dead letters still buffered by the producer are delivered when the service stops.
+    flushes = []
+    service.producer.flush = lambda timeout=10.0: flushes.append(timeout)
+    service.close()
+    assert flushes
