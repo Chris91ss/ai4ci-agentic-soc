@@ -119,6 +119,7 @@ uv run soc pipeline --inventory data/runs/live/inventory.json --db $SOC_DB --api
 uv run soc evaluate models                    # M1-M3 on the held-out test weeks: PR-AUC, recall at 1% FPR, FP/day
 uv run soc evaluate e2e --seeds 401-410       # agent vs detectors + playbooks vs rules, paired over seeds
 uv run soc evaluate llm --seeds 401-403       # the agent on gpt-oss:20b through Ollama, same seeds
+uv run soc evaluate llm --seeds 401-403 --verifier   # ... with the evidence verifier
 uv run soc evaluate s1 --seeds 301-303        # S1 drift, with and without retraining
 uv run soc evaluate s2                        # S2 burst through Redpanda (make up): lag, latency, shedding
 ```
@@ -174,4 +175,13 @@ simulator's one-minute tick and the consumer lag peaked at about 3,200 messages,
 second of input. With the local LLM four times slower during the burst, 4 of 15 triages timed
 out, the circuit breaker opened once and the playbooks decided those incidents; the intrusion was
 stopped before credential access in both runs.
+
+**Local LLM (gpt-oss:20b through Ollama, 3 seeds).** With the scripted analyst replaced by
+gpt-oss:20b every intrusion was still stopped before exfiltration, contained in about 15 minutes
+(median) as with the scripted analyst on the same seeds. It is a noisier analyst: 18% of its tool
+calls were malformed and rejected by the MCP layer, its verdict precision was 0.57 (recall 0.80)
+and in one run it revoked the sessions of two accounts outside the attack (action correctness
+0.92). With the evidence verifier, which vetoes containments the cited alerts do not justify, the
+same seeds produced one false containment instead of two (action correctness 0.93) at the same
+time to contain.
 

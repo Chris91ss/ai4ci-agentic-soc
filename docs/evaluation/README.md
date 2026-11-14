@@ -1,6 +1,6 @@
 # Evaluation
 
-Generated 2026-11-14 16:16 UTC. Raw numbers: [results.json](results.json).
+Generated 2026-11-14 18:14 UTC. Raw numbers: [results.json](results.json).
 
 ## Model level (M1-M3)
 
@@ -64,6 +64,20 @@ Paired comparisons over the same seeds (Wilcoxon signed-rank):
 | Configuration | Decisions | Verdict precision | Verdict recall | Verdict F1 | Attack incidents flagged | Action correctness | Invalid tool calls | Latency mean (s) | Latency p95 (s) | Timeouts | Escalated dismissals |
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | Agent (scripted analyst) + M1-M3 | 111 | 1.000 | 0.680 | 0.810 | 25/25 | 1.000 | 0.0000 | 117.5 | 165.0 | 0 | 0 |
+
+### Local LLM (gpt-oss:20b via Ollama)
+
+| Configuration | Runs | Detected | MTTD (min, median) | Contained | MTTC (min, median) | Stopped before exfiltration | Exfiltrated (GB, mean) | Furthest stage (mean of 9) | False containments (mean) | Runs without false containment | Alerts (mean) | Incidents (mean) | Alert reduction |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| Agent (scripted analyst) + M1-M3 | 3 | 100% | 12.4 | 100% | 15.4 | 100% | 0.00 | 5.0 | 0.0 | 100% | 198 | 30 | 0.840 |
+| Agent (gpt-oss:20b) + M1-M3 | 3 | 100% | 12.4 | 100% | 14.6 | 100% | 0.00 | 5.0 | 0.7 | 67% | 228 | 30 | 0.860 |
+| Agent (gpt-oss:20b) + M1-M3, evidence verifier | 3 | 100% | 12.4 | 100% | 15.4 | 100% | 0.00 | 5.0 | 0.3 | 67% | 249 | 29 | 0.880 |
+
+| Configuration | Decisions | Verdict precision | Verdict recall | Verdict F1 | Attack incidents flagged | Action correctness | Invalid tool calls | Latency mean (s) | Latency p95 (s) | Timeouts | Escalated dismissals |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Agent (scripted analyst) + M1-M3 | 35 | 1.000 | 0.714 | 0.833 | 7/7 | 1.000 | 0.0000 | 118.7 | 165.0 | 0 | 0 |
+| Agent (gpt-oss:20b) + M1-M3 | 32 | 0.571 | 0.800 | 0.667 | 5/5 | 0.920 | 0.1838 | 68.0 | 114.6 | 2 | 0 |
+| Agent (gpt-oss:20b) + M1-M3, evidence verifier | 37 | 0.625 | 0.833 | 0.714 | 6/6 | 0.930 | 0.1758 | 75.3 | 149.9 | 3 | 0 |
 
 ## S1: drift (move to remote work over ZTNA)
 

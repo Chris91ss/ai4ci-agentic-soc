@@ -15,12 +15,19 @@ CONFIG_NAMES = {
 
 
 def _name(config: str) -> str:
-    if config.startswith("agent:"):
-        model = config.split(":", 1)[1].replace("+retrain", "")
-        return f"Agent ({model}) + M1-M3" + (
-            ", M1 retrained on drift" if config.endswith("+retrain") else ""
-        )
-    return CONFIG_NAMES.get(config, config)
+    if config in CONFIG_NAMES:
+        return CONFIG_NAMES[config]
+    base, *flags = config.split("+")
+    name = (
+        f"Agent ({base.split(':', 1)[1]}) + M1-M3"
+        if base.startswith("agent:")
+        else CONFIG_NAMES.get(base, base)
+    )
+    if "retrain" in flags:
+        name += ", M1 retrained on drift"
+    if "verifier" in flags:
+        name += ", evidence verifier"
+    return name
 
 
 def _fmt(value: Any, digits: int = 1, pct: bool = False) -> str:
