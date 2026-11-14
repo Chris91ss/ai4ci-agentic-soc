@@ -188,6 +188,16 @@ class CorrelationEngine:
         return stop
 
     def link_keys(self, alert: Alert) -> set[str]:
+        """Entities that link this alert to others. A network sweep (T1018) is evidence about
+        its source, not about every host it touched, so sweeps link through the source only."""
+        if alert.detector == "M2" and "T1018" in alert.techniques and alert.entities.ips:
+            src_ip = alert.entities.ips[0]
+            keys = {f"user:{u}" for u in alert.entities.users} | {f"ip:{src_ip}"}
+            for host in alert.entities.hosts:
+                info = self.inv.hosts.get(host)
+                if info is not None and (info.static_ip == src_ip or info.kind == "workstation"):
+                    keys.add(f"host:{host}")
+            return keys - self.stop
         return alert.entities.keys() - self.stop
 
     def _new_id(self) -> str:

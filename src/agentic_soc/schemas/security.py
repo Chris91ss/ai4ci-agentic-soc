@@ -158,8 +158,16 @@ class Decision(_Model):
     techniques: list[TechniqueId] = Field(default_factory=list)
     evidence: list[EvidenceRef] = Field(default_factory=list)
     action: ProposedAction
+    extra_actions: list[ProposedAction] = Field(
+        default_factory=list,
+        max_length=2,
+        description="Further containment steps, e.g. block the C2 address and isolate the host.",
+    )
     confidence: float = Field(ge=0.0, le=1.0)
     rationale: str = Field(default="", max_length=1500)
+
+    def all_actions(self) -> list[ProposedAction]:
+        return [a for a in [self.action, *self.extra_actions] if a.type != "none"]
 
     @model_validator(mode="after")
     def _guardrails(self) -> Decision:
@@ -167,10 +175,13 @@ class Decision(_Model):
             raise ValueError(
                 "a benign verdict (dismissal) must cite at least one piece of evidence"
             )
-        if self.verdict == "benign" and self.action.type != "none":
+        if self.verdict == "benign" and self.all_actions():
             raise ValueError("a benign verdict cannot carry a containment action")
-        if self.action.type != "none" and not self.action.target:
-            raise ValueError("a containment action needs a target")
+        for action in [self.action, *self.extra_actions]:
+            if action.type != "none" and not action.target:
+                raise ValueError("a containment action needs a target")
+        if self.action.type == "none" and self.extra_actions:
+            raise ValueError("extra actions need a primary action")
         return self
 
 

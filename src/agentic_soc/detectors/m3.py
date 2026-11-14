@@ -198,9 +198,8 @@ class M3Detector(Detector):
             for _, p, c in rare
         )
         users = ", ".join(row.users) if row.users else "SYSTEM"
-        return techniques or [
-            "T1059.001"
-        ], f"Rare process launches on {host} ({host_class}) by {users}: {launches}"
+        summary = f"Rare process launches on {host} ({host_class}) by {users}: {launches}"
+        return techniques, summary
 
     def save(self, directory: Path) -> None:
         directory = Path(directory)

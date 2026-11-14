@@ -146,9 +146,10 @@ class M1Detector(Detector):
             return techniques, summary
         account = row.users[0] if row.users else row.key
         techniques = []
-        if f["n_fail"] >= 3 and f["fail_ratio"] > 0.5:
+        succeeded = ctx.get("outcomes", {}).get("success", 0) > 0
+        if (f["n_fail"] >= 3 and f["fail_ratio"] > 0.5) or not succeeded:
             techniques.append("T1110")
-        if ctx.get("outcomes", {}).get("success", 0):
+        if succeeded:
             techniques.append("T1078")
         if "vpn" in ctx.get("logon_types", []) and (
             f["new_country_share"] > 0 or f["hosting_share"] > 0
