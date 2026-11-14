@@ -24,13 +24,15 @@ test-all: ## All tests, including integration/LLM/slow ones
 
 COMPOSE := docker compose -f deploy/docker-compose.yml
 
-up: ## Start the infrastructure (Redpanda)
+up: ## Start the infrastructure (Redpanda, TimescaleDB)
 	$(COMPOSE) up -d --wait
 
 down: ## Stop the infrastructure
 	$(COMPOSE) down
 
 test-integration: ## Integration tests against the docker compose stack
-	SOC_KAFKA_URL=kafka://localhost:19092 uv run pytest -m integration
+	SOC_KAFKA_URL=kafka://localhost:19092 \
+	SOC_PG_URL=postgresql+psycopg://soc:soc@localhost:15432/soc \
+	uv run pytest -m integration
 
 .PHONY: help install lint fmt test test-all up down test-integration

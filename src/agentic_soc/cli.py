@@ -132,9 +132,26 @@ def simulate(
     console.print(table)
 
 
+@app.command("db-init")
+def db_init(
+    db: str = typer.Option(
+        None, help="Database URL (default $SOC_DB or sqlite:///data/soc.sqlite)."
+    ),
+    reset: bool = typer.Option(False, help="Drop and recreate every table."),
+) -> None:
+    """Create the hot-store schema (TimescaleDB hypertables on PostgreSQL)."""
+    from agentic_soc.storage import Store
+
+    store = Store(db)
+    store.reset() if reset else store.init_schema()
+    console.print(f"schema ready on {store.dialect} ({store.url.split('@')[-1]})")
+
+
 @app.command()
 def ingest(
     run: Path = typer.Argument(..., help="Run directory written by `soc simulate`."),
+    db: str | None = typer.Option(None, help="Also write to this hot store (database URL)."),
+    lake: Path | None = typer.Option(None, help="Also write Parquet files to this cold store."),
 ) -> None:
     """Replay a run directory through ingestion and report stream health."""
     import time
@@ -142,16 +159,28 @@ def ingest(
     from rich.table import Table
 
     from agentic_soc.ingestion import IngestionStage, Inventory, replay_run
+    from agentic_soc.storage import ColdStore, StorageSink, Store
 
     stage = IngestionStage(Inventory.from_file(run / "inventory.json"))
+    hot = Store(db) if db else None
+    if hot is not None:
+        hot.init_schema()
+    sink = StorageSink(hot, ColdStore(lake) if lake else None)
     started = time.perf_counter()
     batch: list = []
+
+    def process() -> None:
+        result = stage.process_batch(batch)
+        sink.write_events(result.events)
+        sink.write_dead_letters(result.dead_letters)
+        batch.clear()
+
     for message in replay_run(run):
         batch.append(message)
         if len(batch) >= 5000:
-            stage.process_batch(batch)
-            batch.clear()
-    stage.process_batch(batch)
+            process()
+    process()
+    sink.close()
     elapsed = time.perf_counter() - started
     table = Table(title=f"ingestion of {run} ({elapsed:.1f}s)")
     columns = ["received", "valid", "invalid", "duplicates", "legacy", "delay_p50_s", "delay_p95_s"]

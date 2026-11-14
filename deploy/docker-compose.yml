@@ -32,6 +32,23 @@ services:
       timeout: 5s
       retries: 30
 
+  timescaledb:
+    image: timescale/timescaledb:2.32.0-pg17
+    container_name: soc-timescaledb
+    environment:
+      POSTGRES_USER: soc
+      POSTGRES_PASSWORD: ${SOC_DB_PASSWORD:-soc}   # local development default
+      POSTGRES_DB: soc
+    ports:
+      - "15432:5432"    # host clients: postgresql+psycopg://soc:soc@localhost:15432/soc
+    volumes:
+      - timescaledb:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U soc -d soc"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
   redpanda-console:
     image: redpandadata/console:v3.14.0
     container_name: soc-redpanda-console
@@ -46,3 +63,4 @@ services:
 
 volumes:
   redpanda:
+  timescaledb:
