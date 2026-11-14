@@ -8,9 +8,11 @@ pipeline's events as they happen.
 
 from __future__ import annotations
 
+import json
 import statistics
 from collections import Counter
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import func, select
@@ -65,6 +67,7 @@ class ConsoleService:
         broker: Broker | None = None,
         run: dict[str, Any] | None = None,
         log: list[dict[str, Any]] | None = None,
+        evaluation_dir: Path | None = None,
     ) -> None:
         self.store = store
         self.pipeline = pipeline
@@ -73,6 +76,7 @@ class ConsoleService:
         self.broker = broker
         self.run = run or {}
         self.recorded_log = log or []  # pipeline log of a recorded run (replayed by the console)
+        self.evaluation_dir = evaluation_dir
         self.feedback_service = FeedbackService(store)
 
     @property
@@ -356,6 +360,18 @@ class ConsoleService:
         return {"ok": ok, "first_broken": broken}
 
     # ------------------------------------------------------------------ live events
+    def evaluation(self) -> dict[str, Any] | None:
+        """The evaluation results (docs/evaluation), with the S2 time series thinned out."""
+        if self.evaluation_dir is None or not (self.evaluation_dir / "results.json").exists():
+            return None
+        results = json.loads((self.evaluation_dir / "results.json").read_text())
+        series = {}
+        for path in sorted(self.evaluation_dir.glob("s2-samples-x*.json")):
+            samples = json.loads(path.read_text())
+            step = max(1, len(samples) // 600)
+            series[path.stem.removeprefix("s2-samples-x")] = samples[::step]
+        return results | {"s2_samples": series}
+
     def log(self, kinds: list[str] | None = None, limit: int = 20_000) -> list[dict[str, Any]]:
         """The whole pipeline log (a recorded run's, or the live pipeline's so far)."""
         entries = self.pipeline.log if self.pipeline is not None else self.recorded_log

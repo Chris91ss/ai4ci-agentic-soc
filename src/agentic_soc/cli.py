@@ -605,7 +605,8 @@ def api(
             }
     if models.exists():
         profiles = ModelRegistry(models).load_set().profiles
-    service = ConsoleService(Store(db), inventory, profiles, run=run_info, log=log)
+    service = ConsoleService(Store(db), inventory, profiles, run=run_info, log=log,
+                             evaluation_dir=Path("docs/evaluation"))  # fmt: skip
     console.print(f"console API on http://{host}:{port}/api (read-only {run_info.get('name', db)})")
     _serve(service, host, port, cors)
 
@@ -650,7 +651,8 @@ def demo(
     (out / "inventory.json").write_text(json.dumps(sim.ent.inventory(), indent=1) + "\n")
     runner = LiveDemo(sim, ModelRegistry(models).load_set(), config, store, speed=speed)
     service = ConsoleService(store, pipeline=runner.pipeline, broker=runner.broker,
-                             run={"name": "live demo", "mode": mode, "seed": seed, "speed": speed})  # fmt: skip
+                             run={"name": "live demo", "mode": mode, "seed": seed, "speed": speed},
+                             evaluation_dir=Path("docs/evaluation"))  # fmt: skip
     runner.start()
     console.print(
         f"live demo at {speed:g}x: console API on http://{host}:{port}/api; Ctrl-C to stop"

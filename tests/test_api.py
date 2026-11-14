@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -143,3 +145,20 @@ def test_recorded_runs_replay_their_log_and_hide_merged_incidents(agent_run) -> 
     listed = {i["incident_id"] for i in client.get("/api/incidents", params={"limit": 5000}).json()}
     assert merged and not set(merged) & listed
     assert client.get("/api/metrics").json()["incidents"] == len(pipeline.correlation.incidents)
+
+
+def test_evaluation_results_with_thinned_load_samples(agent_run, tmp_path) -> None:
+    pipeline = agent_run.pipeline
+    service = ConsoleService(pipeline.store, pipeline.inv, evaluation_dir=tmp_path)
+    client = TestClient(create_app(service))
+    assert client.get("/api/evaluation").status_code == 404
+    (tmp_path / "results.json").write_text(
+        json.dumps({"generated": "now", "s2": [{"llm_slowdown": 4}]})
+    )
+    samples = [{"wall_s": i, "sim_t": 60 * i, "stream_lag_s": 30} for i in range(3000)]
+    (tmp_path / "s2-samples-x4.json").write_text(json.dumps(samples))
+    found = client.get("/api/evaluation").json()
+    assert found["generated"] == "now" and found["s2"][0]["llm_slowdown"] == 4
+    assert (
+        500 <= len(found["s2_samples"]["4"]) <= 600 and found["s2_samples"]["4"][0]["wall_s"] == 0
+    )

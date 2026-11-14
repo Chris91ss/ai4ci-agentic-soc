@@ -86,7 +86,8 @@ cd web && npm install && npm run dev               # http://localhost:3000
 
 Endpoints: `/api/health`, `/api/stream-health`, `/api/incidents[/{id}[/evidence|/trace|/feedback]]`,
 `/api/entities/{entity}[/timeline]`, `/api/actions[/{id}/approve|/reject]`, `/api/metrics`,
-`/api/audit[/verify]` and `/api/events` (server-sent events of the live pipeline).
+`/api/audit[/verify]`, `/api/evaluation` (the results in `docs/evaluation`) and `/api/events`
+(server-sent events of the live pipeline).
 
 Live mode streams through Redpanda instead (`make up` starts it and TimescaleDB):
 
