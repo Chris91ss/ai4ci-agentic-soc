@@ -1,4 +1,4 @@
-import { IconBrain, IconCpu2, IconListCheck, IconRadar2, IconRefresh } from "@tabler/icons-react";
+import { IconBrain, IconCpu2, IconListCheck, IconRadar2, IconRefresh, IconShieldCheck } from "@tabler/icons-react";
 import type { ReactNode } from "react";
 
 import type { Tone } from "@/components/ui/badge";
@@ -15,8 +15,12 @@ export const CONFIG_META: Record<string, { label: string; short: string; color: 
 
 export function configMeta(config: string) {
   if (CONFIG_META[config]) return CONFIG_META[config];
-  if (config.startsWith("agent:"))
-    return { label: `Agent on ${config.slice(6)}`, short: config.slice(6), color: "#a78bfa", tone: "signin" as Tone, icon: <IconCpu2 size={15} /> };
+  if (config.startsWith("agent:")) {
+    const [model, ...flags] = config.slice(6).split("+");
+    if (flags.includes("verifier"))
+      return { label: `Agent on ${model} + verifier`, short: `${model} + verifier`, color: "#10b981", tone: "ok" as Tone, icon: <IconShieldCheck size={15} /> };
+    return { label: `Agent on ${model}`, short: model, color: "#a78bfa", tone: "signin" as Tone, icon: <IconCpu2 size={15} /> };
+  }
   return { label: config, short: config, color: "#9aa5b8", tone: "neutral" as Tone, icon: <IconBrain size={15} /> };
 }
 

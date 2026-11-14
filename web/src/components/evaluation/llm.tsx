@@ -48,7 +48,7 @@ export function LocalLlm({ llm, e2e }: { llm: NonNullable<Evaluation["llm"]>; e2
         The same closed loop with the triage agent on a local model served by Ollama instead of the scripted reference analyst. Every LLM call
         is charged in simulated time, so slower reasoning gives the attacker more time; malformed tool calls are rejected by the MCP layer.
       </p>
-      <div className="grid gap-4 xl:grid-cols-2">
+      <div className={`grid gap-4 ${configs.length > 2 ? "xl:grid-cols-3" : "xl:grid-cols-2"}`}>
         {configs.map((c, i) => (
           <ConfigCard key={c} config={c} s={llm.summary[c]} index={i} />
         ))}

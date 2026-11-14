@@ -31,7 +31,8 @@ Set `NEXT_PUBLIC_API_URL` to use another API address.
 With `NEXT_PUBLIC_DATA=static` the console reads a recorded run exported as JSON under
 `public/data/` instead of the API, and replays its pipeline log; approvals and feedback are
 read-only. The Pages workflow (`.github/workflows/pages.yml`) builds it on every push to `main`
-that touches `web/`:
+that touches `web/`; Pages has to be enabled once, with GitHub Actions as the source
+(repository Settings → Pages):
 
 ```bash
 # from the repository root: the demo run (scenario S1 with retraining), exported with
