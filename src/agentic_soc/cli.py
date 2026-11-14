@@ -133,6 +133,37 @@ def simulate(
 
 
 @app.command()
+def ingest(
+    run: Path = typer.Argument(..., help="Run directory written by `soc simulate`."),
+) -> None:
+    """Replay a run directory through ingestion and report stream health."""
+    import time
+
+    from rich.table import Table
+
+    from agentic_soc.ingestion import IngestionStage, Inventory, replay_run
+
+    stage = IngestionStage(Inventory.from_file(run / "inventory.json"))
+    started = time.perf_counter()
+    batch: list = []
+    for message in replay_run(run):
+        batch.append(message)
+        if len(batch) >= 5000:
+            stage.process_batch(batch)
+            batch.clear()
+    stage.process_batch(batch)
+    elapsed = time.perf_counter() - started
+    table = Table(title=f"ingestion of {run} ({elapsed:.1f}s)")
+    columns = ["received", "valid", "invalid", "duplicates", "legacy", "delay_p50_s", "delay_p95_s"]
+    table.add_column("stream")
+    for column in columns:
+        table.add_column(column, justify="right")
+    for stream, summary in stage.summary().items():
+        table.add_row(stream, *[f"{summary[c]:,}" for c in columns])
+    console.print(table)
+
+
+@app.command()
 def calibrate(
     lanl_auth: Path | None = typer.Option(None, help="LANL auth.txt[.gz]"),
     lanl_flows: Path | None = typer.Option(None, help="LANL flows.txt[.gz]"),

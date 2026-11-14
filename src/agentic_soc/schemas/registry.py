@@ -47,6 +47,13 @@ def parse_event(stream: str, payload: bytes | str | dict[str, Any]) -> Telemetry
     ``not_an_object``, ``unknown_version``, ``validation_error``) so that ingestion can route
     the payload to the dead-letter topic.
     """
+    return parse_event_versioned(stream, payload)[0]
+
+
+def parse_event_versioned(
+    stream: str, payload: bytes | str | dict[str, Any]
+) -> tuple[TelemetryEvent, str]:
+    """Like :func:`parse_event`, also returning the schema version the producer used."""
     if isinstance(payload, dict):
         data = payload
     else:
@@ -69,8 +76,8 @@ def parse_event(stream: str, payload: bytes | str | dict[str, Any]) -> Telemetry
         )
         raise SchemaError("validation_error", errors) from None
     if isinstance(event, LegacySignInEventV09 | LegacyFlowEventV09):
-        return event.upgrade()
-    return event  # type: ignore[return-value]
+        return event.upgrade(), str(version)
+    return event, str(version)  # type: ignore[return-value]
 
 
 def json_schemas() -> dict[str, dict[str, Any]]:

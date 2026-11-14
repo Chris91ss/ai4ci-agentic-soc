@@ -10,7 +10,12 @@ from agentic_soc.schemas.events import (
     SignInEvent,
     TelemetryEvent,
 )
-from agentic_soc.schemas.registry import SchemaError, json_schemas, parse_event
+from agentic_soc.schemas.registry import (
+    SchemaError,
+    json_schemas,
+    parse_event,
+    parse_event_versioned,
+)
 from agentic_soc.schemas.security import (
     ACTION_IMPACT,
     ACTION_TARGET_KIND,
@@ -52,4 +57,5 @@ __all__ = [
     "TelemetryEvent",
     "json_schemas",
     "parse_event",
+    "parse_event_versioned",
 ]
