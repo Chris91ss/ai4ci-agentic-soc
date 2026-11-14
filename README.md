@@ -78,7 +78,8 @@ uv run soc demo --speed 120                        # live: attack 1.5 h in, anal
 
 The SOC console (`web/`, Next.js with Tabler icons and framer-motion) shows stream health,
 the incident queue, incident timelines with the agent's tool trace and evidence, approvals,
-analyst feedback, metrics and the audit log; see [web/README.md](web/README.md):
+analyst feedback, metrics with the drift monitor, the evaluation results and the audit log; see
+[web/README.md](web/README.md):
 
 ```bash
 cd web && npm install && npm run dev               # http://localhost:3000

@@ -5,6 +5,7 @@ import {
   IconBrandGithub,
   IconChartBar,
   IconFingerprint,
+  IconFlask,
   IconLayoutDashboard,
   IconShieldHalfFilled,
   IconStack2,
@@ -24,6 +25,7 @@ const NAV: { href: string; label: string; icon: ReactNode; match: string[] }[] =
   { href: "/entities", label: "Entities", icon: <IconUsers size={18} />, match: ["/entities", "/entity"] },
   { href: "/actions", label: "Actions", icon: <IconBolt size={18} />, match: ["/actions"] },
   { href: "/metrics", label: "Metrics", icon: <IconChartBar size={18} />, match: ["/metrics"] },
+  { href: "/evaluation", label: "Evaluation", icon: <IconFlask size={18} />, match: ["/evaluation"] },
   { href: "/audit", label: "Audit log", icon: <IconFingerprint size={18} />, match: ["/audit"] },
 ];
 

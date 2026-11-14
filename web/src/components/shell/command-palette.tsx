@@ -1,6 +1,6 @@
 "use client";
 
-import { IconBolt, IconChartBar, IconFingerprint, IconLayoutDashboard, IconStack2, IconUsers } from "@tabler/icons-react";
+import { IconBolt, IconChartBar, IconFingerprint, IconFlask, IconLayoutDashboard, IconStack2, IconUsers } from "@tabler/icons-react";
 import { Command } from "cmdk";
 import { AnimatePresence, motion } from "framer-motion";
 import { useRouter } from "next/navigation";
@@ -16,6 +16,7 @@ const PAGES: { label: string; href: string; icon: ReactNode }[] = [
   { label: "Entities", href: "/entities", icon: <IconUsers size={16} /> },
   { label: "Actions", href: "/actions", icon: <IconBolt size={16} /> },
   { label: "Metrics", href: "/metrics", icon: <IconChartBar size={16} /> },
+  { label: "Evaluation", href: "/evaluation", icon: <IconFlask size={16} /> },
   { label: "Audit log", href: "/audit", icon: <IconFingerprint size={16} /> },
 ];
 

@@ -307,3 +307,148 @@ export interface PipelineEvent {
   incident_id?: string;
   [field: string]: unknown;
 }
+
+// ---------------------------------------------------------------- evaluation (docs/evaluation)
+
+export interface ModelKind {
+  rows: number;
+  positives: number;
+  pr_auc: number | null;
+  roc_auc: number | null;
+  recall_at_1pct_fpr: number | null;
+  threshold: number;
+  recall_at_threshold: number | null;
+  fpr_at_threshold: number | null;
+  false_positives_per_day: number;
+  precision_at_threshold: number;
+  recall_by_stage: Record<string, number>;
+  detection_delay_min: Record<string, number[]>;
+}
+
+export interface AgentSummary {
+  decisions: number;
+  verdict: { precision: number | null; recall: number | null; f1: number | null; tp: number; fp: number; fn: number };
+  attack_incidents_flagged: number;
+  attack_incidents_decided: number;
+  action_correctness_mean: number | null;
+  invalid_tool_call_rate: number | null;
+  latency_mean_s: number | null;
+  latency_p95_s: number | null;
+  timeouts: number;
+  escalated_dismissals: number;
+}
+
+export interface ConfigSummary {
+  runs: number;
+  detected: number;
+  mttd_min_median: number | null;
+  mttd_min_mean: number | null;
+  contained: number;
+  mttc_min_median: number | null;
+  mttc_min_mean: number | null;
+  stopped_before_exfiltration: number;
+  exfil_gb_mean: number | null;
+  furthest_stage_mean: number | null;
+  furthest_stage: Record<string, number>;
+  false_containments_mean: number | null;
+  false_containments_total: number;
+  runs_without_false_containment: number;
+  actions_executed_mean: number | null;
+  alerts_mean: number | null;
+  incidents_mean: number | null;
+  alert_reduction_mean: number | null;
+  wall_s_mean: number | null;
+  agent?: AgentSummary;
+}
+
+export interface EvalRun {
+  name: string;
+  config: string;
+  mode: string;
+  seed: number;
+  furthest_stage: string | null;
+  furthest_stage_index: number;
+  campaign_status: string;
+  stall_reason: string | null;
+  detected: boolean;
+  mttd_min: number | null;
+  contained: boolean;
+  mttc_min: number | null;
+  stopped_before_exfiltration: boolean;
+  exfil_gb: number;
+  false_containments: number;
+  false_containments_by_type: Record<string, number>;
+  alerts: number;
+  incidents: number;
+  alert_reduction: number | null;
+  actions_executed: number;
+  wall_s: number;
+  agent?: {
+    decisions: number;
+    verdict: { precision: number | null; recall: number | null; f1: number | null; tp: number; fp: number; fn: number };
+    invalid_tool_call_rate: number | null;
+    latency_mean_s: number | null;
+    latency_p95_s: number | null;
+    timeouts: number;
+    llm_calls: number;
+    tool_calls: number;
+  };
+  drift?: {
+    onset: string;
+    alarm_delay_h: number | null;
+    retrains: string[];
+    false_alerts_per_h_before: number;
+    false_alerts_per_h_first_6h: number;
+    false_alerts_per_h_next_day: number;
+    recovery_h: number | null;
+    hourly_false_alerts: { hour: string; false_alerts: number }[];
+  } | null;
+  error?: string;
+}
+
+export interface S2Phase {
+  samples: number;
+  stream_lag_s_p50: number | null;
+  stream_lag_s_p95: number | null;
+  stream_lag_s_max: number;
+  stream_lag_wall_s_p95: number;
+  consumer_lag_max: number;
+  consumer_lag_p95: number | null;
+  events_per_wall_s: number;
+  agent_queue_max: number;
+}
+
+export interface S2Variant {
+  phases: Partial<Record<"before" | "burst" | "after", S2Phase>>;
+  routes: Record<string, number>;
+  event_rate_multiplier: number | null;
+  shed_to_playbooks: number;
+  agent_timeouts: number;
+  breaker_trips: number;
+  decisions: Record<string, number>;
+  campaign: { status: string; stall_reason: string | null; exfil_gb: number };
+  burst: { start: string; end: string; factor: number };
+  speed: number;
+  llm_slowdown: number;
+  triage_s: number;
+}
+
+export interface S2Sample {
+  wall_s: number;
+  sim_t: number;
+  pipeline_t: number | null;
+  stream_lag_s: number | null;
+  lag_messages: number;
+  events: number;
+  queue: number;
+}
+
+export interface Evaluation {
+  generated: string;
+  models?: { test_runs: string[]; test_days: number; kinds: Record<string, ModelKind> };
+  e2e?: { runs: EvalRun[]; summary: Record<string, ConfigSummary>; tests: Record<string, Record<string, { n: number; median_difference: number | null; p_value: number | null }>> };
+  llm?: { runs: EvalRun[]; summary: Record<string, ConfigSummary> };
+  s1?: { runs: EvalRun[]; summary: Record<string, ConfigSummary> };
+  s2?: S2Variant[];
+  s2_samples?: Record<string, S2Sample[]>;
+}

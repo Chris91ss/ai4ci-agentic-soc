@@ -2,6 +2,7 @@ import type {
   Action,
   AuditEntry,
   EntityDetail,
+  Evaluation,
   EvidenceItem,
   Health,
   IncidentDetail,
@@ -197,6 +198,15 @@ export const api = {
     DATA_MODE === "static"
       ? staticJSON<{ ok: boolean; first_broken: number | null }>("audit-verify.json")
       : request<{ ok: boolean; first_broken: number | null }>("/audit/verify"),
+
+  evaluation: () =>
+    DATA_MODE === "static" ? staticJSON<Evaluation>("evaluation.json") : request<Evaluation>("/evaluation"),
+
+  driftLog: async () => {
+    const kinds = ["drift_check", "drift_alarm", "retrain"];
+    if (DATA_MODE === "static") return (await staticJSON<PipelineEvent[]>("log.json")).filter((e) => kinds.includes(e.kind));
+    return request<PipelineEvent[]>(`/log${query({ kinds })}`);
+  },
 
   pipelineLog: () =>
     DATA_MODE === "static" ? staticJSON<PipelineEvent[]>("log.json") : request<PipelineEvent[]>("/log"),

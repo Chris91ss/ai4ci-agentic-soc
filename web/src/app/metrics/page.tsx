@@ -4,6 +4,7 @@ import { IconBrain, IconChartBar, IconClockHour4, IconRoute, IconShieldExclamati
 import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 import { ACTION_META, DETECTOR_META, STREAM_META } from "@/components/soc/badges";
+import { DriftCard } from "@/components/soc/drift-card";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Stat } from "@/components/ui/stat";
@@ -177,6 +178,7 @@ export default function MetricsPage() {
             ) : null}
           </CardBody>
         </Card>
+        <DriftCard />
       </div>
     </>
   );

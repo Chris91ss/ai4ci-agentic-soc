@@ -2,7 +2,8 @@
 
 Next.js console of the Agentic SOC: stream health, the incident queue, incident timelines with
 the agent's tool trace and the evidence behind every verdict, approve/reject controls for held
-containment actions, analyst feedback, live metrics and the hash-chained audit log.
+containment actions, analyst feedback, live metrics with the drift monitor, the evaluation results
+(agent against the baselines, detectors, drift and load) and the hash-chained audit log.
 
 Built with Next.js (App Router), Tailwind CSS, [Tabler icons](https://tabler.io/icons),
 [framer-motion](https://motion.dev), TanStack Query, Recharts, Radix UI primitives, cmdk
@@ -29,9 +30,10 @@ how the GitHub Pages demo is built (`STATIC_EXPORT=1 NEXT_PUBLIC_BASE_PATH=/repo
 
 ## Layout
 
-- `src/app/`: pages (overview, incidents, incident, entities, entity, actions, metrics, audit)
+- `src/app/`: pages (overview, incidents, incident, entities, entity, actions, metrics, evaluation, audit)
 - `src/components/shell/`: sidebar, top bar (simulation clock, live/replay status), command palette
 - `src/components/soc/`, `src/components/incident/`: SOC widgets (risk gauge, kill chain, alert lanes,
   agent trace, evidence explorer, approvals)
+- `src/components/evaluation/`: evaluation views (end to end, detectors, S1 drift, S2 load, local LLM)
 - `src/components/ui/`: design-system primitives
 - `src/lib/`: API client (live or static), React Query hooks, live events (SSE or replay), formatting

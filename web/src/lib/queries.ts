@@ -22,6 +22,8 @@ export const keys = {
   metrics: ["metrics"] as const,
   audit: (objectId?: string) => ["audit", objectId ?? ""] as const,
   verifyAudit: ["audit-verify"] as const,
+  evaluation: ["evaluation"] as const,
+  driftLog: ["drift-log"] as const,
 };
 
 export const useHealth = () => useQuery({ queryKey: keys.health, queryFn: api.health, refetchInterval: every(5_000) });
@@ -60,3 +62,6 @@ export const useAudit = (objectId?: string) =>
   useQuery({ queryKey: keys.audit(objectId), queryFn: () => api.audit(objectId), refetchInterval: every(15_000) });
 
 export const useAuditVerification = () => useQuery({ queryKey: keys.verifyAudit, queryFn: api.verifyAudit });
+
+export const useEvaluation = () => useQuery({ queryKey: keys.evaluation, queryFn: api.evaluation, retry: false });
+export const useDriftLog = () => useQuery({ queryKey: keys.driftLog, queryFn: api.driftLog, refetchInterval: every(30_000) });
