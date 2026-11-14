@@ -14,7 +14,7 @@ from collections.abc import Iterable
 from datetime import UTC, datetime
 from typing import Any
 
-from sqlalchemy import Engine, and_, create_engine, func, insert, or_, select, text
+from sqlalchemy import Engine, and_, case, create_engine, func, insert, or_, select, text
 from sqlalchemy.engine import Connection
 from sqlalchemy.pool import StaticPool
 
@@ -297,6 +297,33 @@ class Store(SecurityObjects):
                 out += [{"stream": stream, **row} for row in conn.execute(query).mappings()]
         out.sort(key=lambda r: r["event_time"], reverse=True)
         return out[:limit]
+
+    def ip_contacts(self, ip: str, start: datetime, end: datetime) -> dict[str, Any]:
+        """How an address was used in a window: flows, internal peers, bytes each way."""
+        fl = s.flow_events.c
+        query = select(
+            func.count().label("flows"),
+            func.count(func.distinct(fl.src_ip)).label("sources"),
+            func.coalesce(func.sum(fl.bytes_out), 0).label("bytes_to_ip"),
+            func.coalesce(func.sum(fl.bytes_in), 0).label("bytes_from_ip"),
+            func.min(fl.event_time).label("first_seen"),
+            func.max(fl.event_time).label("last_seen"),
+            func.coalesce(func.sum(case((fl.fw_action == "blocked", 1), else_=0)), 0).label(
+                "blocked"
+            ),
+        ).where(fl.dst_ip == ip, fl.event_time >= start, fl.event_time < end)
+        with self.engine.connect() as conn:
+            row = dict(conn.execute(query).mappings().one())
+        for key in ("first_seen", "last_seen"):
+            value = row[key]
+            if isinstance(value, str):
+                value = datetime.fromisoformat(value)
+            if isinstance(value, datetime) and value.tzinfo is None:
+                value = value.replace(tzinfo=UTC)
+            row[key] = value
+        for key in ("flows", "sources", "bytes_to_ip", "bytes_from_ip", "blocked"):
+            row[key] = int(row[key] or 0)
+        return row
 
     def stream_counts(
         self, start: datetime, end: datetime, bucket_s: int = 300

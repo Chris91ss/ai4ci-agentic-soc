@@ -99,3 +99,16 @@ class NormProcess(NormEvent):
 
 
 NormEventT = NormSignin | NormFlow | NormProcess
+
+
+EVENT_TYPES: dict[str, type[NormEvent]] = {
+    "signin": NormSignin,
+    "flow": NormFlow,
+    "process": NormProcess,
+}
+
+
+def from_row(row: dict[str, Any]) -> NormEventT:
+    """Rebuild a normalised event from a stored row (with its ``stream`` column)."""
+    cls = EVENT_TYPES[row["stream"]]
+    return cls(**{f.name: row[f.name] for f in fields(cls)})  # type: ignore[return-value]

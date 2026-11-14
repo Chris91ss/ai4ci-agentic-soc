@@ -360,6 +360,45 @@ def serve_detectors(
 
 
 @app.command()
+def mcp(
+    http: bool = typer.Option(False, "--http", help="Serve streamable HTTP instead of stdio."),
+    host: str = typer.Option("127.0.0.1"),
+    port: int = typer.Option(8002),
+    db: str | None = typer.Option(None, help="Hot store URL (default $SOC_DB)."),
+    models: Path = typer.Option(Path("models"), help="Model registry."),
+    inventory: Path = typer.Option(..., help="inventory.json of the monitored enterprise."),
+    detectors_url: str | None = typer.Option(
+        None, help="Detector REST service (default: in-process models)."
+    ),
+) -> None:
+    """Serve the SOC tools to an MCP client (the triage agent)."""
+    from datetime import UTC, datetime
+
+    from agentic_soc.actions import ActionManager, BrokerActionSink, PolicyGate
+    from agentic_soc.broker import connect
+    from agentic_soc.detectors.registry import ModelRegistry
+    from agentic_soc.detectors.service import HttpDetectorClient, LocalDetectorClient
+    from agentic_soc.ingestion import Inventory
+    from agentic_soc.mcp_server import SocContext, SocTools, build_server
+    from agentic_soc.storage import Store
+
+    inv = Inventory.from_file(inventory)
+    store = Store(db)
+    registry = ModelRegistry(models)
+    detectors = registry.load_set()
+    client = HttpDetectorClient(detectors_url) if detectors_url else LocalDetectorClient(detectors)
+    actions = ActionManager(PolicyGate(inv), BrokerActionSink(connect().producer()), store)
+    ctx = SocContext(
+        store, inv, detectors.profiles, client, actions, clock=lambda: datetime.now(UTC)
+    )
+    server = build_server(SocTools(ctx))
+    if http:
+        server.run(transport="streamable-http", host=host, port=port)
+    else:
+        server.run()
+
+
+@app.command()
 def calibrate(
     lanl_auth: Path | None = typer.Option(None, help="LANL auth.txt[.gz]"),
     lanl_flows: Path | None = typer.Option(None, help="LANL flows.txt[.gz]"),
