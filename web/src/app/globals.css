@@ -1,0 +1,93 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  /* surfaces */
+  --color-canvas: #090c12;
+  --color-panel: #0f141c;
+  --color-raised: #151b26;
+  --color-hover: #1a2230;
+  --color-line: #222b3a;
+  --color-line-strong: #2e394c;
+
+  /* text */
+  --color-ink: #e7ebf3;
+  --color-dim: #9aa5b8;
+  --color-faint: #64708a;
+
+  /* brand and states */
+  --color-brand: #22d3ee;
+  --color-brand-strong: #06b6d4;
+  --color-danger: #f43f5e;
+  --color-warn: #f59e0b;
+  --color-ok: #10b981;
+  --color-info: #818cf8;
+
+  /* streams and detectors (M1 sign-ins, M2 flows, M3 processes) */
+  --color-signin: #a78bfa;
+  --color-flow: #22d3ee;
+  --color-process: #fbbf24;
+
+  --radius-card: 14px;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  background: var(--color-canvas);
+  color: var(--color-ink);
+}
+
+body {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: rgb(34 211 238 / 0.3);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #2e394c transparent;
+}
+
+.bg-grid {
+  background-image:
+    linear-gradient(to right, rgb(46 57 76 / 0.22) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(46 57 76 / 0.22) 1px, transparent 1px);
+  background-size: 32px 32px;
+  mask-image: radial-gradient(ellipse at top, black 15%, transparent 70%);
+}
+
+.text-gradient {
+  background: linear-gradient(120deg, #e7ebf3 10%, #22d3ee 60%, #818cf8 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+}
+
+.pulse-ring::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background: currentColor;
+  animation: pulse-ring 1.6s cubic-bezier(0.2, 0.6, 0.3, 1) infinite;
+}

@@ -26,3 +26,23 @@ jobs:
           uv run ruff format --check src tests
       - name: Tests
         run: uv run pytest -m "not integration and not llm and not slow"
+
+  web:
+    name: web (lint + build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Install
+        run: npm ci
+      - name: Lint
+        run: npm run lint
+      - name: Build
+        run: npm run build
