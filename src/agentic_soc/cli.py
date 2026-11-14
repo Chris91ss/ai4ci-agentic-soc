@@ -482,6 +482,7 @@ def run(
     summary = outcome.summary | {"wall_s": round(time.perf_counter() - started, 1),
                                  "seed": cfg.seed, "org_seed": org_seed}  # fmt: skip
     _write_run(out, summary, outcome.truth, outcome.pipeline)
+    (out / "inventory.json").write_text(json.dumps(sim.ent.inventory(), indent=1) + "\n")
     camp = outcome.truth["campaign"]
     table = Table(title=f"{mode} run seed={cfg.seed}")
     table.add_column("metric")
@@ -515,6 +516,7 @@ def pipeline(
         None, help="Stop after the stream has been idle this many seconds."
     ),
     out: Path | None = typer.Option(None, help="Write summary.json and log.jsonl here at exit."),
+    api_port: int | None = typer.Option(None, help="Also serve the console API on this port."),
 ) -> None:
     """Live SOC pipeline on the event broker (run the simulator with `soc simulate --broker`)."""
     import logging
@@ -533,8 +535,22 @@ def pipeline(
     store = Store(db)
     store.init_schema()
     config = PipelineConfig(mode=mode, llm=llm, worker="threaded", auto_approve=False)  # type: ignore[arg-type]
-    soc = SocPipeline(Inventory.from_file(inventory), client, detectors.profiles, store,
-                      connect(broker), config)  # fmt: skip
+    bus = connect(broker)
+    soc = SocPipeline(
+        Inventory.from_file(inventory), client, detectors.profiles, store, bus, config
+    )
+    if api_port is not None:
+        import threading
+
+        from agentic_soc.api import ConsoleService
+
+        service = ConsoleService(
+            store, pipeline=soc, broker=bus, run={"name": "live", "mode": mode}
+        )
+        threading.Thread(
+            target=_serve, args=(service, "127.0.0.1", api_port, None), daemon=True
+        ).start()
+        console.print(f"console API on http://127.0.0.1:{api_port}/api")
     console.print(f"SOC pipeline ({mode}) consuming {broker}; Ctrl-C to stop")
     try:
         run_live(soc, on_report=lambda p: console.print(_progress_line(p)), idle_exit_s=idle_exit)
@@ -542,6 +558,100 @@ def pipeline(
         console.print("[yellow]stopped[/yellow]")
     if out is not None:
         _write_run(out, soc.summary(), None, soc)
+
+
+def _serve(service, host: str, port: int, cors: list[str] | None) -> None:
+    import uvicorn
+
+    from agentic_soc.api import create_app
+
+    uvicorn.run(create_app(service, cors), host=host, port=port, log_level="warning")
+
+
+@app.command()
+def api(
+    run_dir: Path | None = typer.Option(None, "--run", help="Run directory written by `soc run`."),
+    db: str | None = typer.Option(None, help="Store URL (default: soc.db of --run, else $SOC_DB)."),
+    models: Path = typer.Option(Path("models"), help="Model registry (account baselines)."),
+    host: str = typer.Option("127.0.0.1"),
+    port: int = typer.Option(8000),
+    cors: list[str] | None = typer.Option(None, help="Allowed console origins."),
+) -> None:
+    """Serve the console API over a recorded run (read-only)."""
+    from agentic_soc.api import ConsoleService
+    from agentic_soc.detectors.registry import ModelRegistry
+    from agentic_soc.ingestion import Inventory
+    from agentic_soc.storage import Store
+
+    if db is None and run_dir is not None:
+        db = f"sqlite:///{run_dir / 'soc.db'}"
+    inventory = profiles = None
+    run_info: dict = {}
+    if run_dir is not None:
+        if (run_dir / "inventory.json").exists():
+            inventory = Inventory.from_file(run_dir / "inventory.json")
+        if (run_dir / "summary.json").exists():
+            summary = json.loads((run_dir / "summary.json").read_text())
+            run_info = {"name": run_dir.name} | {
+                k: summary.get(k) for k in ("mode", "llm", "seed", "org_seed")
+            }
+    if models.exists():
+        profiles = ModelRegistry(models).load_set().profiles
+    service = ConsoleService(Store(db), inventory, profiles, run=run_info)
+    console.print(f"console API on http://{host}:{port}/api (read-only {run_info.get('name', db)})")
+    _serve(service, host, port, cors)
+
+
+@app.command()
+def demo(
+    seed: int = typer.Option(201, help="Activity seed."),
+    org_seed: int = typer.Option(7, help="Company seed (the models use 7)."),
+    start: str = typer.Option("2026-03-09T16:00:00Z", help="Start time (UTC)."),
+    hours: float = typer.Option(24.0, help="Duration in hours."),
+    attack_after: float = typer.Option(1.5, help="Hours until the campaign starts."),
+    speed: float = typer.Option(120.0, help="Simulated seconds per wall-clock second."),
+    mode: str = typer.Option("agent", help="agent or detectors (playbooks only)."),
+    llm: str = typer.Option("scripted", help="scripted or ollama[:model] (use a low --speed)."),
+    models: Path = typer.Option(Path("models"), help="Model registry."),
+    approval_delay: float | None = typer.Option(
+        None, help="Auto-approve held actions after this many simulated seconds (default: analyst)."
+    ),
+    out: Path = typer.Option(Path("data/soc-runs/demo"), help="Directory of the demo store."),
+    host: str = typer.Option("127.0.0.1"),
+    port: int = typer.Option(8000),
+    cors: list[str] | None = typer.Option(None, help="Allowed console origins."),
+) -> None:
+    """Live demo: simulator, SOC pipeline and console API in one process."""
+    from agentic_soc.api import ConsoleService
+    from agentic_soc.detectors.registry import ModelRegistry
+    from agentic_soc.pipeline import PipelineConfig
+    from agentic_soc.pipeline.demo import LiveDemo
+    from agentic_soc.simulator.engine import Simulator
+    from agentic_soc.storage import Store
+
+    campaign = {"start_offset_h": attack_after, "start_jitter_h": 0.0}
+    cfg = _sim_config(None, None, seed, hours, False,
+                      extra={"org_seed": org_seed, "start": start, "campaign": campaign})  # fmt: skip
+    out.mkdir(parents=True, exist_ok=True)
+    (out / "soc.db").unlink(missing_ok=True)
+    store = Store(f"sqlite:///{out / 'soc.db'}")
+    store.init_schema()
+    config = PipelineConfig(mode=mode, llm=llm, auto_approve=approval_delay is not None,  # type: ignore[arg-type]
+                            approval_delay_s=max(1.0, approval_delay or 0.0))  # fmt: skip
+    sim = Simulator(cfg)
+    (out / "inventory.json").write_text(json.dumps(sim.ent.inventory(), indent=1) + "\n")
+    runner = LiveDemo(sim, ModelRegistry(models).load_set(), config, store, speed=speed)
+    service = ConsoleService(store, pipeline=runner.pipeline, broker=runner.broker,
+                             run={"name": "live demo", "mode": mode, "seed": seed, "speed": speed})  # fmt: skip
+    runner.start()
+    console.print(
+        f"live demo at {speed:g}x: console API on http://{host}:{port}/api; Ctrl-C to stop"
+    )
+    try:
+        _serve(service, host, port, cors)
+    finally:
+        runner.close()
+        (out / "truth.json").write_text(json.dumps(sim.truth(), indent=2, default=str) + "\n")
 
 
 @app.command()

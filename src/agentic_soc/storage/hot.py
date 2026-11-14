@@ -467,6 +467,33 @@ class Store(SecurityObjects):
             row[key] = int(row[key] or 0)
         return row
 
+    def addresses_of(self, kind: str, value: str, start: datetime, end: datetime) -> list[str]:
+        """Dynamic addresses of a workstation or account recovered from stored sign-ins (what
+        the online resolver learns): interactive logons bind a host's address, VPN logons an
+        account's lease."""
+        si = s.signin_events.c
+        ok = and_(si.outcome == "success", si.event_time >= start, si.event_time < end)
+        if kind == "host":
+            query = select(si.src_ip).where(
+                ok,
+                si.dst_host == value,
+                si.logon_type == "interactive",
+                si.src_zone.in_(["corp", "vpn"]),
+            )
+        elif kind == "user":
+            query = select(func.coalesce(si.assigned_ip, si.src_ip)).where(
+                ok,
+                or_(si.user_id == value, si.person == value),
+                or_(
+                    si.logon_type == "vpn",
+                    and_(si.logon_type == "interactive", si.src_zone.in_(["corp", "vpn"])),
+                ),
+            )
+        else:
+            return []
+        with self.engine.connect() as conn:
+            return list(dict.fromkeys(r[0] for r in conn.execute(query.distinct()) if r[0]))
+
     def flow_volume(self, src_ips: Iterable[str], start: datetime, end: datetime) -> dict[str, Any]:
         """Traffic sent by a set of addresses in a window (a host's traffic baseline)."""
         ips = list(dict.fromkeys(src_ips))

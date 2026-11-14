@@ -21,7 +21,7 @@ RFC: [docs/rfc/0001-agentic-soc.pdf](docs/rfc/0001-agentic-soc.pdf) (source: [do
 | Local-LLM triage agent (ReAct) | `agentic_soc.agent` | done |
 | Closed-loop pipeline (in-process and live on the broker) | `agentic_soc.pipeline` | done |
 | Evidence bundles behind every verdict, analyst feedback and FP statistics | `agentic_soc.evidence` | done |
-| FastAPI backend and Next.js SOC console | `agentic_soc.api`, `web/` | planned |
+| FastAPI backend (REST + server-sent events) and Next.js SOC console | `agentic_soc.api`, `web/` | API done; console planned |
 | Evaluation (model level, end to end, S1 drift, S2 load) | `agentic_soc.evaluation` | planned |
 
 ## Development
@@ -52,9 +52,22 @@ summary, the pipeline log and the simulator's ground truth. The agent's latency 
 simulated time, so the attack keeps going while it investigates; high-impact actions are
 auto-approved in these unattended runs (`--approval-delay` models an analyst's response time).
 
+The console API (FastAPI) serves a recorded run read-only, or a live demo in which the
+simulator, the pipeline and the API share one process and an analyst approves or rejects held
+actions:
+
+```bash
+uv run soc api --run data/soc-runs/agent-seed201   # http://127.0.0.1:8000/api, read-only
+uv run soc demo --speed 120                        # live: attack 1.5 h in, analyst approvals
+```
+
+Endpoints: `/api/health`, `/api/stream-health`, `/api/incidents[/{id}[/evidence|/trace|/feedback]]`,
+`/api/entities/{entity}[/timeline]`, `/api/actions[/{id}/approve|/reject]`, `/api/metrics`,
+`/api/audit[/verify]` and `/api/events` (server-sent events of the live pipeline).
+
 Live mode streams through Redpanda instead (`make up` starts it and TimescaleDB):
 
 ```bash
 uv run soc simulate --broker kafka://localhost:19092 --speed 60 --out data/runs/live
-uv run soc pipeline --inventory data/runs/live/inventory.json --db $SOC_DB
+uv run soc pipeline --inventory data/runs/live/inventory.json --db $SOC_DB --api-port 8000
 ```
