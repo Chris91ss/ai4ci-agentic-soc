@@ -49,6 +49,9 @@ class PolicyGate:
 
     def normalise(self, action_type: str, target: str) -> str:
         value = target.strip()
+        for prefix in ("user:", "host:", "ip:"):
+            if value.lower().startswith(prefix):
+                value = value[len(prefix) :]
         kind = ACTION_TARGET_KIND.get(action_type)
         if kind == "user":
             return value.split("\\")[-1].split("@")[0].lower()

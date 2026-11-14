@@ -190,12 +190,10 @@ class FeatureExtractor:
         }
         hosts = _uniq(e.dst_host for e in events)
         person = events[0].person
-        if person and person in self.inv.users:
-            hosts = (
-                _uniq([*hosts, self.inv.users[person].workstation])
-                if events[0].user_kind == "user"
-                else hosts
-            )
+        succeeded = len(fails) < n
+        if succeeded and person and person in self.inv.users and events[0].user_kind == "user":
+            # A successful sign-in puts the account's own workstation at risk; a failed one does not.
+            hosts = _uniq([*hosts, self.inv.users[person].workstation])
         return FeatureRow(
             "M1-user", window.key, window.start, window.end,
             users=[account], hosts=hosts, ips=_uniq(e.src_ip for e in events if e.src_zone == "external"),

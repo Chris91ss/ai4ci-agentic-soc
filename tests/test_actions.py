@@ -47,6 +47,8 @@ def test_policy_gate_targets_and_protected_assets(inventory) -> None:
         ("block_ip", next(iter(inventory.office_egress.values()))): "deny",
         ("block_ip", ms_ip): "deny",
         ("block_ip", "not-an-ip"): "deny",
+        ("revoke_sessions", f"user:{user.user_id}"): "execute",
+        ("block_ip", "ip:95.216.10.11"): "execute",
     }
     for (action, target), expected in cases.items():
         verdict = gate.evaluate(action, target, "agent", T0)

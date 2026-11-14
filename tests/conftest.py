@@ -23,9 +23,9 @@ from agentic_soc.storage import Store
 
 MINI = {
     "org": {"users": 50},
-    "duration_h": 10,
+    "duration_h": 15,
     "campaign": {
-        "start_offset_h": 3,
+        "start_offset_h": 9,
         "start_jitter_h": 0,
         "dwell_scale": 0.35,
         "spray_targets": 30,
