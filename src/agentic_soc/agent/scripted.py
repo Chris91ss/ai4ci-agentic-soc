@@ -161,7 +161,14 @@ class ScriptedLLM:
         independent = [k for k in confirmed if tool_detector[k[0]] not in detectors]
         injection = any('"injection_suspected": true' in json.dumps(r) for _, _, r in history)
         late = techniques & LATE
-        strong = techniques & C2_EXFIL if "M2" in detectors else set()
+        # C2 and exfiltration talk to the outside: an odd internal connection (app server to its
+        # database) is not one, whatever technique the flow detector guessed.
+        strong = {
+            t
+            for a in alerts
+            if a["detector"] == "M2" and self._external_destination(a)
+            for t in set(a["techniques"]) & C2_EXFIL
+        }
         spray = "T1110.003" in techniques
         reasons: list[str] = []
         if injection:
@@ -209,6 +216,11 @@ class ScriptedLLM:
             "confidence": round(confidence, 2),
             "rationale": "; ".join(reasons)[:1400],
         }
+
+    @staticmethod
+    def _external_destination(alert: dict[str, Any]) -> bool:
+        ips = alert["entities"].get("ips", [])
+        return len(ips) > 1 and not PRIVATE.match(ips[1])
 
     @staticmethod
     def _benign_signins(history: list[tuple[str, dict[str, Any], Any]]) -> list[str]:

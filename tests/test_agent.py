@@ -152,3 +152,37 @@ def test_local_llm_triage(setup) -> None:
     result = triage(TriageAgent(llm, server, max_steps=8), mini, mini.top_incident())
     assert result.llm_calls >= 2 and result.tool_calls >= 1
     assert result.ok, result.error
+
+
+def _flow_incident(destination: str) -> dict[str, Any]:
+    """An odd flow labelled as C2 next to rare admin processes on another server."""
+    flow = {
+        "alert_id": "AL-1",
+        "detector": "M2",
+        "kind": "M2",
+        "score": 0.82,
+        "techniques": ["T1071.001"],
+        "entities": {"users": [], "hosts": ["SRV-APP-08"], "ips": ["10.20.4.18", destination]},
+    }
+    rare = {
+        "alert_id": "AL-2",
+        "detector": "M3",
+        "kind": "M3",
+        "score": 0.99,
+        "techniques": ["T1059.001"],
+        "entities": {"users": ["adm-david.bernard"], "hosts": ["SRV-FILE-04"], "ips": []},
+    }
+    return {"incident_id": "INC-00038", "risk": 0.78, "detectors": ["M2", "M3"], "alerts": [flow, rare],
+            "techniques": [{"id": "T1071.001"}, {"id": "T1059.001"}]}  # fmt: skip
+
+
+def test_c2_needs_an_external_destination() -> None:
+    llm = ScriptedLLM()
+    internal = llm.decide("INC-00038", _flow_incident("10.20.3.13"), [])
+    assert internal["verdict"] == "suspicious" and internal["action"]["type"] == "none"
+    external = llm.decide("INC-00038", _flow_incident("193.106.191.70"), [])
+    assert external["verdict"] == "malicious" and "C2" in external["rationale"]
+    assert {"type": "block_ip", "target": "193.106.191.70"} in [
+        external["action"],
+        *external["extra_actions"],
+    ]
