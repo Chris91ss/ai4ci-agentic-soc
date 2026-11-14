@@ -55,12 +55,15 @@ class M1Detector(Detector):
         version: str,
         thresholds: dict[str, float],
         meta: dict[str, Any],
+        references: dict[str, Any] | None = None,
     ) -> None:
         super().__init__(version, thresholds, meta)
         self.forests = forests
         self.calibrators = calibrators
         self.stats = stats
         self.profiles = profiles
+        # Training distribution of every feature, for drift monitoring (FeatureReference).
+        self.references = references or {}
 
     # ------------------------------------------------------------------ training
     @classmethod
@@ -71,7 +74,9 @@ class M1Detector(Detector):
         seed: int = 0,
         n_estimators: int = 300,
     ) -> M1Detector:
-        forests, calibrators, stats = {}, {}, {}
+        from agentic_soc.drift.reference import FeatureReference
+
+        forests, calibrators, stats, references = {}, {}, {}, {}
         for kind in cls.kinds:
             X = _transform(kind, train[kind])
             forest = IsolationForest(
@@ -85,9 +90,11 @@ class M1Detector(Detector):
             forests[kind] = forest
             calibrators[kind] = TailCalibrator.fit(raw)
             stats[kind] = RobustStats.fit(FEATURES[kind], train[kind])
+            references[kind] = FeatureReference.fit(FEATURES[kind], train[kind], seed=seed)
         meta = {"training_rows": {k: len(v) for k, v in train.items()}, "seed": seed}
         thresholds = {kind: 0.999 for kind in cls.kinds}
-        return cls(forests, calibrators, stats, profiles, new_version("m1"), thresholds, meta)
+        return cls(forests, calibrators, stats, profiles, new_version("m1"), thresholds, meta,
+                   references)  # fmt: skip
 
     def raw_scores(self, kind: str, X: np.ndarray) -> np.ndarray:
         if len(X) == 0:
@@ -187,6 +194,9 @@ class M1Detector(Detector):
         directory.mkdir(parents=True, exist_ok=True)
         joblib.dump(self.forests, directory / "forests.joblib")
         self.profiles.save(directory / "profiles.json")
+        if self.references:
+            references = {k: r.to_json() for k, r in self.references.items()}
+            (directory / "drift_reference.json").write_text(json.dumps(references))
         extra = {
             "calibrators": {k: c.to_json() for k, c in self.calibrators.items()},
             "stats": {k: s.to_json() for k, s in self.stats.items()},
@@ -203,4 +213,10 @@ class M1Detector(Detector):
         profiles = Profiles.load(directory / "profiles.json")
         version, thresholds = meta.pop("version"), meta.pop("thresholds")
         meta.pop("detector", None)
-        return cls(forests, calibrators, stats, profiles, version, thresholds, meta)
+        references = {}
+        if (directory / "drift_reference.json").exists():
+            from agentic_soc.drift.reference import FeatureReference
+
+            data = json.loads((directory / "drift_reference.json").read_text())
+            references = {k: FeatureReference.from_json(v) for k, v in data.items()}
+        return cls(forests, calibrators, stats, profiles, version, thresholds, meta, references)

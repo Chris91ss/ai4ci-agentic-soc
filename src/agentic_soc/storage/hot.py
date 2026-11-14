@@ -467,6 +467,16 @@ class Store(SecurityObjects):
             row[key] = int(row[key] or 0)
         return row
 
+    def events_between(
+        self, stream: str, start: datetime, end: datetime, by: str = "event_time"
+    ) -> list[dict[str, Any]]:
+        """Every stored event of a stream in a window (by event or ingest time), oldest first."""
+        table = s.EVENT_TABLES[stream]
+        column = table.c[by]
+        query = select(table).where(column >= start, column < end).order_by(column)
+        with self.engine.connect() as conn:
+            return [{"stream": stream, **row} for row in conn.execute(query).mappings()]
+
     def addresses_of(self, kind: str, value: str, start: datetime, end: datetime) -> list[str]:
         """Dynamic addresses of a workstation or account recovered from stored sign-ins (what
         the online resolver learns): interactive logons bind a host's address, VPN logons an

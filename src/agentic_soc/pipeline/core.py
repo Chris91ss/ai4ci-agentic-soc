@@ -16,7 +16,10 @@ from agentic_soc.agent.react import compact_json
 from agentic_soc.broker.base import Broker
 from agentic_soc.correlation import CorrelationEngine, IncidentState, IncidentUpdate
 from agentic_soc.detectors.base import Score
+from agentic_soc.detectors.m1 import M1Detector
 from agentic_soc.detectors.service import DetectorClient
+from agentic_soc.drift import DriftConfig as DriftSettings
+from agentic_soc.drift import DriftMonitor, recent_signins, retrain_m1
 from agentic_soc.evidence import EvidenceBuilder
 from agentic_soc.features import FeatureBatch, FeaturePipeline, FeatureRow, Profiles, WindowConfig
 from agentic_soc.ingestion import IngestionService, IngestionStage, IngestResult, Inventory
@@ -43,6 +46,14 @@ class PipelineConfig:
     auto_approve: bool = True
     approval_delay_s: float = 0.0
     worker: Literal["virtual", "threaded"] = "virtual"  # threaded: live mode on a broker
+    # Drift (scenario S1): PSI/KS of M1 features against the training reference, checked
+    # every hour; on an alarm M1 can be retrained offline and swapped in after a delay.
+    drift_monitor: bool = True
+    drift_check_every_h: float = 1.0
+    retrain_on_drift: bool = False
+    retrain_delay_h: float = 3.0
+    retrain_window_h: float = 24.0
+    drift: DriftSettings = field(default_factory=DriftSettings)
     router: RouterConfig = field(default_factory=RouterConfig)
     windows: WindowConfig = field(default_factory=WindowConfig)
     policy: PolicyConfig = field(default_factory=PolicyConfig)
@@ -108,6 +119,12 @@ class SocPipeline:
         )
         self.mcp = build_server(SocTools(self.ctx))
         self.evidence = EvidenceBuilder(store, inventory, profiles, self.features.resolver)
+        m1 = self.local_m1()
+        self.drift: DriftMonitor | None = None
+        if cfg.drift_monitor and m1 is not None and m1.references:
+            self.drift = DriftMonitor(dict(m1.references), cfg.drift)
+        self._next_drift_check: datetime | None = None
+        self._retrain_at: datetime | None = None
         self.worker: VirtualTimeAgentWorker | ThreadedAgentWorker | None = None
         if cfg.mode == "agent":
             llm = make_llm(cfg.llm)
@@ -156,6 +173,7 @@ class SocPipeline:
         if self.worker is not None:
             self.worker.tick(self.clock)
         self._tick_approvals()
+        self._tick_drift()
         return len(result.events)
 
     def flush(self) -> None:
@@ -182,6 +200,8 @@ class SocPipeline:
     def handle(self, batch: FeatureBatch) -> None:
         if len(batch) == 0:
             return
+        if self.drift is not None:
+            self.drift.observe(batch.m1_user + batch.m1_ip)
         scored = self.score(batch)
         self.stats["alerts"] += sum(1 for _, s in scored if s.alert)
         for update in self.correlation.ingest(scored, self.now()):
@@ -398,6 +418,75 @@ class SocPipeline:
                 if self.actions.actions[action_id].status == "pending_approval":
                     self.actions.approve(action_id, "auto-analyst", now)
 
+    # ------------------------------------------------------------------ drift and retraining
+    def local_m1(self) -> M1Detector | None:
+        detector_set = getattr(self.detectors, "detectors", None)
+        m1 = getattr(detector_set, "detectors", {}).get("M1") if detector_set is not None else None
+        return m1 if isinstance(m1, M1Detector) else None
+
+    def _tick_drift(self) -> None:
+        if self.drift is None:
+            return
+        now = self.now()
+        every = timedelta(hours=self.cfg.drift_check_every_h)
+        if self._next_drift_check is None:
+            self._next_drift_check = now + every
+        if now >= self._next_drift_check:
+            self._next_drift_check = now + every
+            was = self.drift.alarm
+            for check in self.drift.check(now):
+                summary = check.to_dict(top=4)
+                self._log("drift_check", feature_kind=check.kind, rows=check.rows, max_psi=summary["max_psi"],
+                          drifted=check.drifted[:6], top_psi=summary["top_psi"])  # fmt: skip
+            if self.drift.alarm and not was:
+                self.stats["drift_alarms"] += 1
+                latest = {c.kind: c for c in self.drift.history[-len(self.drift.references) :]}
+                self._log("drift_alarm", features={k: c.drifted[:6] for k, c in latest.items()},
+                          max_psi={k: round(c.max_psi, 3) for k, c in latest.items()})  # fmt: skip
+                if self.cfg.retrain_on_drift and self._retrain_at is None:
+                    self._retrain_at = now + timedelta(hours=self.cfg.retrain_delay_h)
+                    self._log("retrain_scheduled", at=self._retrain_at)
+        if self._retrain_at is not None and now >= self._retrain_at:
+            self._retrain_at = None
+            self.retrain(now)
+
+    def malicious_event_ids(self) -> set[str]:
+        """Events behind incidents judged malicious or alerts analysts confirmed."""
+        out: set[str] = set()
+        for state in self.correlation.incidents.values():
+            if state.verdict == "malicious":
+                for alert in state.alerts.values():
+                    out.update(alert.event_ids)
+        confirmed = [
+            f["alert_id"]
+            for f in self.store.list_feedback(limit=1_000_000)
+            if f["verdict"] == "true_positive"
+        ]
+        for alert in self.store.alerts_by_ids(confirmed):
+            out.update(alert["event_ids"])
+        return out
+
+    def retrain(self, now: datetime) -> dict[str, Any] | None:
+        """Retrain M1 offline on the recent sign-ins and swap it in with its new baselines."""
+        current = self.local_m1()
+        if current is None:
+            return None
+        try:
+            new, report = retrain_m1(current, recent_signins(self.store, now, self.cfg.retrain_window_h),
+                                     self.inv, self.malicious_event_ids(), self.cfg.windows)  # fmt: skip
+        except ValueError as exc:
+            self._log("retrain_failed", error=str(exc))
+            return None
+        self.detectors.detectors.detectors["M1"] = new  # type: ignore[attr-defined]
+        self.features.profiles = self.features.extractor.profiles = new.profiles
+        self.ctx.profiles = self.evidence.profiles = new.profiles
+        if self.drift is not None:
+            self.drift.reset(dict(new.references))
+            self._next_drift_check = now + timedelta(hours=self.cfg.drift_check_every_h)
+        self.stats["retrains"] += 1
+        self._log("retrain", **report)
+        return report
+
     # ------------------------------------------------------------------ reporting
     def summary(self) -> dict[str, Any]:
         corr = self.correlation.stats()
@@ -411,6 +500,11 @@ class SocPipeline:
             "alert_to_incident_ratio": corr["alert_to_incident_ratio"],
             "routes": dict(self.router.stats),
             "breaker_trips": self.router.breaker.trips,
+            "drift": {
+                "alarms": [e["time"] for e in self.log if e["kind"] == "drift_alarm"],
+                "retrains": [e["time"] for e in self.log if e["kind"] == "retrain"],
+                "models": self.detectors.versions(),
+            },
             "decisions": dict(Counter(d["decided_by"] for d in self.decisions)),
             "verdicts": dict(Counter(d["verdict"] for d in self.decisions)),
             "actions": [

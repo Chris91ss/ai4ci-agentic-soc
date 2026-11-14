@@ -451,6 +451,9 @@ def run(
         help="High-impact actions: 0 = auto-approved (unattended run), else seconds before a "
         "simulated analyst approves them.",
     ),
+    retrain_on_drift: bool = typer.Option(
+        False, "--retrain-on-drift", help="Retrain M1 offline when the drift monitor alarms."
+    ),
 ) -> None:
     """Closed-loop run: simulator and SOC in one process, containment flowing back to the attack."""
     import time
@@ -473,7 +476,8 @@ def run(
     store = Store(db or f"sqlite:///{db_path}")
     store.init_schema()
     sim = Simulator(cfg)
-    pipeline_cfg = PipelineConfig(mode=mode, llm=llm, approval_delay_s=approval_delay)  # type: ignore[arg-type]
+    pipeline_cfg = PipelineConfig(mode=mode, llm=llm, approval_delay_s=approval_delay,  # type: ignore[arg-type]
+                                  retrain_on_drift=retrain_on_drift)  # fmt: skip
     runner = InProcessRun(sim, ModelRegistry(models).load_set(), pipeline_cfg, store)
     console.print(f"closed-loop run: {mode} ({llm if mode == 'agent' else 'playbooks'}), "
                   f"seed {cfg.seed}, org {org_seed}, {cfg.duration_h:g}h from {cfg.start:%Y-%m-%d %H:%M} -> {out}")  # fmt: skip

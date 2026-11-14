@@ -144,6 +144,26 @@ class Profiles:
         }
         return cls(accounts, known_ips, global_hours, timezone, built)
 
+    def updated(self, signins: Iterable[Any]) -> Profiles:
+        """A copy of the baselines with more sign-ins folded in (refreshing them after drift)."""
+        merged = Profiles.from_json(self.to_json())
+        delta = Profiles.build(signins, self.timezone)
+        for account, extra in delta.accounts.items():
+            profile = merged.accounts.setdefault(account, AccountProfile())
+            profile.n += extra.n
+            profile.fails += extra.fails
+            profile.hours = [a + b for a, b in zip(profile.hours, extra.hours, strict=True)]
+            for name in ("countries", "asns", "ips", "cities"):
+                getattr(profile, name).update(getattr(extra, name))
+            for name in ("devices", "apps", "logon_types", "dst_hosts"):
+                getattr(profile, name).update(getattr(extra, name))
+        merged.known_ips |= delta.known_ips
+        merged.global_hours = [
+            a + b for a, b in zip(merged.global_hours, delta.global_hours, strict=True)
+        ]
+        merged.built_from = dict(self.built_from) | {"updated_with": delta.built_from}
+        return merged
+
     # ------------------------------------------------------------------ persistence
     def to_json(self) -> dict[str, Any]:
         return {

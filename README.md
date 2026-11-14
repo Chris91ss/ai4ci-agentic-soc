@@ -14,7 +14,7 @@ RFC: [docs/rfc/0001-agentic-soc.pdf](docs/rfc/0001-agentic-soc.pdf) (source: [do
 | Kafka-compatible event broker (Redpanda) | `agentic_soc.broker` | done |
 | Ingestion: schema validation, dead-letter, dedupe, normalise, enrich | `agentic_soc.ingestion` | done |
 | Storage: TimescaleDB (hot), Parquet (cold), labels, audit log | `agentic_soc.storage` | done |
-| Offline ETL in DuckDB, drift checks, retraining | `agentic_soc.etl` | ETL done; drift planned |
+| Offline ETL in DuckDB, drift checks (PSI/KS), retraining | `agentic_soc.etl`, `agentic_soc.drift` | done |
 | Online inference: event-time windows, entity resolution, M1–M3 | `agentic_soc.features`, `agentic_soc.detectors` | done |
 | Correlation engine, risk router and playbooks | `agentic_soc.correlation`, `agentic_soc.routing` | done |
 | MCP server and policy gate | `agentic_soc.mcp_server`, `agentic_soc.actions` | done |
@@ -45,6 +45,16 @@ uv run soc train              # train M1-M3 into the model registry (models/)
 uv run soc run                # closed loop: simulator + SOC in one process (scripted analyst)
 uv run soc run --llm ollama:gpt-oss:20b          # the triage agent on a local LLM (Ollama)
 uv run soc run --mode detectors                  # baseline: detectors + playbooks, no agent
+```
+
+Scenario S1 (drift) moves most staff to remote work through a newly adopted ZTNA service, so
+sign-ins come from new networks abroad and later in the day. The drift monitor compares the
+live M1 feature windows with M1's training distribution (PSI and KS) and alarms; with
+`--retrain-on-drift` M1 is retrained offline on the recent sign-ins with refreshed baselines and
+swapped in:
+
+```bash
+uv run soc run --scenario config/scenarios/s1-remote-work.yaml --hours 72 --retrain-on-drift
 ```
 
 `soc run` writes `data/soc-runs/<mode>-seed<seed>/` with the SOC store (`soc.db`), the run
