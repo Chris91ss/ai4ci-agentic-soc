@@ -21,7 +21,7 @@ RFC: [docs/rfc/0001-agentic-soc.pdf](docs/rfc/0001-agentic-soc.pdf) (source: [do
 | Local-LLM triage agent (ReAct) | `agentic_soc.agent` | done |
 | Closed-loop pipeline (in-process and live on the broker) | `agentic_soc.pipeline` | done |
 | Evidence bundles behind every verdict, analyst feedback and FP statistics | `agentic_soc.evidence` | done |
-| FastAPI backend (REST + server-sent events) and Next.js SOC console | `agentic_soc.api`, `web/` | API done; console planned |
+| FastAPI backend (REST + server-sent events) and Next.js SOC console | `agentic_soc.api`, `web/` | done |
 | Evaluation (model level, end to end, S1 drift, S2 load) | `agentic_soc.evaluation` | planned |
 
 ## Development
@@ -59,6 +59,14 @@ actions:
 ```bash
 uv run soc api --run data/soc-runs/agent-seed201   # http://127.0.0.1:8000/api, read-only
 uv run soc demo --speed 120                        # live: attack 1.5 h in, analyst approvals
+```
+
+The SOC console (`web/`, Next.js with Tabler icons and framer-motion) shows stream health,
+the incident queue, incident timelines with the agent's tool trace and evidence, approvals,
+analyst feedback, metrics and the audit log; see [web/README.md](web/README.md):
+
+```bash
+cd web && npm install && npm run dev               # http://localhost:3000
 ```
 
 Endpoints: `/api/health`, `/api/stream-health`, `/api/incidents[/{id}[/evidence|/trace|/feedback]]`,
