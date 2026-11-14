@@ -252,6 +252,41 @@ def _default_delivery() -> dict[str, DeliverySpec]:
     }  # fmt: skip
 
 
+class CampaignConfig(_Cfg):
+    """The injected intrusion (see :mod:`agentic_soc.simulator.campaign`)."""
+
+    enabled: bool = True
+    campaign_id: str = "CAMP-1"
+    start_offset_h: float = Field(19.0, ge=0, description="Hours after the simulation start.")
+    start_jitter_h: float = Field(3.0, ge=0, description="Seeded +/- shift of the start.")
+    dwell_scale: float = Field(1.0, gt=0, description="Multiplies the pauses between stages.")
+    spray_targets: int = Field(80, ge=1, description="Accounts tried by the password spray.")
+    spray_passwords: int = Field(2, ge=1, le=10, description="Passwords tried per account.")
+    spray_interval_s: tuple[float, float] = (15.0, 45.0)
+    attacker_blocks: list[str] = Field(
+        default_factory=lambda: [
+            "45.32.0.0/16",
+            "193.106.191.0/24",
+            "185.220.100.0/22",
+            "51.75.0.0/16",
+        ],
+        description="Netblocks of the servers used for spraying and VPN access.",
+    )
+    c2_blocks: list[str] = Field(
+        default_factory=lambda: ["95.216.0.0/16", "159.89.0.0/16", "103.75.0.0/16"],
+        description="Netblocks of the primary and fallback C2 servers.",
+    )
+    c2_ports: list[int] = Field(default_factory=lambda: [443])
+    beacon_period_s: tuple[float, float] = (45.0, 180.0)
+    beacon_jitter: tuple[float, float] = (0.1, 0.35)
+    scan_targets: tuple[int, int] = (25, 60)
+    exfil_gb: tuple[float, float] = (1.5, 4.0)
+    pivot: bool = Field(True, description="Rotate infrastructure when it gets blocked.")
+    prompt_injection: bool = Field(
+        True, description="Embed instructions aimed at LLM analysts in attacker-controlled fields."
+    )
+
+
 class SimulatorConfig(_Cfg):
     seed: int = 7
     start: AwareDatetime = Field(
@@ -266,6 +301,7 @@ class SimulatorConfig(_Cfg):
     activity: ActivityConfig = Field(default_factory=ActivityConfig)
     lookalikes: LookalikeConfig = Field(default_factory=LookalikeConfig)
     delivery: dict[str, DeliverySpec] = Field(default_factory=_default_delivery)
+    campaign: CampaignConfig = Field(default_factory=CampaignConfig)
 
     @model_validator(mode="after")
     def _all_streams_delivered(self) -> SimulatorConfig:

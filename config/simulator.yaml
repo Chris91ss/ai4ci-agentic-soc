@@ -74,3 +74,25 @@ delivery:
   process:
     {median_delay_s: 4.0, sigma: 0.9, late_prob: 0.03, late_delay_s: [300, 3600], duplicate_prob: 0.005,
      clock_skew_s: 0.5, drifted_clock_prob: 0.03, malformed_prob: 0.0005}
+
+# The injected ATT&CK campaign: password spray -> VPN with a valid account -> RDP foothold ->
+# discovery -> PowerShell implant + C2 beacon -> LSASS dump -> PsExec/RDP lateral movement ->
+# collection with 7-Zip -> exfiltration over C2. It reacts to containment (pivots or stalls).
+campaign:
+  enabled: true
+  campaign_id: CAMP-1
+  start_offset_h: 19.0           # Monday ~21:00 local, +/- start_jitter_h (seeded)
+  start_jitter_h: 3.0
+  dwell_scale: 1.0               # >1 slows the attacker down between stages
+  spray_targets: 80
+  spray_passwords: 2
+  spray_interval_s: [15, 45]
+  attacker_blocks: [45.32.0.0/16, 193.106.191.0/24, 185.220.100.0/22, 51.75.0.0/16]
+  c2_blocks: [95.216.0.0/16, 159.89.0.0/16, 103.75.0.0/16]   # shared with benign dev/mirror hosts
+  c2_ports: [443]
+  beacon_period_s: [45, 180]
+  beacon_jitter: [0.1, 0.35]
+  scan_targets: [25, 60]
+  exfil_gb: [1.5, 4.0]
+  pivot: true                    # rotate spray / C2 infrastructure when blocked
+  prompt_injection: true         # instructions for LLM analysts hidden in user agents and command lines

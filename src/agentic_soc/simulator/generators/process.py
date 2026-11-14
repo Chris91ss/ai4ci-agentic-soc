@@ -108,6 +108,7 @@ class ProcessGenerator:
         rng: np.random.Generator,
         *,
         command_line: str | None = None,
+        image_path: str | None = None,
         integrity: str | None = None,
         tag: str | None = None,
         label: Label | None = None,
@@ -119,6 +120,7 @@ class ProcessGenerator:
             self.parents[(host.host_id, parent)] = ppid
         self.parents[(host.host_id, child)] = pid
         cmd, image = self.command_line(host, child, user, rng)
+        image = image_path or image
         account = self.account(host, child, user)
         if integrity is None:
             integrity = (

@@ -7,6 +7,7 @@ import pytest
 
 from agentic_soc.schemas import parse_event
 from agentic_soc.simulator.config import load_config
+from agentic_soc.simulator.enterprise import is_internal
 from agentic_soc.simulator.generators import BenignActivity, build_context
 from agentic_soc.simulator.model import SimEvent
 
@@ -48,11 +49,21 @@ def test_diurnal_cycle(day_run) -> None:
 
 
 def test_benign_lookalikes_are_present(day_run) -> None:
-    _, events = day_run
+    activity, events = day_run
     tags = Counter(e.label.tag for e in events if e.label is not None)
     for tag in ("typo", "admin_rdp", "backup", "offsite_backup", "edr_heartbeat", "edr_cloud_sync"):
         assert tags[tag] > 0, tag
     assert not any(e.label.malicious for e in events if e.label is not None)
+    vpn_ip = activity.ctx.ent.servers_by_role["vpn"][0].static_ip
+    tunnels = [
+        e
+        for e in events
+        if e.stream == "flow"
+        and e.payload["dst_ip"] == vpn_ip
+        and e.payload["dst_port"] == 443
+        and not is_internal(e.payload["src_ip"])
+    ]
+    assert tunnels and all(e.label.tag in {"remote_vpn", "travel"} for e in tunnels)
 
 
 def test_entity_identifiers_differ_per_stream(day_run) -> None:

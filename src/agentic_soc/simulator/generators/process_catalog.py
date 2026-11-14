@@ -28,6 +28,8 @@ WORKSTATION_COMMON: list[Launch] = [
     ("explorer.exe", "OneDrive.exe", 0.2),
     ("svchost.exe", "SearchProtocolHost.exe", 1.2),
     ("explorer.exe", "SnippingTool.exe", 0.2),
+    ("explorer.exe", "rundll32.exe", 0.25),
+    ("svchost.exe", "rundll32.exe", 0.2),
 ]
 
 ROLE_EXTRA: dict[str, list[Launch]] = {
@@ -46,6 +48,7 @@ ROLE_EXTRA: dict[str, list[Launch]] = {
         ("cmd.exe", "git.exe", 0.5),
         ("code.exe", "cmd.exe", 0.5),
         ("git.exe", "git-remote-https.exe", 1.5),
+        ("explorer.exe", "7z.exe", 0.15),
     ],
     "it_admin": [
         ("explorer.exe", "mmc.exe", 1.5),
@@ -59,6 +62,8 @@ ROLE_EXTRA: dict[str, list[Launch]] = {
         ("explorer.exe", "putty.exe", 0.8),
         ("explorer.exe", "WindowsTerminal.exe", 0.8),
         ("WindowsTerminal.exe", "powershell.exe", 1.0),
+        ("powershell.exe", "whoami.exe", 0.2),
+        ("cmd.exe", "whoami.exe", 0.1),
     ],
     "finance": [
         ("explorer.exe", "saplogon.exe", 2.0),
@@ -166,7 +171,7 @@ SYSTEM_PROCESSES = {
     "sqlceip.exe", "disp+work.exe", "MSExchangeTransport.exe", "EdrManager.exe", "WsusService.exe",
     "spoolsv.exe", "PrintIsolationHost.exe", "BackupAgent.exe", "vssadmin.exe", "robocopy.exe",
     "BackupUpload.exe", "sihost.exe", "ctfmon.exe", "userinit.exe", "rdpclip.exe", "csc.exe",
-    "w3wp.exe", "bcp.exe", "cmd.exe",
+    "w3wp.exe", "bcp.exe",
 }  # fmt: skip
 
 IMAGE_DIRS = {
@@ -198,6 +203,7 @@ IMAGE_DIRS = {
     "sqlservr.exe": r"C:\Program Files\Microsoft SQL Server\MSSQL16.MSSQLSERVER\MSSQL\Binn",
     "sqlceip.exe": r"C:\Program Files\Microsoft SQL Server\MSSQL16.MSSQLSERVER\MSSQL\Binn",
     "bcp.exe": r"C:\Program Files\Microsoft SQL Server\Client SDK\ODBC\170\Tools\Binn",
+    "7z.exe": r"C:\Program Files\7-Zip",
 }
 LINUX_DIRS = {
     "bash": "/usr/bin", "python3": "/usr/bin", "curl": "/usr/bin", "logrotate": "/usr/sbin",
@@ -268,6 +274,14 @@ COMMAND_LINES: dict[str, list[str]] = {
     "docker": ["docker build -t registry.corp.example/app:{n} ."],
     "git": ["git clone https://github.com/example-corp/app-{n}.git"],
     "make": ["make -j8 all"],
+    "rundll32.exe": [
+        "rundll32.exe shell32.dll,Control_RunDLL desk.cpl",
+        "rundll32.exe printui.dll,PrintUIEntry /il",
+        "rundll32.exe C:\\Windows\\system32\\PcaSvc.dll,PcaPatchSdbTask",
+        "rundll32.exe Startupscan.dll,SusRunTask",
+    ],
+    "whoami.exe": ["whoami.exe", "whoami.exe /groups"],
+    "7z.exe": ['"{image}" x C:\\Users\\{user}\\Downloads\\release-{n}.zip -oC:\\work\\release-{n}'],
 }
 
 ADMIN_TOOLS = {"mmc.exe", "powershell.exe", "net.exe", "nltest.exe", "mstsc.exe", "cmd.exe"}

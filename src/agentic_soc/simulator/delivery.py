@@ -133,7 +133,8 @@ class DeliveryModel:
     @staticmethod
     def _is_legacy(stream: str, payload: dict[str, Any], spec: DeliverySpec, u: float) -> bool:
         if stream == "signin":
-            return payload.get("source") == "vpn" and u < spec.legacy_prob
+            source = payload.get("source")
+            return source == "vpn-legacy" or (source == "vpn" and u < spec.legacy_prob)
         if stream == "flow":
             return payload.get("source") in spec.legacy_sources
         return False

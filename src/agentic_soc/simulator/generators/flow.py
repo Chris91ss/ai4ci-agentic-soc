@@ -66,6 +66,8 @@ class FlowGenerator:
         self.internal_p = weights / weights.sum()
         edr = ent.servers_by_role.get("edr", [])
         self.edr_ip = edr[0].static_ip if edr else None
+        vpn = ent.servers_by_role.get("vpn", [])
+        self.vpn_ip = vpn[0].static_ip if vpn else None
         self.phase = {
             h.host_id: float(rng_for(ctx.seed, "phase", h.host_id).uniform(0, self.cfg.heartbeat_s))
             for h in ent.hosts
@@ -170,6 +172,12 @@ class FlowGenerator:
                 )  # type: ignore[arg-type]
             if ip is not None:
                 out.extend(self.heartbeats(rng, host, ip, t0, t1))
+            if plan.works and plan.vpn_ip and self.vpn_ip and t0 <= plan.start < t1:
+                out.append(
+                    self.vpn_tunnel(
+                        rng, plan.public_ip, plan.start, plan.end, plan.trip is not None
+                    )
+                )
             if (
                 user.role == "engineering"
                 and self.look.dev_hosting
@@ -227,6 +235,14 @@ class FlowGenerator:
                                      rng, tag="edr_heartbeat"))  # fmt: skip
             k += 1
         return out
+
+    def vpn_tunnel(
+        self, rng: np.random.Generator, public_ip: str, start: datetime, end: datetime, travel: bool
+    ) -> SimEvent:
+        duration = max(60.0, (end - start).total_seconds())
+        down = duration * float(rng.uniform(15e3, 90e3))
+        return self.make(start, public_ip, self.vpn_ip or "", 443, down * 0.3, down, duration * 1000, rng,
+                         tag="travel" if travel else "remote_vpn")  # fmt: skip
 
     def dev_deploy(self, rng: np.random.Generator, src_ip: str, t: datetime) -> SimEvent:
         svc = self.services["dev-staging"]
