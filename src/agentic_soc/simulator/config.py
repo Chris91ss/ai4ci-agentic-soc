@@ -215,6 +215,43 @@ class LookalikeConfig(_Cfg):
     edr_cloud_sync: bool = True
 
 
+class DeliverySpec(_Cfg):
+    """Transport of one stream from its producers to the broker."""
+
+    median_delay_s: float = Field(gt=0)
+    sigma: float = Field(0.6, ge=0, description="Log-normal spread of the delay.")
+    late_prob: float = Field(ge=0, le=1, description="Share of stragglers (buffered, offline).")
+    late_delay_s: tuple[float, float] = Field(description="Extra delay range of stragglers.")
+    duplicate_prob: float = Field(ge=0, le=1, description="Share redelivered a second time.")
+    duplicate_max_s: float = Field(120, gt=0)
+    clock_skew_s: float = Field(0.5, ge=0, description="Std of per-producer clock offsets.")
+    drifted_clock_prob: float = Field(0.0, ge=0, le=1, description="Producers off by 30-180 s.")
+    malformed_prob: float = Field(0.0005, ge=0, le=1)
+    legacy_prob: float = Field(0.0, ge=0, le=1, description="VPN sign-ins from the 0.9 appliance.")
+    legacy_sources: list[str] = Field(
+        default_factory=list, description="Flow sensors on schema 0.9."
+    )
+
+
+def _default_delivery() -> dict[str, DeliverySpec]:
+    return {
+        "signin": DeliverySpec(
+            median_delay_s=2.0, sigma=0.6, late_prob=0.01, late_delay_s=(60, 600),
+            duplicate_prob=0.003, clock_skew_s=0.3, malformed_prob=0.0005, legacy_prob=0.35,
+        ),
+        "flow": DeliverySpec(
+            median_delay_s=15.0, sigma=0.5, late_prob=0.02, late_delay_s=(120, 900),
+            duplicate_prob=0.01, clock_skew_s=1.0, malformed_prob=0.0003,
+            legacy_sources=["sensor-dc-01"],
+        ),
+        "process": DeliverySpec(
+            median_delay_s=4.0, sigma=0.9, late_prob=0.03, late_delay_s=(300, 3600),
+            duplicate_prob=0.005, clock_skew_s=0.5, drifted_clock_prob=0.03,
+            malformed_prob=0.0005,
+        ),
+    }  # fmt: skip
+
+
 class SimulatorConfig(_Cfg):
     seed: int = 7
     start: AwareDatetime = Field(
@@ -228,6 +265,14 @@ class SimulatorConfig(_Cfg):
     org: OrgConfig = Field(default_factory=OrgConfig)
     activity: ActivityConfig = Field(default_factory=ActivityConfig)
     lookalikes: LookalikeConfig = Field(default_factory=LookalikeConfig)
+    delivery: dict[str, DeliverySpec] = Field(default_factory=_default_delivery)
+
+    @model_validator(mode="after")
+    def _all_streams_delivered(self) -> SimulatorConfig:
+        missing = {"signin", "flow", "process"} - set(self.delivery)
+        if missing:
+            raise ValueError(f"delivery settings missing for {sorted(missing)}")
+        return self
 
     @property
     def end(self) -> datetime:

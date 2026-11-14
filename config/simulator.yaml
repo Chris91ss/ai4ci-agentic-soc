@@ -40,3 +40,37 @@ org:
   # defaults from config.py; override a role here to change it, e.g.
   # roles:
   #   engineering: {share: 0.3, department: Engineering, remote_prob: 0.5, apps: [...], tools: [...]}
+
+# Benign activity rates (per active user/host hour unless noted).
+activity:
+  weekday_attendance: 0.94
+  signin: {sso_per_hour: 1.4, network_logons_per_hour: 1.0, mobile_checks_per_evening: 1.5, admin_rdp_per_day: 3.0, mfa_prob: 0.35, monitor_logons_per_hour: 20}
+  flow: {web_per_hour: 40, internal_per_hour: 18, app_db_per_hour: 25, dmz_inbound_per_hour: 120, heartbeat_s: 900, monitoring_s: 600, edr_cloud_s: 60}
+  process: {server_per_hour: 12}
+
+# Benign behaviour that resembles attack steps (hard negatives for the detectors).
+lookalikes:
+  typos: true                    # failed password followed by a success
+  travel: true                   # multi-day trips abroad, VPN from foreign ISPs
+  remote_vpn: true
+  admin_rdp: true                # admins RDP to servers through jump hosts
+  admin_maintenance_weekday: 1   # patch night (Tuesday): one admin RDPs into many servers
+  nightly_backup: true           # large internal pulls, then offsite upload to cloud storage
+  backup_start_h: 1.0
+  backup_internal_gb: [5.0, 15.0]
+  backup_offsite_gb: [2.0, 6.0]
+  dev_hosting: true              # developers push builds to VPS providers over SSH
+  edr_cloud_sync: true           # EDR server beacons to the vendor cloud every minute
+
+# Transport of each stream to the broker: delays, stragglers, duplicates, producer clock
+# skew, malformed payloads (dead-letter) and legacy schema-0.9 producers.
+delivery:
+  signin:
+    {median_delay_s: 2.0, sigma: 0.6, late_prob: 0.01, late_delay_s: [60, 600], duplicate_prob: 0.003,
+     clock_skew_s: 0.3, malformed_prob: 0.0005, legacy_prob: 0.35}
+  flow:
+    {median_delay_s: 15.0, sigma: 0.5, late_prob: 0.02, late_delay_s: [120, 900], duplicate_prob: 0.01,
+     clock_skew_s: 1.0, malformed_prob: 0.0003, legacy_sources: [sensor-dc-01]}
+  process:
+    {median_delay_s: 4.0, sigma: 0.9, late_prob: 0.03, late_delay_s: [300, 3600], duplicate_prob: 0.005,
+     clock_skew_s: 0.5, drifted_clock_prob: 0.03, malformed_prob: 0.0005}
