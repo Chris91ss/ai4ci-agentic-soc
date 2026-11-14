@@ -58,7 +58,7 @@ class FeaturePipeline:
         detectors: set[str] | None = None,
     ) -> None:
         self.inv = inventory
-        self.detectors = set(detectors or FEATURES)
+        self.detectors = set(FEATURES if detectors is None else detectors)
         self.cfg = cfg = config or WindowConfig()
         self.profiles = profiles or Profiles(timezone=inventory.timezone)
         self.resolver = EntityResolver(inventory)

@@ -465,8 +465,8 @@ def run(
     from agentic_soc.simulator.engine import Simulator
     from agentic_soc.storage import Store
 
-    if mode not in {"agent", "detectors"}:
-        raise typer.BadParameter("mode must be agent or detectors")
+    if mode not in {"agent", "detectors", "rules"}:
+        raise typer.BadParameter("mode must be agent, detectors or rules")
     cfg = _sim_config(config, scenario, seed, hours, no_campaign,
                       extra={"org_seed": org_seed, "start": start})  # fmt: skip
     out = out or Path("data/soc-runs") / f"{mode}-seed{cfg.seed}"

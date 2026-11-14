@@ -38,7 +38,7 @@ def _isolatable(inv: Inventory, host: str) -> bool:
 
 
 def _source_host(inv: Inventory, alert: Alert) -> str | None:
-    """Host that originated an M2 conversation (entities.ips is [source, destination])."""
+    """Host that originated a flow alert (entities.ips is [source, destination])."""
     if not alert.entities.ips:
         return None
     src_ip = alert.entities.ips[0]
@@ -57,7 +57,7 @@ def playbook_actions(incident: IncidentState, inv: Inventory) -> list[tuple[Prop
     for alert in sorted(incident.alerts.values(), key=lambda a: -a.score):
         techniques = set(alert.techniques)
         users, hosts, ips = alert.entities.users, alert.entities.hosts, alert.entities.ips
-        if alert.detector == "M2" and techniques & C2_EXFIL:
+        if alert.stream == "flow" and techniques & C2_EXFIL:
             for ip in ips[1:2]:  # destination of the conversation
                 if _external(inv, ip):
                     candidates.append((ProposedAction(type="block_ip", target=ip), alert))
@@ -68,13 +68,11 @@ def playbook_actions(incident: IncidentState, inv: Inventory) -> list[tuple[Prop
             for ip in ips:
                 if _external(inv, ip):
                     candidates.append((ProposedAction(type="block_ip", target=ip), alert))
-        if alert.detector == "M1" and techniques & TAKEOVER and not techniques & SPRAY:
+        if alert.stream == "signin" and techniques & TAKEOVER and not techniques & SPRAY:
             for user in users:
                 if inv.account_kind(user) in {"user", "admin"}:
                     candidates.append((ProposedAction(type="revoke_sessions", target=user), alert))
-        if (
-            alert.detector == "M3" or alert.detector.startswith("rule:")
-        ) and techniques & HOST_COMPROMISE:
+        if alert.stream == "process" and techniques & HOST_COMPROMISE:
             for host in hosts[:1]:
                 if _isolatable(inv, host):
                     candidates.append((ProposedAction(type="isolate_host", target=host), alert))

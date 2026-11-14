@@ -40,7 +40,7 @@ def make_alert(row: FeatureRow, score: Score) -> Alert:
         alert_id=alert_id(row),
         detector=detector,
         model_version=row.detector,
-        stream=STREAM_OF[row.detector],
+        stream=STREAM_OF.get(row.detector) or row.context["stream"],
         window_start=row.window_start,
         window_end=row.window_end,
         score=min(1.0, max(0.0, score.score)),

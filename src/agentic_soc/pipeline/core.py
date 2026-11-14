@@ -27,16 +27,17 @@ from agentic_soc.mcp_server import SocContext, SocTools, build_server
 from agentic_soc.pipeline.staging import StagedActions
 from agentic_soc.pipeline.worker import ThreadedAgentWorker, TriageJob, VirtualTimeAgentWorker
 from agentic_soc.routing import RiskRouter, RouteDecision, RouterConfig, playbook_decision
+from agentic_soc.rules import RuleEngine
 from agentic_soc.schemas import Action, Decision
 from agentic_soc.storage import StorageSink, Store
 
-Mode = Literal["agent", "detectors"]
+Mode = Literal["agent", "detectors", "rules"]
 EPOCH = datetime(2000, 1, 1, tzinfo=UTC)
 
 
 @dataclass
 class PipelineConfig:
-    mode: Mode = "agent"  # "detectors": M1-M3 + playbooks, no agent (baseline)
+    mode: Mode = "agent"  # baselines: "detectors" (M1-M3 + playbooks), "rules" (rules + playbooks)
     llm: str = "scripted"  # "scripted" or "ollama[:model]"
     seconds_per_llm_call: float = 15.0  # simulated cost of one scripted-analyst LLM call
     wall_time_scale: float = 1.0  # real LLM: simulated seconds per wall-clock second
@@ -95,7 +96,11 @@ class SocPipeline:
         self.store = store
         self.detectors = detectors
         self.ingestion = IngestionService(broker, IngestionStage(inventory), StorageSink(store))
-        self.features = FeaturePipeline(inventory, profiles, cfg.windows)
+        rules = cfg.mode == "rules"
+        self.features = FeaturePipeline(
+            inventory, profiles, cfg.windows, detectors=set() if rules else None
+        )
+        self.rules = RuleEngine(inventory, self.features.resolver, cfg.windows) if rules else None
         self.correlation = CorrelationEngine(inventory)
         self.router = RiskRouter(cfg.router)
         gate = PolicyGate(inventory, cfg.policy)
@@ -162,6 +167,8 @@ class SocPipeline:
         self.stats["events"] += len(result.events)
         self.stats["dead_letters"] += len(result.dead_letters)
         if result.events:
+            if self.rules is not None:
+                self.rules.add(result.events)
             self.features.add(result.events)
         if clock is not None:
             self.clock = clock
@@ -170,6 +177,8 @@ class SocPipeline:
         if self.clock is None:
             return 0
         self.handle(self.features.advance(self.clock))
+        if self.rules is not None:
+            self.correlate(self.rules.advance(self.clock))
         if self.worker is not None:
             self.worker.tick(self.clock)
         self._tick_approvals()
@@ -180,6 +189,8 @@ class SocPipeline:
         """End of a run: fire every remaining window."""
         with self.lock:
             self.handle(self.features.flush())
+            if self.rules is not None:
+                self.correlate(self.rules.flush())
 
     def close(self) -> None:
         if isinstance(self.worker, ThreadedAgentWorker):
@@ -202,7 +213,11 @@ class SocPipeline:
             return
         if self.drift is not None:
             self.drift.observe(batch.m1_user + batch.m1_ip)
-        scored = self.score(batch)
+        self.correlate(self.score(batch))
+
+    def correlate(self, scored: list[tuple[FeatureRow, Score]]) -> None:
+        if not scored:
+            return
         self.stats["alerts"] += sum(1 for _, s in scored if s.alert)
         for update in self.correlation.ingest(scored, self.now()):
             self._persist_update(update)
