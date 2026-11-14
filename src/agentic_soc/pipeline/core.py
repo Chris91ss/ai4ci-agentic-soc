@@ -40,6 +40,9 @@ class PipelineConfig:
     mode: Mode = "agent"  # baselines: "detectors" (M1-M3 + playbooks), "rules" (rules + playbooks)
     llm: str = "scripted"  # "scripted" or "ollama[:model]"
     seconds_per_llm_call: float = 15.0  # simulated cost of one scripted-analyst LLM call
+    llm_delay_s: float = 0.0  # live mode: wall-clock seconds per scripted call (local-LLM stand-in)
+    consumer_group: str = "ingestion"
+    from_beginning: bool = True  # False: a fresh consumer group starts at the end of the topics
     wall_time_scale: float = 1.0  # real LLM: simulated seconds per wall-clock second
     agent_max_steps: int = 12
     # Unattended runs approve high-impact actions automatically: at once through the policy gate
@@ -60,9 +63,9 @@ class PipelineConfig:
     policy: PolicyConfig = field(default_factory=PolicyConfig)
 
 
-def make_llm(spec: str) -> Any:
+def make_llm(spec: str, delay_s: float = 0.0) -> Any:
     if spec == "scripted":
-        return ScriptedLLM()
+        return ScriptedLLM(delay_s=delay_s)
     if spec.startswith("ollama"):
         _, _, model = spec.partition(":")
         return OllamaLLM(model) if model else OllamaLLM()
@@ -95,7 +98,8 @@ class SocPipeline:
         self.inv = inventory
         self.store = store
         self.detectors = detectors
-        self.ingestion = IngestionService(broker, IngestionStage(inventory), StorageSink(store))
+        self.ingestion = IngestionService(broker, IngestionStage(inventory), StorageSink(store),
+                                          cfg.consumer_group, cfg.from_beginning)  # fmt: skip
         rules = cfg.mode == "rules"
         self.features = FeaturePipeline(
             inventory, profiles, cfg.windows, detectors=set() if rules else None
@@ -132,7 +136,7 @@ class SocPipeline:
         self._retrain_at: datetime | None = None
         self.worker: VirtualTimeAgentWorker | ThreadedAgentWorker | None = None
         if cfg.mode == "agent":
-            llm = make_llm(cfg.llm)
+            llm = make_llm(cfg.llm, cfg.llm_delay_s)
             agent = TriageAgent(llm, self.mcp, max_steps=cfg.agent_max_steps)
             if threaded:
                 self.worker = ThreadedAgentWorker(self, agent)

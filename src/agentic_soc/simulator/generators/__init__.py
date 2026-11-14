@@ -50,6 +50,11 @@ def build_context(
             rng = rng_for(config.enterprise_seed, "ztna-egress")
             pool = ent.allocator.take(rng, config.drift.ztna_netblock, config.drift.ztna_ips)
             planner.remote_egress_override.append((since, pool))
+    if config.burst.enabled:
+        since = config.start + timedelta(hours=config.burst.at_h)
+        planner.surges.append(
+            (since, since + timedelta(hours=config.burst.duration_h), config.burst.factor)
+        )
     return GenContext(
         config=config,
         ent=ent,

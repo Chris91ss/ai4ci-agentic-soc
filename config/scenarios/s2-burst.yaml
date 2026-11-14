@@ -1,0 +1,11 @@
+# Scenario S2 (high load): a burst of user activity, ten times the usual rate for an hour on a
+# working-day afternoon, while the attack is under way.
+duration_h: 48
+burst:
+  enabled: true
+  at_h: 33         # Tuesday 09:00 UTC (11:00 local)
+  duration_h: 1.0
+  factor: 10.0
+campaign:
+  start_offset_h: 31  # Tuesday 07:00 UTC, so the burst hits an active intrusion
+  start_jitter_h: 1.0

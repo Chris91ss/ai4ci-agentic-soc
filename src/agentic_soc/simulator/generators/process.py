@@ -190,7 +190,8 @@ class ProcessGenerator:
                     )
             if not plan.active(t0):
                 continue
-            factor = planner.intensity(hour, plan.shift_h) * (0.3 if plan.in_lunch(t0) else 1.0)
+            factor = planner.intensity(hour, plan.shift_h) * planner.surge(t0)
+            factor *= 0.3 if plan.in_lunch(t0) else 1.0
             pairs, p = self.role_tables[user.role]
             for _ in range(rng.poisson(rate * factor * per_hour)):
                 parent, child = pairs[int(rng.choice(len(pairs), p=p))]

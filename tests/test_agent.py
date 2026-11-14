@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+import time
 from typing import Any
 
 import pytest
@@ -152,6 +153,15 @@ def test_local_llm_triage(setup) -> None:
     result = triage(TriageAgent(llm, server, max_steps=8), mini, mini.top_incident())
     assert result.llm_calls >= 2 and result.tool_calls >= 1
     assert result.ok, result.error
+
+
+def test_scripted_llm_delay() -> None:
+    llm = ScriptedLLM(delay_s=0.05)
+    messages = [{"role": "user", "content": "Triage incident INC-00001 (risk 0.9)."}]
+    started = time.perf_counter()
+    response = llm.chat(messages, tools=[{"type": "function"}])
+    assert time.perf_counter() - started >= 0.05
+    assert response.tool_calls[0].name == "get_incident"
 
 
 def _flow_incident(destination: str) -> dict[str, Any]:

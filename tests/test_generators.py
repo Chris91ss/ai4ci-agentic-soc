@@ -150,3 +150,24 @@ def test_remote_work_shift_moves_egress_and_hours() -> None:
         np.mean([p.start.hour + p.start.minute / 60 for p in after if p.works])
         > np.mean([p.start.hour + p.start.minute / 60 for p in before if p.works]) + 1.0
     )
+
+
+def test_burst_multiplies_user_activity() -> None:
+    base = {"org": {"users": 40}, "duration_h": 6, "seed": 3, "org_seed": 7, "campaign": {"enabled": False},
+            "start": "2026-03-17T08:00:00Z"}  # fmt: skip
+    burst = base | {"burst": {"enabled": True, "at_h": 3, "duration_h": 1, "factor": 6}}
+
+    def per_hour(overrides: dict) -> dict[int, int]:
+        sim = Simulator(load_config(overrides=overrides))
+        counts: dict[int, int] = {}
+        for batch in sim.run():
+            for delivery in batch:
+                if not delivery.duplicate:
+                    hour = int((delivery.true_time - sim.config.start).total_seconds() // 3600)
+                    counts[hour] = counts.get(hour, 0) + 1
+        return counts
+
+    quiet, busy = per_hour(base), per_hour(burst)
+    # Server and infrastructure traffic does not surge, so a small company multiplies less.
+    assert busy[3] > 2 * quiet[3]
+    assert busy[1] == pytest.approx(quiet[1], rel=0.25)

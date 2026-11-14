@@ -79,6 +79,7 @@ class ActivityPlanner:
         self.remote_override: list[tuple[datetime, float]] = []  # (from, remote_prob) for drift
         self.shift_override: list[tuple[datetime, float]] = []  # (from, extra shift hours)
         self.remote_egress_override: list[tuple[datetime, list[str]]] = []  # (from, ZTNA egress)
+        self.surges: list[tuple[datetime, datetime, float]] = []  # (from, until, activity factor)
         self.trips = self._plan_trips()
 
     # ------------------------------------------------------------------ trips
@@ -137,6 +138,14 @@ class ActivityPlanner:
             if t >= since:
                 shift = value
         return shift
+
+    def surge(self, t: datetime) -> float:
+        """Activity multiplier of a load burst (scenario S2) at ``t``."""
+        factor = 1.0
+        for since, until, value in self.surges:
+            if since <= t < until:
+                factor *= value
+        return factor
 
     def remote_egress(self, t: datetime) -> list[str] | None:
         pool = None

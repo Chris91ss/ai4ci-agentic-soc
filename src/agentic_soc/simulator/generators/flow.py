@@ -153,7 +153,8 @@ class FlowGenerator:
             ip = planner.workstation_ip(host.host_id, t0)
             n_web = n_int = 0
             if plan.active(t0):
-                factor = planner.intensity(hour, plan.shift_h) * (0.3 if plan.in_lunch(t0) else 1.0)
+                factor = planner.intensity(hour, plan.shift_h) * planner.surge(t0)
+                factor *= 0.3 if plan.in_lunch(t0) else 1.0
                 n_web = int(rng.poisson(self.cfg.web_per_hour * factor * per_hour))
                 n_int = int(rng.poisson(self.cfg.internal_per_hour * factor * per_hour))
             if ip is None or ctx.control.is_isolated(host.host_id, t0):

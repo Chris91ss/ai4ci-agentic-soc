@@ -280,6 +280,15 @@ class DriftConfig(_Cfg):
     ztna_ips: int = Field(24, ge=1)
 
 
+class BurstConfig(_Cfg):
+    """Scenario S2: a burst of user activity (every user much busier for a while)."""
+
+    enabled: bool = False
+    at_h: float = Field(32.0, ge=0, description="Hours after the start when the burst begins.")
+    duration_h: float = Field(1.0, gt=0)
+    factor: float = Field(10.0, ge=1, description="Activity multiplier during the burst.")
+
+
 class CampaignConfig(_Cfg):
     """The injected intrusion (see :mod:`agentic_soc.simulator.campaign`)."""
 
@@ -335,6 +344,7 @@ class SimulatorConfig(_Cfg):
     delivery: dict[str, DeliverySpec] = Field(default_factory=_default_delivery)
     campaign: CampaignConfig = Field(default_factory=CampaignConfig)
     drift: DriftConfig = Field(default_factory=DriftConfig)
+    burst: BurstConfig = Field(default_factory=BurstConfig)
 
     @model_validator(mode="after")
     def _all_streams_delivered(self) -> SimulatorConfig:

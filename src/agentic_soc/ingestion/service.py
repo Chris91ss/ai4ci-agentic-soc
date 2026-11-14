@@ -168,10 +168,12 @@ class IngestionService:
         stage: IngestionStage,
         sink: EventSink | None = None,
         group: str = "ingestion",
+        from_beginning: bool = True,
     ) -> None:
         self.stage = stage
         self.sink = sink or NullSink()
-        self.consumer = broker.consumer(group, list(topics.STREAM_TOPICS.values()))
+        self.group = group
+        self.consumer = broker.consumer(group, list(topics.STREAM_TOPICS.values()), from_beginning)
         self.producer = broker.producer()
 
     def poll_once(self, max_messages: int = 5000, timeout: float = 0.2) -> IngestResult:

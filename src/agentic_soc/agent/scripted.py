@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import re
+import time
 from datetime import datetime, timedelta
 from typing import Any
 
@@ -31,9 +32,10 @@ def _parse(t: str) -> datetime:
 class ScriptedLLM:
     """Rule-based analyst speaking the chat/tool-calling protocol of the agent."""
 
-    def __init__(self, max_calls: int = 9) -> None:
+    def __init__(self, max_calls: int = 9, delay_s: float = 0.0) -> None:
         self.name = "scripted-analyst"
         self.max_calls = max_calls
+        self.delay_s = delay_s  # wall-clock latency per call, to stand in for a local LLM
 
     # ------------------------------------------------------------------ conversation state
     @staticmethod
@@ -55,6 +57,8 @@ class ScriptedLLM:
 
     def chat(self, messages: list[dict[str, Any]], tools: list[dict[str, Any]] | None = None,
              response_format: dict[str, Any] | None = None) -> LLMResponse:  # fmt: skip
+        if self.delay_s:
+            time.sleep(self.delay_s)
         task = next(m["content"] for m in messages if m["role"] == "user")
         incident_id = re.search(r"incident (\S+?) \(", task).group(1)  # type: ignore[union-attr]
         history = self._history(messages)

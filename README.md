@@ -57,6 +57,11 @@ swapped in:
 uv run soc run --scenario config/scenarios/s1-remote-work.yaml --hours 72 --retrain-on-drift
 ```
 
+Scenario S2 (high load) adds a one-hour burst of user activity, about ten times the usual event
+rate, on a working-day morning while the intrusion is under way. Streamed live through Redpanda
+it shows consumer lag, end-to-end latency and the router shedding incidents to the playbooks
+when the agent cannot keep up (`--scenario config/scenarios/s2-burst.yaml`).
+
 `soc run` writes `data/soc-runs/<mode>-seed<seed>/` with the SOC store (`soc.db`), the run
 summary, the pipeline log and the simulator's ground truth. The agent's latency is charged in
 simulated time, so the attack keeps going while it investigates; high-impact actions are

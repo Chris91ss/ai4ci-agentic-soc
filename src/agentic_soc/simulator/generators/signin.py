@@ -180,7 +180,8 @@ class SigninGenerator:
             if plan.works and t0 <= plan.start < t1:
                 out.extend(self.start_of_day(rng, user, plan))
             if plan.active(t0):
-                factor = planner.intensity(hour, plan.shift_h) * (0.3 if plan.in_lunch(t0) else 1.0)
+                factor = planner.intensity(hour, plan.shift_h) * planner.surge(t0)
+                factor *= 0.3 if plan.in_lunch(t0) else 1.0
                 for _ in range(rng.poisson(self.cfg.sso_per_hour * factor * per_hour)):
                     out.extend(
                         self.sso(rng, user, plan, t0 + timedelta(seconds=float(rng.random()) * dt))
