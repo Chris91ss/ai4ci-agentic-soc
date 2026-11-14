@@ -54,6 +54,21 @@ def iso(t: datetime | None) -> str | None:
     return t.astimezone(UTC).strftime("%Y-%m-%dT%H:%M:%SZ") if t else None
 
 
+def representative(alerts: list[dict[str, Any]], limit: int) -> list[dict[str, Any]]:
+    """The strongest alert of every detector and technique signature first, then the others by
+    score. Dozens of near-identical alerts (a spray hits many accounts) must not push the one
+    alert that names the spraying address out of the view, nor out of an agent's context when
+    it shortens long lists from the end."""
+    ranked = sorted(alerts, key=lambda a: (-a["score"], a["window_end"]))
+    lead: dict[tuple[Any, ...], int] = {}
+    for i, alert in enumerate(ranked):
+        kind = alert.get("model_version") or alert["detector"]
+        lead.setdefault((kind, tuple(sorted(alert["techniques"]))), i)
+    first = set(lead.values())
+    order = sorted(first) + [i for i in range(len(ranked)) if i not in first]
+    return [ranked[i] for i in order[:limit]]
+
+
 def parse_entity(entity: str) -> tuple[str, str]:
     kind, _, value = entity.partition(":")
     if kind not in {"user", "host", "ip"} or not value:
@@ -173,7 +188,8 @@ class SocTools:
                 for t in record["techniques"]
             ],
             "entities": record["entities"],
-            "alerts": [self._alert_view(a) for a in alerts[:max_alerts]],
+            "alerts": [self._alert_view(a) for a in representative(alerts, max_alerts)],
+            "alerts_omitted": max(0, len(alerts) - max_alerts),
             "actions_taken": actions,
         }
 
@@ -421,7 +437,7 @@ class SocTools:
 
 TOOL_DESCRIPTIONS = {
     "get_incident": "Incident summary: status, risk and its breakdown, detectors, ATT&CK techniques, entities, the "
-    "strongest alerts with their scores, explanations and summaries, and actions already taken.",
+    "strongest alerts of each detector and technique (scores, explanations, summaries) and actions already taken.",
     "get_entity_timeline": "Events of an entity (user:<account>, host:<host id> or ip:<address>) between start and "
     "end (ISO 8601, default the 6 hours before now), newest first, across sign-in, flow and process streams.",
     "get_asset_context": "Inventory and baseline context of an entity: role, criticality, owner, usual countries, "

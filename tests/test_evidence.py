@@ -34,8 +34,12 @@ def test_every_decision_stores_its_evidence(agent_run) -> None:
 
 def test_baselines_describe_the_entities(agent_run) -> None:
     store = agent_run.pipeline.store
-    decision = _malicious(agent_run)
-    baselines = store.list_evidence(decision["incident_id"], kind="baseline", limit=500)
+    incidents = {
+        d["incident_id"] for d in store.recent_decisions(500) if d["verdict"] == "malicious"
+    }
+    baselines = [
+        b for i in sorted(incidents) for b in store.list_evidence(i, kind="baseline", limit=500)
+    ]
     users = [b for b in baselines if b["entity"].startswith("user:") and "local_hours" in b["data"]]
     assert users and len(users[0]["data"]["local_hours"]) == 24
     hosts = [b for b in baselines if b["entity"].startswith("host:")]
@@ -83,12 +87,16 @@ def test_rebuilding_a_bundle_refreshes_without_duplicates(agent_run) -> None:
     )
     bundle = builder.build(state, decision, decision_id=999)
     assert bundle.missing == ["AL-doesnotexist"]
-    before = len(pipeline.store.list_evidence(state.incident_id, limit=10_000))
+
+    def keys(items):
+        return [(i["kind"], i["ref_id"]) for i in items]
+
+    before = set(keys(pipeline.store.list_evidence(state.incident_id, limit=10_000)))
     pipeline.store.upsert_evidence(bundle.items)
     pipeline.store.upsert_evidence(bundle.items)
     after = pipeline.store.list_evidence(state.incident_id, limit=10_000)
-    new_refs = {i["ref_id"] for i in bundle.items} - {i["ref_id"] for i in after[:before]}
-    assert len(after) <= before + len(new_refs)
+    assert len(keys(after)) == len(set(keys(after)))  # one row per (kind, reference)
+    assert set(keys(after)) == before | set(keys(bundle.items))
     refreshed = next(i for i in after if i["ref_id"] == alert.alert_id)
     assert refreshed["cited"]
 

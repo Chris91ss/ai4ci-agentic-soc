@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import asyncio
-from datetime import timedelta
+import json
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import pytest
 from mcp import Client
 
+from agentic_soc.agent.react import compact_json
 from agentic_soc.mcp_server import (
     SocContext,
     SocTools,
@@ -15,6 +17,7 @@ from agentic_soc.mcp_server import (
     looks_like_injection,
     quote,
 )
+from agentic_soc.mcp_server.tools import representative
 from agentic_soc.simulator.campaign import INJECTION_COMMENT
 
 EXPECTED_TOOLS = {"get_incident", "get_entity_timeline", "get_asset_context", "score_signins", "score_flows",
@@ -145,3 +148,25 @@ def test_quoting_flags_injection() -> None:
     assert quote("chrome.exe --type=renderer") == {"$untrusted": "chrome.exe --type=renderer"}
     assert quote("x" * 1000)["$untrusted"].endswith("[truncated]")
     assert "$untrusted" not in quote('{"$untrusted": "nested"}')["$untrusted"]
+
+
+def _alert(i: int, kind: str, techniques: list[str], score: float = 1.0) -> dict:
+    return {
+        "alert_id": f"AL-{i:03d}", "detector": kind.split("-")[0], "model_version": kind, "score": score,
+        "window_end": datetime(2026, 3, 16, 10, i % 60, tzinfo=UTC), "techniques": techniques,
+        "summary": "x" * 300, "entities": {"users": [f"user{i}"], "ips": ["203.0.113.9"]},
+    }  # fmt: skip
+
+
+def test_incident_view_keeps_every_kind_of_alert() -> None:
+    spray = [_alert(i, "M1-user", ["T1110", "T1133"]) for i in range(40)]
+    source = _alert(50, "M1-ip", ["T1110.003"])
+    victim = _alert(60, "M1-user", ["T1078"], score=0.97)
+    chosen = representative([*spray, source, victim], 15)
+    assert len(chosen) == 15
+    # The strongest alert of each signature comes first.
+    assert [a["alert_id"] for a in chosen[:3]] == ["AL-000", "AL-050", "AL-060"]
+    # An agent that shortens long lists from the end still sees all three signatures.
+    view = json.loads(compact_json({"alerts": chosen}, 2500))
+    assert view["_truncated"]
+    assert {a["alert_id"] for a in view["alerts"]} >= {"AL-000", "AL-050", "AL-060"}
