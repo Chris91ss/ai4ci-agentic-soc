@@ -6,20 +6,7 @@ from agentic_soc.pipeline import InProcessRun, PipelineConfig, RunOutcome
 from agentic_soc.pipeline.staging import StagedActions
 from agentic_soc.simulator import Simulator, load_config
 from agentic_soc.storage import Store
-from conftest import MINI
-
-# Same company as the fixture's training run (seed 7), different activity and attack timing.
-RUN = MINI | {"seed": 11, "org_seed": 7}
-
-
-def closed_loop(mini_soc, **config) -> RunOutcome:
-    sim = Simulator(load_config(overrides=RUN))
-    return InProcessRun(sim, mini_soc.detectors, PipelineConfig(**config)).run()
-
-
-@pytest.fixture(scope="module")
-def agent_run(mini_soc) -> RunOutcome:
-    return closed_loop(mini_soc, mode="agent")
+from conftest import MINI, RUN, closed_loop
 
 
 @pytest.fixture(scope="module")

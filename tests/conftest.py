@@ -133,3 +133,20 @@ def mini_soc() -> MiniSoc:
         malicious,
         sim.clock,
     )
+
+
+# Same company as the fixture's training run (seed 7), different activity and attack timing.
+RUN = MINI | {"seed": 11, "org_seed": 7}
+
+
+def closed_loop(soc: MiniSoc, **config):
+    from agentic_soc.pipeline import InProcessRun, PipelineConfig
+
+    sim = Simulator(load_config(overrides=RUN))
+    return InProcessRun(sim, soc.detectors, PipelineConfig(**config)).run()
+
+
+@pytest.fixture(scope="session")
+def agent_run(mini_soc: MiniSoc):
+    """A closed-loop run of the mini SOC with the scripted analyst as the triage agent."""
+    return closed_loop(mini_soc, mode="agent")

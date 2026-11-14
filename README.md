@@ -20,6 +20,7 @@ RFC: [docs/rfc/0001-agentic-soc.pdf](docs/rfc/0001-agentic-soc.pdf) (source: [do
 | MCP server and policy gate | `agentic_soc.mcp_server`, `agentic_soc.actions` | done |
 | Local-LLM triage agent (ReAct) | `agentic_soc.agent` | done |
 | Closed-loop pipeline (in-process and live on the broker) | `agentic_soc.pipeline` | done |
+| Evidence bundles behind every verdict, analyst feedback and FP statistics | `agentic_soc.evidence` | done |
 | FastAPI backend and Next.js SOC console | `agentic_soc.api`, `web/` | planned |
 | Evaluation (model level, end to end, S1 drift, S2 load) | `agentic_soc.evaluation` | planned |
 

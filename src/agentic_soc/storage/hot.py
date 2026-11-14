@@ -125,9 +125,10 @@ class SecurityObjects:
                 .values(incident_id=to_incident)
             )
 
-    def add_decision(self, record: dict[str, Any]) -> None:
+    def add_decision(self, record: dict[str, Any]) -> int:
         with self.engine.begin() as conn:
-            conn.execute(insert(s.decisions), [record])
+            result = conn.execute(insert(s.decisions).values(**record))
+            return int(result.inserted_primary_key[0])
 
     def decisions_for(self, incident_id: str) -> list[dict[str, Any]]:
         query = (
@@ -156,6 +157,107 @@ class SecurityObjects:
         )
         with self.engine.connect() as conn:
             return [dict(r) for r in conn.execute(query).mappings()]
+
+    # ------------------------------------------------------------------ evidence
+    def upsert_evidence(self, rows: list[dict[str, Any]]) -> None:
+        """One row per (incident, kind, reference): a later decision refreshes the data and
+        keeps earlier citations."""
+        ev = s.evidence
+        by_incident: dict[str, list[dict[str, Any]]] = {}
+        for row in rows:
+            by_incident.setdefault(row["incident_id"], []).append(row)
+        with self.engine.begin() as conn:
+            for incident_id, items in by_incident.items():
+                existing = {
+                    (r.kind, r.ref_id): (r.id, r.cited)
+                    for r in conn.execute(
+                        select(ev.c.id, ev.c.kind, ev.c.ref_id, ev.c.cited).where(
+                            ev.c.incident_id == incident_id
+                        )
+                    )
+                }
+                fresh = []
+                for item in items:
+                    row = item | {"data": _jsonable(item["data"]), "cited": bool(item["cited"])}
+                    hit = existing.get((row["kind"], row["ref_id"]))
+                    if hit is None:
+                        fresh.append(row)
+                        existing[(row["kind"], row["ref_id"])] = (-1, row["cited"])
+                    else:
+                        values = row | {"cited": row["cited"] or bool(hit[1])}
+                        conn.execute(ev.update().where(ev.c.id == hit[0]).values(**values))
+                if fresh:
+                    conn.execute(insert(ev), fresh)
+
+    def list_evidence(
+        self,
+        incident_id: str,
+        kind: str | None = None,
+        entity: str | None = None,
+        stream: str | None = None,
+        detector: str | None = None,
+        start: datetime | None = None,
+        end: datetime | None = None,
+        cited: bool | None = None,
+        limit: int = 500,
+    ) -> list[dict[str, Any]]:
+        """Evidence of an incident filtered by entity, stream, detector and time window."""
+        t = s.evidence.c
+        query = select(s.evidence).where(t.incident_id == incident_id)
+        if kind:
+            query = query.where(t.kind == kind)
+        if entity:
+            query = query.where(t.entity == entity)
+        if stream:
+            query = query.where(t.stream == stream)
+        if detector:
+            query = query.where(t.detector == detector)
+        if start:
+            query = query.where(t.time >= start)
+        if end:
+            query = query.where(t.time < end)
+        if cited is not None:
+            query = query.where(t.cited == cited)
+        query = query.order_by(t.cited.desc(), t.time, t.id).limit(limit)
+        with self.engine.connect() as conn:
+            return [dict(r) for r in conn.execute(query).mappings()]
+
+    # ------------------------------------------------------------------ analyst feedback
+    def add_feedback(self, rows: list[dict[str, Any]]) -> None:
+        if rows:
+            with self.engine.begin() as conn:
+                conn.execute(insert(s.feedback), rows)
+
+    def list_feedback(
+        self, incident_id: str | None = None, alert_id: str | None = None, limit: int = 5000
+    ) -> list[dict[str, Any]]:
+        t = s.feedback.c
+        query = select(s.feedback)
+        if incident_id:
+            query = query.where(t.incident_id == incident_id)
+        if alert_id:
+            query = query.where(t.alert_id == alert_id)
+        query = query.order_by(t.id).limit(limit)
+        with self.engine.connect() as conn:
+            return [dict(r) for r in conn.execute(query).mappings()]
+
+    def alert_counts(self) -> list[dict[str, Any]]:
+        """Alerts per detector and feature kind (kept in ``model_version``)."""
+        t = s.alerts.c
+        query = select(t.detector, t.model_version, func.count().label("alerts")).group_by(
+            t.detector, t.model_version
+        )
+        with self.engine.connect() as conn:
+            return [dict(r) for r in conn.execute(query).mappings()]
+
+    def alerts_by_ids(self, alert_ids: Iterable[str]) -> list[dict[str, Any]]:
+        ids = list(dict.fromkeys(alert_ids))
+        out: list[dict[str, Any]] = []
+        with self.engine.connect() as conn:
+            for chunk in range(0, len(ids), 500):
+                query = select(s.alerts).where(s.alerts.c.alert_id.in_(ids[chunk : chunk + 500]))
+                out += [dict(r) for r in conn.execute(query).mappings()]
+        return out
 
     def upsert_action(self, action: dict[str, Any]) -> None:
         self._upsert(s.actions, "action_id", action)
@@ -364,6 +466,32 @@ class Store(SecurityObjects):
         for key in ("flows", "sources", "bytes_to_ip", "bytes_from_ip", "blocked"):
             row[key] = int(row[key] or 0)
         return row
+
+    def flow_volume(self, src_ips: Iterable[str], start: datetime, end: datetime) -> dict[str, Any]:
+        """Traffic sent by a set of addresses in a window (a host's traffic baseline)."""
+        ips = list(dict.fromkeys(src_ips))
+        out = {
+            "flows": 0,
+            "bytes_out": 0,
+            "bytes_in": 0,
+            "destinations": 0,
+            "external_destinations": 0,
+        }
+        if not ips:
+            return out
+        fl = s.flow_events.c
+        query = select(
+            func.count().label("flows"),
+            func.coalesce(func.sum(fl.bytes_out), 0).label("bytes_out"),
+            func.coalesce(func.sum(fl.bytes_in), 0).label("bytes_in"),
+            func.count(func.distinct(fl.dst_ip)).label("destinations"),
+            func.count(func.distinct(case((fl.dst_zone == "external", fl.dst_ip)))).label(
+                "external_destinations"
+            ),
+        ).where(fl.src_ip.in_(ips), fl.event_time >= start, fl.event_time < end)
+        with self.engine.connect() as conn:
+            row = conn.execute(query).mappings().one()
+        return {key: int(row[key] or 0) for key in out}
 
     def stream_counts(
         self, start: datetime, end: datetime, bucket_s: int = 300

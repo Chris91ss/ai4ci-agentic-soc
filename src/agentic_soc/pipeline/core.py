@@ -16,6 +16,7 @@ from agentic_soc.broker.base import Broker
 from agentic_soc.correlation import CorrelationEngine, IncidentState, IncidentUpdate
 from agentic_soc.detectors.base import Score
 from agentic_soc.detectors.service import DetectorClient
+from agentic_soc.evidence import EvidenceBuilder
 from agentic_soc.features import FeatureBatch, FeaturePipeline, FeatureRow, Profiles, WindowConfig
 from agentic_soc.ingestion import IngestionService, IngestionStage, IngestResult, Inventory
 from agentic_soc.mcp_server import SocContext, SocTools, build_server
@@ -101,6 +102,7 @@ class SocPipeline:
             lock=self.lock if threaded else None,
         )
         self.mcp = build_server(SocTools(self.ctx))
+        self.evidence = EvidenceBuilder(store, inventory, profiles, self.features.resolver)
         self.worker: VirtualTimeAgentWorker | ThreadedAgentWorker | None = None
         if cfg.mode == "agent":
             llm = make_llm(cfg.llm)
@@ -274,6 +276,8 @@ class SocPipeline:
             note=note or "",
             original=result.decision,
             injection_seen=result.injection_seen,
+            steps=result.steps,
+            started=job.started,
         )
         # The decision reflects the incident as the agent first saw it; anything that arrived
         # meanwhile (a new tactic, a jump in risk) sends it back to the queue.
@@ -290,6 +294,8 @@ class SocPipeline:
         note: str = "",
         original: Decision | None = None,
         injection_seen: bool = False,
+        steps: list[Any] | None = None,
+        started: datetime | None = None,
     ) -> None:
         now = self.now()
         evidence_ids = [e.id for e in decision.evidence]
@@ -318,8 +324,14 @@ class SocPipeline:
             "latency_s": round(latency_s, 2),
             "created_at": now,
         }
-        self.store.add_decision(record)
+        record["id"] = self.store.add_decision(record)
         self.decisions.append(record)
+        bundle = self.evidence.build(state, decision, record["id"], steps, started or now)
+        self.store.upsert_evidence(bundle.items)
+        self.stats["evidence_items"] += len(bundle.items)
+        if bundle.missing:
+            self.stats["evidence_missing"] += len(bundle.missing)
+            self._log("evidence_missing", incident_id=state.incident_id, ids=bundle.missing)
         actor = f"agent:{model}" if decided_by == "agent" else decided_by
         actions = [a.model_dump() for a in decision.all_actions()]
         self.store.audit(actor, "decide", "incident", state.incident_id,
