@@ -93,6 +93,11 @@ def test_describe_other_patterns() -> None:
         row(np.array([sweep[n] for n in NAMES]), "10.10.1.5|10.20.1.11|445")
     )
     assert techniques == ["T1018"] and "45 destinations" in summary
+    inbound = dict.fromkeys(NAMES, 0.0) | {"dir_inbound": 1, "n_flows": 14, "port_web": 1}
+    techniques, summary = M2Detector.describe(
+        row(np.array([inbound[n] for n in NAMES]), "45.32.1.2|172.16.10.17|443")
+    )
+    assert techniques == ["T1133"] and "inbound" in summary
 
 
 def test_save_and_load(trained, tmp_path) -> None:

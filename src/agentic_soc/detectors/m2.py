@@ -171,6 +171,12 @@ class M2Detector(Detector):
                 f"Network sweep from {src}: {int(f['src_distinct_dsts'])} destinations, "
                 f"{int(f['src_distinct_ports'])} ports, {f['src_small_share']:.0%} tiny flows",
             )
+        if f["dir_inbound"]:
+            return (
+                ["T1133"],
+                f"Repeated inbound connections from {src} to {dst}: {int(f['n_flows'])} flows, "
+                f"{f['src_distinct_dsts']:.0f} internal targets",
+            )
         if f["dir_internal"] and (f["port_smb"] or f["port_rpc"]):
             return (
                 ["T1021.002"],

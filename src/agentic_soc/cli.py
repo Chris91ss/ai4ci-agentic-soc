@@ -275,6 +275,91 @@ def etl_replay(
 
 
 @app.command()
+def train(
+    data: Path = typer.Option(Path("data"), help="Data root built by `soc etl build`."),
+    models: Path = typer.Option(Path("models"), help="Model registry."),
+    only: list[str] | None = typer.Option(None, help="Train only these detectors (M1, M2, M3)."),
+    promote: bool = typer.Option(True, help="Promote the new versions."),
+    seed: int = typer.Option(0, help="Training seed."),
+) -> None:
+    """Train M1-M3 on the time-split datasets and store them in the model registry."""
+    import time
+
+    from rich.table import Table
+
+    from agentic_soc.detectors.registry import ModelRegistry
+    from agentic_soc.detectors.training import train_m1, train_m2, train_m3
+
+    registry = ModelRegistry(models)
+    features = data / "features"
+    jobs = {
+        "M1": lambda: train_m1(features, seed=seed),
+        "M2": lambda: train_m2(features, seed=seed),
+        "M3": lambda: train_m3(features, data / "lake"),
+    }
+    table = Table(title="validation week (thresholds at target FPR)")
+    for column in (
+        "detector",
+        "version",
+        "kind",
+        "threshold",
+        "TP",
+        "FP",
+        "positives",
+        "rows",
+        "seconds",
+    ):
+        table.add_column(column)
+    for name, job in jobs.items():
+        if only and name not in only:
+            continue
+        started = time.perf_counter()
+        detector, report = job()
+        registry.save(detector, promote=promote)
+        validation = report["validation"]
+        per_kind = validation if name == "M1" else {name: validation}
+        for kind, v in per_kind.items():
+            table.add_row(name, detector.version, kind, f"{v['threshold']:.5f}", str(v["true_positives"]),
+                          str(v["false_positives"]), str(v["positives"]), f"{v['rows']:,}",
+                          f"{time.perf_counter() - started:.1f}")  # fmt: skip
+    console.print(table)
+
+
+@app.command()
+def models(
+    models: Path = typer.Option(Path("models"), help="Model registry."),
+    promote: str | None = typer.Option(None, help="Promote DETECTOR:VERSION (rollback)."),
+) -> None:
+    """List model versions or promote one."""
+    from agentic_soc.detectors.registry import ModelRegistry
+
+    registry = ModelRegistry(models)
+    if promote:
+        name, version = promote.split(":", 1)
+        registry.promote(name, version)
+        console.print(f"promoted {name} {version}")
+    for name in ("M1", "M2", "M3"):
+        for info in registry.versions(name):
+            marker = "*" if info["current"] else " "
+            console.print(f"{marker} {name} {info['version']} thresholds={info['thresholds']}")
+
+
+@app.command("serve-detectors")
+def serve_detectors(
+    host: str = typer.Option("127.0.0.1"),
+    port: int = typer.Option(8001),
+    models: Path = typer.Option(Path("models"), help="Model registry."),
+) -> None:
+    """Serve M1-M3 over REST (POST /score/{M1|M2|M3})."""
+    import uvicorn
+
+    from agentic_soc.detectors.registry import ModelRegistry
+    from agentic_soc.detectors.service import create_app
+
+    uvicorn.run(create_app(ModelRegistry(models)), host=host, port=port, log_level="info")
+
+
+@app.command()
 def calibrate(
     lanl_auth: Path | None = typer.Option(None, help="LANL auth.txt[.gz]"),
     lanl_flows: Path | None = typer.Option(None, help="LANL flows.txt[.gz]"),
