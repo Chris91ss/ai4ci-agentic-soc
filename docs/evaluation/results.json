@@ -153,7 +153,7 @@
    }
   }
  },
- "generated": "2026-11-14 16:03 UTC",
+ "generated": "2026-11-14 16:16 UTC",
  "e2e": {
   "runs": [
    {
@@ -4048,5 +4048,146 @@
     }
    }
   }
- }
+ },
+ "s2": [
+  {
+   "phases": {
+    "before": {
+     "samples": 339,
+     "stream_lag_s_p50": 0.2,
+     "stream_lag_s_p95": 60.3,
+     "stream_lag_s_max": 62.1,
+     "stream_lag_wall_s_p95": 1.0,
+     "consumer_lag_max": 18683,
+     "consumer_lag_p95": 307,
+     "events_per_wall_s": 228.9,
+     "agent_queue_max": 1
+    },
+    "burst": {
+     "samples": 112,
+     "stream_lag_s_p50": 0.0,
+     "stream_lag_s_p95": 60.0,
+     "stream_lag_s_max": 60.1,
+     "stream_lag_wall_s_p95": 1.0,
+     "consumer_lag_max": 3229,
+     "consumer_lag_p95": 3131,
+     "events_per_wall_s": 3003.7,
+     "agent_queue_max": 1
+    },
+    "after": {
+     "samples": 233,
+     "stream_lag_s_p50": 0.1,
+     "stream_lag_s_p95": 60.2,
+     "stream_lag_s_max": 61.0,
+     "stream_lag_wall_s_p95": 1.0,
+     "consumer_lag_max": 970,
+     "consumer_lag_p95": 336,
+     "events_per_wall_s": 299.7,
+     "agent_queue_max": 1
+    }
+   },
+   "routes": {
+    "log": 26,
+    "agent": 15
+   },
+   "routes_during_burst": {
+    "agent": 6,
+    "log": 18
+   },
+   "event_rate_multiplier": 10.9,
+   "shed_to_playbooks": 0,
+   "shed_during_burst": 0,
+   "agent_timeouts": 0,
+   "breaker_trips": 0,
+   "decisions": {
+    "agent": 15
+   },
+   "events": 260956,
+   "campaign": {
+    "status": "stalled",
+    "stall_reason": "foothold WS-0158 isolated before credential_access",
+    "exfil_gb": 0.0
+   },
+   "burst": {
+    "start": "2026-03-17T08:00:00+00:00",
+    "end": "2026-03-17T09:00:00+00:00",
+    "factor": 11.5
+   },
+   "seed": 501,
+   "speed": 60.0,
+   "factor": 11.5,
+   "triage_s": 60.0,
+   "llm_slowdown": 1.0
+  },
+  {
+   "phases": {
+    "before": {
+     "samples": 339,
+     "stream_lag_s_p50": 0.2,
+     "stream_lag_s_p95": 60.3,
+     "stream_lag_s_max": 61.6,
+     "stream_lag_wall_s_p95": 1.0,
+     "consumer_lag_max": 42059,
+     "consumer_lag_p95": 305,
+     "events_per_wall_s": 228.3,
+     "agent_queue_max": 1
+    },
+    "burst": {
+     "samples": 111,
+     "stream_lag_s_p50": 0.0,
+     "stream_lag_s_p95": 60.0,
+     "stream_lag_s_max": 60.0,
+     "stream_lag_wall_s_p95": 1.0,
+     "consumer_lag_max": 3228,
+     "consumer_lag_p95": 3133,
+     "events_per_wall_s": 3041.9,
+     "agent_queue_max": 1
+    },
+    "after": {
+     "samples": 232,
+     "stream_lag_s_p50": 0.1,
+     "stream_lag_s_p95": 60.2,
+     "stream_lag_s_max": 61.4,
+     "stream_lag_wall_s_p95": 1.0,
+     "consumer_lag_max": 3017,
+     "consumer_lag_p95": 323,
+     "events_per_wall_s": 323.2,
+     "agent_queue_max": 1
+    }
+   },
+   "routes": {
+    "log": 26,
+    "agent": 15
+   },
+   "routes_during_burst": {
+    "agent": 6,
+    "log": 18
+   },
+   "event_rate_multiplier": 10.91,
+   "shed_to_playbooks": 0,
+   "shed_during_burst": 0,
+   "agent_timeouts": 4,
+   "breaker_trips": 1,
+   "decisions": {
+    "agent": 11,
+    "playbook": 4
+   },
+   "events": 261077,
+   "campaign": {
+    "status": "stalled",
+    "stall_reason": "foothold WS-0158 isolated before credential_access",
+    "exfil_gb": 0.0
+   },
+   "burst": {
+    "start": "2026-03-17T08:00:00+00:00",
+    "end": "2026-03-17T09:00:00+00:00",
+    "factor": 11.5
+   },
+   "seed": 501,
+   "speed": 60.0,
+   "factor": 11.5,
+   "triage_s": 60.0,
+   "llm_slowdown": 4.0
+  }
+ ]
 }

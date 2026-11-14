@@ -1,6 +1,6 @@
 # Evaluation
 
-Generated 2026-11-14 16:03 UTC. Raw numbers: [results.json](results.json).
+Generated 2026-11-14 16:16 UTC. Raw numbers: [results.json](results.json).
 
 ## Model level (M1-M3)
 
@@ -77,3 +77,19 @@ False M1 alerts are sign-in alerts without attack events. Busy hours have at lea
 | Agent, M1 retrained on drift | 301 | 4.0 | 0.46 / 0.78 | 14.17 | 2.25 (2.9x) | 30.0 | 2 | 0 | command_and_control | 0.00 |
 | Agent, M1 retrained on drift | 302 | 4.0 | 0.54 / 0.88 | 13.83 | 2.67 (3.1x) | – | 2 | 0 | command_and_control | 0.00 |
 | Agent, M1 retrained on drift | 303 | 4.0 | 0.71 / 1.25 | 14.17 | 1.75 (1.4x) | 25.0 | 2 | 0 | command_and_control | 0.00 |
+
+## S2: high load (10x event burst)
+
+| Variant | Phase | Events consumed / wall s | Stream lag p50 (sim s) | Stream lag p95 (sim s) | Stream lag p95 (wall s) | Consumer lag max (msgs) | Agent queue max |
+|---|---|---|---|---|---|---|---|
+| LLM ×1 in burst | before | 229 | 0 | 60 | 1.00 | 18683 | 1 |
+| LLM ×1 in burst | burst | 3004 | 0 | 60 | 1.00 | 3229 | 1 |
+| LLM ×1 in burst | after | 300 | 0 | 60 | 1.00 | 970 | 1 |
+| LLM ×4 in burst | before | 228 | 0 | 60 | 1.00 | 42059 | 1 |
+| LLM ×4 in burst | burst | 3042 | 0 | 60 | 1.00 | 3228 | 1 |
+| LLM ×4 in burst | after | 323 | 0 | 60 | 1.00 | 3017 | 1 |
+
+| Variant | Event rate in burst | Routes (agent / playbook) | Shed to playbooks | Agent timeouts | Breaker trips | Decisions (agent / playbook) | Campaign |
+|---|---|---|---|---|---|---|---|
+| LLM ×1 in burst | ×10.9 | 15 / 0 | 0 | 0 | 0 | 15 / 0 | stalled (foothold WS-0158 isolated before credential_access) |
+| LLM ×4 in burst | ×10.9 | 15 / 0 | 0 | 4 | 1 | 11 / 4 | stalled (foothold WS-0158 isolated before credential_access) |

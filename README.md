@@ -159,3 +159,10 @@ checks where a suspicious sign-in came from before revoking sessions, so in neit
 did the look-alike sign-ins through the company's ZTNA egress lead to a false containment, and
 every intrusion was stopped before exfiltration.
 
+**S2, high load (Redpanda, 60× real time).** A one-hour burst raised the event rate 10.9-fold,
+to about 3,000 events per second. The pipeline kept up: the p95 stream lag stayed at the
+simulator's one-minute tick and the consumer lag peaked at about 3,200 messages, around one
+second of input. With the local LLM four times slower during the burst, 4 of 15 triages timed
+out, the circuit breaker opened once and the playbooks decided those incidents; the intrusion was
+stopped before credential access in both runs.
+
