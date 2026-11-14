@@ -117,6 +117,22 @@ class SecurityObjects:
         with self.engine.connect() as conn:
             return [dict(r) for r in conn.execute(query).mappings()]
 
+    def upsert_action(self, action: dict[str, Any]) -> None:
+        self._upsert(s.actions, "action_id", action)
+
+    def list_actions(
+        self, incident_id: str | None = None, status: Iterable[str] | None = None, limit: int = 500
+    ) -> list[dict[str, Any]]:
+        t = s.actions.c
+        query = select(s.actions)
+        if incident_id:
+            query = query.where(t.incident_id == incident_id)
+        if status:
+            query = query.where(t.status.in_(list(status)))
+        query = query.order_by(t.created_at.desc()).limit(limit)
+        with self.engine.connect() as conn:
+            return [dict(r) for r in conn.execute(query).mappings()]
+
     def count_alerts(self) -> int:
         with self.engine.connect() as conn:
             return int(conn.execute(select(func.count()).select_from(s.alerts)).scalar_one())
