@@ -190,7 +190,14 @@ NETBLOCKS: list[Netblock] = [
     Netblock(
         "185.220.100.0/22", "DE", "Berlin", 52.52, 13.40, 60729, "Tor exit relays", "anonymizer"
     ),
+    # Consumer VPN exits (privacy-minded staff), indistinguishable by ASN from rented servers.
+    Netblock("89.36.76.0/22", "RO", "Bucharest", 44.43, 26.10, 9009, "M247", "hosting"),
+    Netblock("146.70.0.0/16", "DE", "Frankfurt", 50.11, 8.68, 9009, "M247 Europe", "hosting"),
+    Netblock(
+        "185.156.172.0/22", "NL", "Amsterdam", 52.37, 4.90, 60068, "Datacamp Limited", "hosting"
+    ),
 ]
+CONSUMER_VPN_BLOCKS = ["89.36.76.0/22", "146.70.0.0/16", "185.156.172.0/22"]
 
 
 @dataclass(frozen=True, slots=True)

@@ -101,6 +101,7 @@ class SigninGenerator:
         control = self.ctx.control
         user_field = kwargs.pop("user")
         reason = kwargs.pop("retry_reason", "bad_password")
+        retry_user = kwargs.pop("retry_user", None)
         if control.is_disabled(account, t):
             return [
                 self.make(
@@ -136,16 +137,27 @@ class SigninGenerator:
             events.append(
                 self.make(
                     t,
-                    user_field,
+                    retry_user or user_field,
                     src_ip,
                     outcome="failure",
-                    failure_reason=reason,
+                    failure_reason="unknown_user" if retry_user else reason,
                     **kwargs | {"tag": "typo"},
                 )
             )
             t = t + timedelta(seconds=12)
         events.append(self.make(t, user_field, src_ip, **kwargs))
         return events  # fmt: skip
+
+    def mistyped(self, rng: np.random.Generator, name: str) -> str | None:
+        """Username with two adjacent letters swapped (a typo in the account, not the password)."""
+        if rng.random() >= self.look.username_typo_share:
+            return None
+        local, _, domain = name.partition("@")
+        if len(local) < 4:
+            return None
+        i = int(rng.integers(1, len(local) - 2))
+        swapped = local[:i] + local[i + 1] + local[i] + local[i + 2 :]
+        return f"{swapped}@{domain}" if domain else swapped
 
     def desktop(self, user: User):
         return user.devices[0]
@@ -203,12 +215,13 @@ class SigninGenerator:
         typo = self.look.typos and rng.random() < self.typo_prob
         out: list[SimEvent] = []
         if plan.vpn_ip:
-            tag = "travel" if plan.trip else "remote_vpn"
+            tag = "travel" if plan.trip else ("consumer_vpn" if plan.consumer_vpn else "remote_vpn")
             out += self.guarded(
                 t, user.user_id, plan.public_ip,
                 dict(user=user.upn, app="vpn", logon_type="vpn", auth_protocol="password",
                      source="vpn", mfa=True, user_agent=VPN_CLIENT_UA,
-                     device_id=self.desktop(user).device_id, assigned_ip=plan.vpn_ip, tag=tag),
+                     device_id=self.desktop(user).device_id, assigned_ip=plan.vpn_ip, tag=tag,
+                     retry_user=self.mistyped(rng, user.upn) if typo else None),
                 retry=typo,
             )  # fmt: skip
             ws_ip = plan.vpn_ip
@@ -240,14 +253,15 @@ class SigninGenerator:
         device = self.mobile(user) if on_mobile else self.desktop(user)
         mfa = bool(rng.random() < self.cfg.mfa_prob)
         retry = self.look.typos and rng.random() < self.retry_fail_prob
-        reason = "mfa_timeout" if rng.random() < 0.5 else "bad_password"
-        tag = "travel" if plan.trip else None
+        reason = str(rng.choice(["bad_password", "mfa_timeout", "mfa_denied"], p=[0.45, 0.4, 0.15]))
+        tag = "travel" if plan.trip else ("consumer_vpn" if plan.consumer_vpn else None)
+        retry_user = self.mistyped(rng, user.upn) if retry and reason == "bad_password" else None
         return self.guarded(
             t, user.user_id, plan.public_ip,
             dict(user=user.upn, app=app, logon_type="sso",
                  auth_protocol="saml" if app in _SAML_APPS else "oauth", mfa=mfa,
                  user_agent=device.user_agent, device_id=device.device_id, tag=tag,
-                 retry_reason=reason),
+                 retry_reason=reason, retry_user=retry_user),
             retry=retry,
         )  # fmt: skip
 

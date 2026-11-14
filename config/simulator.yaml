@@ -16,6 +16,7 @@ org:
   home_country: RO
   users: 200                    # one workstation per user + 50 servers = 250 hosts
   weak_password_share: 0.04     # accounts that fall to a password spray
+  consumer_vpn_share: 0.05      # staff who route home traffic through a consumer VPN
   offices:
     - {name: HQ, city: Cluj-Napoca, country: RO, lat: 46.77, lon: 23.60, egress_netblock: 193.226.51.0/24, share: 0.65}
     - {name: Bucharest, city: Bucharest, country: RO, lat: 44.43, lon: 26.10, egress_netblock: 82.77.140.0/24, share: 0.35}
@@ -51,6 +52,11 @@ activity:
 # Benign behaviour that resembles attack steps (hard negatives for the detectors).
 lookalikes:
   typos: true                    # failed password followed by a success
+  username_typo_share: 0.25      # ...or a mistyped username (unknown_user)
+  consumer_vpn: true             # home sign-ins from consumer VPN exits (hosting ASNs)
+  intune_scripts: true           # SYSTEM PowerShell with -EncodedCommand from Intune
+  admin_psexec: true             # PsExec during the patch-night maintenance
+  archive_jobs: true             # nightly 7-Zip log archiving on file servers
   travel: true                   # multi-day trips abroad, VPN from foreign ISPs
   remote_vpn: true
   admin_rdp: true                # admins RDP to servers through jump hosts

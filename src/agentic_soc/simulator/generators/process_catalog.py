@@ -31,6 +31,11 @@ WORKSTATION_COMMON: list[Launch] = [
     ("explorer.exe", "rundll32.exe", 0.25),
     ("svchost.exe", "rundll32.exe", 0.2),
 ]
+# Intune management extension: scripts run as SYSTEM with -EncodedCommand.
+INTUNE: list[Launch] = [
+    ("IntuneManagementExtension.exe", "AgentExecutor.exe", 0.06),
+    ("AgentExecutor.exe", "powershell.exe", 0.06),
+]
 
 ROLE_EXTRA: dict[str, list[Launch]] = {
     "engineering": [
@@ -164,6 +169,7 @@ BACKUP_JOB: list[tuple[str, str]] = [
     ("BackupAgent.exe", "BackupUpload.exe"),
 ]
 
+SYSTEM_PARENTS = {"services.exe", "IntuneManagementExtension.exe", "AgentExecutor.exe"}
 SYSTEM_PROCESSES = {
     "services.exe", "svchost.exe", "taskhostw.exe", "backgroundTaskHost.exe", "RuntimeBroker.exe",
     "MpCmdRun.exe", "wuauclt.exe", "SearchProtocolHost.exe", "WmiPrvSE.exe", "TiWorker.exe",
@@ -171,7 +177,7 @@ SYSTEM_PROCESSES = {
     "sqlceip.exe", "disp+work.exe", "MSExchangeTransport.exe", "EdrManager.exe", "WsusService.exe",
     "spoolsv.exe", "PrintIsolationHost.exe", "BackupAgent.exe", "vssadmin.exe", "robocopy.exe",
     "BackupUpload.exe", "sihost.exe", "ctfmon.exe", "userinit.exe", "rdpclip.exe", "csc.exe",
-    "w3wp.exe", "bcp.exe",
+    "w3wp.exe", "bcp.exe", "IntuneManagementExtension.exe", "AgentExecutor.exe",
 }  # fmt: skip
 
 IMAGE_DIRS = {
@@ -204,6 +210,10 @@ IMAGE_DIRS = {
     "sqlceip.exe": r"C:\Program Files\Microsoft SQL Server\MSSQL16.MSSQLSERVER\MSSQL\Binn",
     "bcp.exe": r"C:\Program Files\Microsoft SQL Server\Client SDK\ODBC\170\Tools\Binn",
     "7z.exe": r"C:\Program Files\7-Zip",
+    "7za.exe": r"C:\Program Files\7-Zip",
+    "IntuneManagementExtension.exe": r"C:\Program Files (x86)\Microsoft Intune Management Extension",
+    "AgentExecutor.exe": r"C:\Program Files (x86)\Microsoft Intune Management Extension",
+    "PSEXESVC.exe": r"C:\Windows",
 }
 LINUX_DIRS = {
     "bash": "/usr/bin", "python3": "/usr/bin", "curl": "/usr/bin", "logrotate": "/usr/sbin",
@@ -283,5 +293,33 @@ COMMAND_LINES: dict[str, list[str]] = {
     "whoami.exe": ["whoami.exe", "whoami.exe /groups"],
     "7z.exe": ['"{image}" x C:\\Users\\{user}\\Downloads\\release-{n}.zip -oC:\\work\\release-{n}'],
 }
+
+# Command lines that depend on the parent as well as the child.
+PAIR_COMMAND_LINES: dict[tuple[str, str], list[str]] = {
+    ("AgentExecutor.exe", "powershell.exe"): [
+        "powershell.exe -NoProfile -ExecutionPolicy Bypass -EncodedCommand {b64}",
+    ],
+    ("IntuneManagementExtension.exe", "AgentExecutor.exe"): [
+        '"{image}" -powershell "C:\\Program Files (x86)\\Microsoft Intune Management Extension\\Policies\\Scripts\\{guid}.ps1"',
+    ],
+}
+INTUNE_SCRIPTS = [
+    "Get-ItemProperty HKLM:\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\* | Select-Object DisplayName, DisplayVersion | ConvertTo-Json | Out-File C:\\ProgramData\\Intune\\apps.json",
+    "Get-BitLockerVolume | Select-Object MountPoint, ProtectionStatus | ConvertTo-Json",
+    "if ((Get-MpComputerStatus).AntivirusSignatureAge -gt 3) { Update-MpSignature }",
+    "Get-WindowsUpdateLog -LogPath C:\\ProgramData\\Intune\\wu.log; exit 0",
+]
+ARCHIVE_JOB: list[tuple[str, str, str]] = [
+    ("svchost.exe", "cmd.exe", "cmd.exe /c C:\\Scripts\\archive-logs.cmd"),
+    (
+        "cmd.exe",
+        "7za.exe",
+        '"C:\\Program Files\\7-Zip\\7za.exe" a -mx3 D:\\Archive\\logs-{date}.7z D:\\Logs\\*.log',
+    ),
+]
+MAINTENANCE_PSEXEC: list[tuple[str, str, str]] = [
+    ("services.exe", "PSEXESVC.exe", "C:\\Windows\\PSEXESVC.exe"),
+    ("PSEXESVC.exe", "cmd.exe", 'cmd.exe /c "wuauclt.exe /detectnow /reportnow & gpupdate /force"'),
+]
 
 ADMIN_TOOLS = {"mmc.exe", "powershell.exe", "net.exe", "nltest.exe", "mstsc.exe", "cmd.exe"}

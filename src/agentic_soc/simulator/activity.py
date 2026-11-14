@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 import numpy as np
 
 from agentic_soc.simulator.calibration import Calibration
+from agentic_soc.simulator.catalog import CONSUMER_VPN_BLOCKS
 from agentic_soc.simulator.enterprise import TRAVEL_BLOCKS, VPN_NET, Enterprise, User
 from agentic_soc.simulator.rng import rng_for
 
@@ -38,6 +39,7 @@ class DayPlan:
     public_ip: str  # source address of cloud sign-ins (office NAT, home or travel ISP)
     vpn_ip: str | None  # VPN lease for remote/travel days
     shift_h: float  # personal phase shift of the activity profile
+    consumer_vpn: bool = False  # public address is a consumer VPN exit
 
     @property
     def vpn(self) -> bool:
@@ -59,11 +61,13 @@ class ActivityPlanner:
         calibration: Calibration,
         attendance: float = 0.94,
         travel: bool = True,
+        consumer_vpn: bool = True,
     ) -> None:
         self.ent = ent
         self.seed = ent.config.seed
         self.attendance = attendance
         self.travel_enabled = travel
+        self.consumer_vpn_enabled = consumer_vpn
         profile = calibration.user_profile()
         self._hourly = np.asarray((*profile.hourly, profile.hourly[0]))
         self._weekly = profile.weekly
@@ -155,10 +159,17 @@ class ActivityPlanner:
         lunch_start = midnight + timedelta(hours=12.0 + float(u[1]) * 1.2)
         lunch_end = lunch_start + timedelta(minutes=30 + float(u[2]) * 30)
         remote = trip is not None or u[3] < self.remote_prob(user, noon)
+        consumer_vpn = False
         if trip is not None:
             public_ip = trip.ip
         elif remote:
             public_ip = user.home_ip
+            if self.consumer_vpn_enabled and user.consumer_vpn and u[5] < 0.6:
+                block = CONSUMER_VPN_BLOCKS[int(u[6] * len(CONSUMER_VPN_BLOCKS))]
+                public_ip = self.ent.allocator.take(
+                    rng_for(self.seed, "cvpn", user.user_id, day), block
+                )[0]
+                consumer_vpn = True
         else:
             public_ip = self.ent.office_egress[user.office]
         plan = DayPlan(
@@ -175,6 +186,7 @@ class ActivityPlanner:
             public_ip=public_ip,
             vpn_ip=self._vpn_ip(user, day) if remote else None,
             shift_h=(user.work_start_h - _PROFILE_ANCHOR_H) + shift,
+            consumer_vpn=consumer_vpn,
         )
         self._plans[key] = plan
         return plan

@@ -147,6 +147,9 @@ class OrgConfig(_Cfg):
     home_country: str = "RO"
     users: int = Field(200, ge=10, le=5000)
     weak_password_share: float = Field(0.04, ge=0, le=1)
+    consumer_vpn_share: float = Field(
+        0.05, ge=0, le=1, description="Staff using a consumer VPN at home."
+    )
     offices: list[OfficeConfig] = Field(default_factory=_default_offices, min_length=1)
     roles: dict[str, RoleConfig] = Field(default_factory=_default_roles, min_length=1)
     servers: list[ServerGroupConfig] = Field(default_factory=_default_servers)
@@ -203,6 +206,13 @@ class LookalikeConfig(_Cfg):
     """Benign behaviour that resembles attack steps (the hard negatives)."""
 
     typos: bool = True
+    username_typo_share: float = Field(
+        0.25, ge=0, le=1, description="Typos in the username, not the password."
+    )
+    consumer_vpn: bool = True
+    intune_scripts: bool = True
+    admin_psexec: bool = True
+    archive_jobs: bool = True
     travel: bool = True
     remote_vpn: bool = True
     admin_rdp: bool = True

@@ -39,6 +39,7 @@ def build_context(
         calibration,
         attendance=config.activity.weekday_attendance,
         travel=config.lookalikes.travel,
+        consumer_vpn=config.lookalikes.consumer_vpn,
     )
     return GenContext(
         config=config,

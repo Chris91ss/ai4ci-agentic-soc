@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import base64
 from datetime import datetime, timedelta
 from typing import Any
 
@@ -10,16 +11,22 @@ import numpy as np
 from agentic_soc.simulator.enterprise import Host
 from agentic_soc.simulator.generators.base import GenContext
 from agentic_soc.simulator.generators.process_catalog import (
+    ARCHIVE_JOB,
     BACKUP_JOB,
     COMMAND_LINES,
     IMAGE_DIRS,
+    INTUNE,
+    INTUNE_SCRIPTS,
     LINUX_DIRS,
     LINUX_SERVER_COMMON,
     LOGON_TREE,
+    MAINTENANCE_PSEXEC,
+    PAIR_COMMAND_LINES,
     RDP_SESSION_TOOLS,
     RDP_SESSION_TREE,
     ROLE_EXTRA,
     SERVER_ROLE,
+    SYSTEM_PARENTS,
     SYSTEM_PROCESSES,
     WINDOWS_SERVER_COMMON,
     WORKSTATION_COMMON,
@@ -29,6 +36,7 @@ from agentic_soc.simulator.model import Label, SimEvent, iso
 from agentic_soc.simulator.rng import rng_for
 
 _SCRIPTS = ["backup-check", "disk-usage", "rotate-logs", "sync-time"]
+_INTUNE_B64 = [base64.b64encode(script.encode("utf-16-le")).decode() for script in INTUNE_SCRIPTS]
 
 
 def _table(entries: list[Launch]) -> tuple[list[tuple[str, str]], np.ndarray]:
@@ -44,8 +52,9 @@ class ProcessGenerator:
         self.ctx = ctx
         ent = ctx.ent
         self.netbios = ent.config.org.netbios
+        intune = INTUNE if ctx.config.lookalikes.intune_scripts else []
         self.role_tables = {
-            role: _table(WORKSTATION_COMMON + ROLE_EXTRA.get(role, []))
+            role: _table(WORKSTATION_COMMON + intune + ROLE_EXTRA.get(role, []))
             for role in ent.config.org.roles
         }
         self.server_tables: dict[str, tuple[list[tuple[str, str]], np.ndarray]] = {}
@@ -56,6 +65,7 @@ class ProcessGenerator:
         self.pids: dict[str, int] = {}
         self.parents: dict[tuple[str, str], int] = {}
         self._backup_nights: set[tuple[str, int]] = set()
+        self._archive_nights: set[tuple[str, int]] = set()
 
     # ------------------------------------------------------------------ helpers
     def next_pid(self, host_id: str, rng: np.random.Generator) -> int:
@@ -68,22 +78,27 @@ class ProcessGenerator:
         self.pids[host_id] = pid
         return pid
 
-    def account(self, host: Host, child: str, user: str | None) -> str:
+    def account(self, host: Host, child: str, user: str | None, parent: str | None = None) -> str:
         if host.os == "linux":
             return "root" if user is None else user
-        if user is None or child in SYSTEM_PROCESSES:
+        if user is None or child in SYSTEM_PROCESSES or parent in SYSTEM_PARENTS:
             return "NT AUTHORITY\\SYSTEM"
         return f"{self.netbios}\\{user}"
 
     def command_line(
-        self, host: Host, child: str, user: str | None, rng: np.random.Generator
+        self,
+        host: Host,
+        child: str,
+        user: str | None,
+        rng: np.random.Generator,
+        parent: str | None = None,
     ) -> tuple[str, str]:
         directory = IMAGE_DIRS.get(child) or LINUX_DIRS.get(child)
         if directory is None:
             directory = "/usr/bin" if host.os == "linux" else r"C:\Windows\System32"
         sep = "/" if host.os == "linux" else "\\"
         image = f"{directory}{sep}{child}".replace("{user}", user or "Default")
-        templates = COMMAND_LINES.get(child)
+        templates = PAIR_COMMAND_LINES.get((parent or "", child)) or COMMAND_LINES.get(child)
         if not templates:
             return (f'"{image}"' if host.os == "windows" else image), image
         template = templates[int(rng.integers(len(templates)))]
@@ -95,6 +110,8 @@ class ProcessGenerator:
             k=int(rng.integers(1, 4)),
             other=others[int(rng.integers(len(others)))].user_id,
             script=_SCRIPTS[int(rng.integers(len(_SCRIPTS)))],
+            b64=_INTUNE_B64[int(rng.integers(len(_INTUNE_B64)))],
+            guid=f"{int(rng.integers(0, 2**32)):08x}-{int(rng.integers(0, 2**16)):04x}-4{int(rng.integers(0, 2**12)):03x}",
         )
         return cmd, image
 
@@ -119,9 +136,9 @@ class ProcessGenerator:
             ppid = max(4, pid - 4 * int(rng.integers(1, 50)))
             self.parents[(host.host_id, parent)] = ppid
         self.parents[(host.host_id, child)] = pid
-        cmd, image = self.command_line(host, child, user, rng)
+        cmd, image = self.command_line(host, child, user, rng, parent)
         image = image_path or image
-        account = self.account(host, child, user)
+        account = self.account(host, child, user, parent)
         if integrity is None:
             integrity = (
                 "system" if account.startswith("NT AUTHORITY") or account == "root" else "medium"
@@ -204,6 +221,7 @@ class ProcessGenerator:
                 )
         out.extend(self.rdp_sessions(rng, t0, t1))
         out.extend(self.backup_jobs(rng, t0, t1, hour, day))
+        out.extend(self.archive_jobs(rng, t0, t1, hour, day))
         return out  # fmt: skip
 
     def rdp_sessions(self, rng: np.random.Generator, t0: datetime, t1: datetime) -> list[SimEvent]:
@@ -223,6 +241,33 @@ class ProcessGenerator:
                 parent, child = pairs[int(rng.choice(len(pairs), p=p))]
                 out.append(self.make(t + timedelta(seconds=30 + 60 * j), host, parent, child, session.account,
                                      rng, integrity="high", label=session.label))  # fmt: skip
+            tag = session.label.tag if session.label is not None else None
+            look = self.ctx.config.lookalikes
+            if tag == "admin_maintenance" and look.admin_psexec and rng.random() < 0.5:
+                for k, (parent, child, command) in enumerate(MAINTENANCE_PSEXEC):
+                    user = None if parent == "services.exe" else session.account
+                    out.append(self.make(t + timedelta(seconds=240 + 2 * k), host, parent, child, user, rng,
+                                         command_line=command, integrity="high", tag=tag))  # fmt: skip
+        return out
+
+    def archive_jobs(
+        self, rng: np.random.Generator, t0: datetime, t1: datetime, hour: float, day: int
+    ) -> list[SimEvent]:
+        """Nightly log archiving with 7-Zip on the file servers (a collection look-alike)."""
+        if not self.ctx.config.lookalikes.archive_jobs:
+            return []
+        start_h = 2.5
+        if not (hour <= start_h < hour + (t1 - t0).total_seconds() / 3600):
+            return []
+        date = self.ctx.ent.local(t0).strftime("%Y%m%d")
+        out: list[SimEvent] = []
+        for host in self.ctx.ent.servers_by_role.get("file", []):
+            if (host.host_id, day) in self._archive_nights:
+                continue
+            self._archive_nights.add((host.host_id, day))
+            for i, (parent, child, command) in enumerate(ARCHIVE_JOB):
+                out.append(self.make(t0 + timedelta(seconds=20 + 4 * i), host, parent, child, None, rng,
+                                     command_line=command.format(date=date), tag="archive_job"))  # fmt: skip
         return out
 
     def backup_jobs(

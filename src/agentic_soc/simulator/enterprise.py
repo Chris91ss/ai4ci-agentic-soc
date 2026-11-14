@@ -82,6 +82,7 @@ class User:
     devices: list[Device]
     admin_account: str | None = None
     weak_password: bool = False
+    consumer_vpn: bool = False  # routes home traffic through a consumer VPN on some days
 
     @property
     def is_admin(self) -> bool:
@@ -314,6 +315,10 @@ class Enterprise:
                     admin_account=f"adm-{username}" if role.admin else None,
                     weak_password=bool(rng.random() < org.weak_password_share) and not role.admin,
                 )
+            )
+        for user in users:
+            user.consumer_vpn = bool(
+                rng_for(seed, "consumer-vpn", user.user_id).random() < org.consumer_vpn_share
             )
         candidates = [u for u in users if not u.is_admin]
         while sum(u.weak_password for u in users) < 2 and candidates:
