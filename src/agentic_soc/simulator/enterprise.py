@@ -252,7 +252,7 @@ class Enterprise:
     # ------------------------------------------------------------------ construction
     @classmethod
     def build(cls, config: SimulatorConfig) -> Enterprise:
-        seed, org = config.seed, config.org
+        seed, org = config.enterprise_seed, config.org
         rng = rng_for(seed, "enterprise")
         allocator = AddressAllocator()
 

@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from typing import Any
 
-from agentic_soc.features.extract import FeatureExtractor, FeatureRow
+from agentic_soc.features.extract import FEATURES, FeatureExtractor, FeatureRow
 from agentic_soc.features.history import ConversationHistory, DestinationPopularity
 from agentic_soc.features.profiles import Profiles
 from agentic_soc.features.resolver import EntityResolver
@@ -55,8 +55,10 @@ class FeaturePipeline:
         inventory: Inventory,
         profiles: Profiles | None = None,
         config: WindowConfig | None = None,
+        detectors: set[str] | None = None,
     ) -> None:
         self.inv = inventory
+        self.detectors = set(detectors or FEATURES)
         self.cfg = cfg = config or WindowConfig()
         self.profiles = profiles or Profiles(timezone=inventory.timezone)
         self.resolver = EntityResolver(inventory)
@@ -83,17 +85,27 @@ class FeaturePipeline:
         self._last_trim: datetime | None = None
 
     def add(self, events: Iterable[NormEventT]) -> None:
+        enabled = self.detectors
+        m1_user, m1_ip, m2, m3 = (
+            "M1-user" in enabled,
+            "M1-ip" in enabled,
+            "M2" in enabled,
+            "M3" in enabled,
+        )
         for event in events:
             stream = event.stream
             if stream == "signin":
                 self.resolver.observe(event)  # type: ignore[arg-type]
-                self.signin_user.add(event)
-                self.signin_ip.add(event)
+                if m1_user:
+                    self.signin_user.add(event)
+                if m1_ip:
+                    self.signin_ip.add(event)
             elif stream == "flow":
-                self.history.observe(event)  # type: ignore[arg-type]
-                self.popularity.observe(event)  # type: ignore[arg-type]
-                self.flow_src.add(event)
-            else:
+                if m2:
+                    self.history.observe(event)  # type: ignore[arg-type]
+                    self.popularity.observe(event)  # type: ignore[arg-type]
+                    self.flow_src.add(event)
+            elif m3:
                 self.process_host.add(event)
             if self.clock is None or event.ingest_time > self.clock:
                 self.clock = event.ingest_time

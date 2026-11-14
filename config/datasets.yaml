@@ -1,0 +1,23 @@
+# Time-ordered dataset plan for one simulated company (org_seed). Splits never overlap in time:
+# baselines and unsupervised models learn from the past, supervised models train on earlier
+# weeks, thresholds are calibrated on a later week and tests come last (TESSERACT-style).
+org_seed: 7
+
+# Benign-only history: per-account baselines (profiles), M1 Isolation Forests, M3 n-grams.
+history: {name: history, seed: 900, start: "2026-01-19T00:00:00Z", hours: 168, campaign: false}
+profile_split_h: 96   # M1 training windows (after this point) are scored against earlier baselines
+
+# Weeks with one campaign each: supervised M2 training.
+train:
+  - {name: train-1, seed: 101, start: "2026-01-26T00:00:00Z", hours: 48}
+  - {name: train-2, seed: 102, start: "2026-02-02T00:00:00Z", hours: 48}
+  - {name: train-3, seed: 103, start: "2026-02-09T00:00:00Z", hours: 48}
+
+# Threshold calibration (target false-positive rates) and model selection.
+validation:
+  - {name: val-1, seed: 104, start: "2026-02-16T00:00:00Z", hours: 48}
+
+# Held-out weeks for model-level metrics (PR-AUC, recall at 1% FPR, detection delay).
+test:
+  - {name: test-1, seed: 105, start: "2026-02-23T00:00:00Z", hours: 48}
+  - {name: test-2, seed: 106, start: "2026-03-02T00:00:00Z", hours: 48}

@@ -192,6 +192,88 @@ def ingest(
     console.print(table)
 
 
+etl_app = typer.Typer(
+    help="Offline ETL: lake, DuckDB analytics, datasets, replays.", no_args_is_help=True
+)
+app.add_typer(etl_app, name="etl")
+
+
+@etl_app.command("build")
+def etl_build(
+    plan: Path = typer.Option(Path("config/datasets.yaml"), help="Dataset plan."),
+    data: Path = typer.Option(Path("data"), help="Data root (lake, features)."),
+    force: bool = typer.Option(False, help="Re-simulate runs already in the lake."),
+) -> None:
+    """Simulate the dataset plan into the lake and build baselines and feature tables."""
+    import logging
+    import time
+
+    from agentic_soc.etl.datasets import build, load_plan
+
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
+    started = time.perf_counter()
+    report = build(load_plan(plan), data, force=force)
+    for run, info in report["features"].items():
+        console.print(f"{run}: rows={info['rows']} positives={info['positives']}")
+    console.print(f"splits: {report['splits']}  ({time.perf_counter() - started:.0f}s)")
+
+
+@etl_app.command("stats")
+def etl_stats(
+    data: Path = typer.Option(Path("data"), help="Data root."),
+    run: str | None = typer.Option(None, help="Details for one run."),
+) -> None:
+    """Analytics over the lake with DuckDB."""
+    from rich.table import Table
+
+    from agentic_soc.etl import duck
+
+    con = duck.connect(data / "lake")
+    sections = {"runs": duck.run_overview(con)}
+    if run:
+        sections["sign-in outcomes"] = duck.signin_failures(con, run)
+        sections["top external destinations"] = duck.top_external_destinations(con, run, 10)
+        sections["labelled stages"] = duck.labelled_stage_counts(con, run)
+    for title, records in sections.items():
+        if not records:
+            continue
+        table = Table(title=title)
+        for column in records[0]:
+            table.add_column(column)
+        for record in records:
+            table.add_row(*[str(v) for v in record.values()])
+        console.print(table)
+
+
+@etl_app.command("replay")
+def etl_replay(
+    run: str = typer.Argument(..., help="Lake run to replay."),
+    data: Path = typer.Option(Path("data"), help="Data root."),
+    out: Path = typer.Option(..., help="JSON-lines file of normalised events in arrival order."),
+    hours: float | None = typer.Option(None, help="Only the first N hours of arrivals."),
+) -> None:
+    """Deterministic replay of a lake run (normalised events in arrival order)."""
+    from datetime import timedelta
+
+    import orjson
+
+    from agentic_soc.etl import duck
+
+    start = end = None
+    events = duck.replay_events(data / "lake", run)
+    written = 0
+    with open(out, "wb") as handle:
+        for event in events:
+            if hours is not None:
+                start = start or event.ingest_time
+                end = end or start + timedelta(hours=hours)
+                if event.ingest_time >= end:
+                    break
+            handle.write(orjson.dumps({"stream": event.stream, **event.row()}) + b"\n")
+            written += 1
+    console.print(f"replayed {written:,} events of {run} to {out}")
+
+
 @app.command()
 def calibrate(
     lanl_auth: Path | None = typer.Option(None, help="LANL auth.txt[.gz]"),

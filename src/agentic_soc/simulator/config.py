@@ -299,6 +299,10 @@ class CampaignConfig(_Cfg):
 
 class SimulatorConfig(_Cfg):
     seed: int = 7
+    org_seed: int | None = Field(
+        None,
+        description="Seed of the enterprise itself (defaults to seed); runs of one company share it.",
+    )
     start: AwareDatetime = Field(
         default=datetime(2026, 3, 2, tzinfo=UTC), description="Simulation start (UTC)."
     )
@@ -319,6 +323,10 @@ class SimulatorConfig(_Cfg):
         if missing:
             raise ValueError(f"delivery settings missing for {sorted(missing)}")
         return self
+
+    @property
+    def enterprise_seed(self) -> int:
+        return self.seed if self.org_seed is None else self.org_seed
 
     @property
     def end(self) -> datetime:
