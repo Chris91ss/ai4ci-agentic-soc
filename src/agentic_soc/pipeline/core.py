@@ -12,6 +12,7 @@ from typing import Any, Literal
 
 from agentic_soc.actions import ActionManager, BrokerActionSink, PolicyConfig, PolicyGate
 from agentic_soc.agent import OllamaLLM, ScriptedLLM, TriageAgent, dismissal_guardrail
+from agentic_soc.agent.react import compact_json
 from agentic_soc.broker.base import Broker
 from agentic_soc.correlation import CorrelationEngine, IncidentState, IncidentUpdate
 from agentic_soc.detectors.base import Score
@@ -56,9 +57,13 @@ def make_llm(spec: str) -> Any:
     raise ValueError(f"unknown LLM {spec!r} (use scripted or ollama[:model])")
 
 
-def _clip(value: Any, limit: int = 4000) -> Any:
-    text = json.dumps(value, default=str)
-    return value if len(text) <= limit else {"_clipped": text[:limit]}
+def _clip(value: Any, limit: int = 12_000) -> Any:
+    """A tool result for the trace store: kept as valid JSON, long lists shortened."""
+    text = compact_json(value, limit)
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        return {"_clipped": text}
 
 
 class SocPipeline:
