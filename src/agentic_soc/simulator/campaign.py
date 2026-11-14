@@ -208,7 +208,15 @@ class Campaign:
         return "".join(self.rng.choice(_NAME_CHARS, n))
 
     def _host_ip(self, host: Host, t: datetime) -> str:
-        return host.static_ip or self.ent.dhcp_ip(host.host_id, t)
+        if host.static_ip:
+            return host.static_ip
+        if host.owner is not None:
+            plan = self.ctx.planner.plan(self.ent.users_by_id[host.owner], self.ent.day_index(t))
+            if plan.remote and plan.vpn_ip:
+                # The owner works from home: the attacker reaches the laptop through the VPN, so it
+                # stays on its VPN lease (which the corporate sensors see) instead of its office DHCP.
+                return plan.vpn_ip
+        return self.ent.dhcp_ip(host.host_id, t)
 
     def _isolated(self, host: Host | None, t: datetime) -> bool:
         return host is not None and self.control.is_isolated(host.host_id, t)
