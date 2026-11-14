@@ -189,6 +189,12 @@ class FeatureExtractor:
             "M1-user", window.key, window.start, window.end,
             users=[account], hosts=hosts, ips=_uniq(e.src_ip for e in events if e.src_zone == "external"),
             event_ids=[e.event_id for e in events], features=features, late=window.late,
+            context={
+                "countries": _uniq(e.src_country for e in events),
+                "orgs": _uniq(e.src_org for e in events),
+                "logon_types": _uniq(e.logon_type for e in events),
+                "outcomes": {"success": n - len(fails), "failure": len(fails)},
+            },
         )  # fmt: skip
 
     def m1_ip(self, window: Window) -> FeatureRow:
@@ -235,7 +241,7 @@ class FeatureExtractor:
         return FeatureRow(
             "M1-ip", window.key, window.start, window.end, users=users, hosts=[], ips=[ip],
             event_ids=[e.event_id for e in events], features=features, late=window.late,
-            context={"targeted_users": len({e.user_id for e in events})},
+            context={"org": first.src_org, "country": first.src_country, "category": first.src_category},
         )  # fmt: skip
 
     # ------------------------------------------------------------------ M2
