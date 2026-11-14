@@ -1,187 +1,285 @@
-# ai4ci-agentic-soc
+<p align="center">
+  <a href="https://chris91ss.github.io/ai4ci-agentic-soc/"><img src="web/public/social.png" width="857" alt="Agentic SOC: a local-LLM analyst that investigates, contains and shows its evidence, beside an incident the agent contained: risk 0.95, alerts from three detectors, and the attacker's techniques"></a>
+</p>
 
-Agentic SOC for a simulated enterprise: correlates asynchronous sign-in, network-flow and endpoint event streams; a local-LLM triage agent orchestrates ML detectors over MCP and takes containment actions that feed back into the simulator. AI4CI course project.
+<p align="center">
+  <a href="https://github.com/Chris91ss/ai4ci-agentic-soc/actions/workflows/ci.yml"><img src="https://github.com/Chris91ss/ai4ci-agentic-soc/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"></a>
+  <a href="https://chris91ss.github.io/ai4ci-agentic-soc/"><img src="https://github.com/Chris91ss/ai4ci-agentic-soc/actions/workflows/pages.yml/badge.svg?branch=main" alt="Live demo"></a>
+  <img src="https://img.shields.io/badge/python-3.12-blue.svg" alt="Python 3.12">
+  <img src="https://img.shields.io/badge/Next.js-16-black.svg" alt="Next.js 16">
+  <img src="https://img.shields.io/badge/LLM-gpt--oss%3A20b%20on%20Ollama-6e56cf.svg" alt="gpt-oss:20b on Ollama">
+  <img src="https://img.shields.io/badge/agent%20tools-MCP-0a7ea4.svg" alt="Agent tools over MCP">
+</p>
 
-RFC: [docs/rfc/0001-agentic-soc.pdf](docs/rfc/0001-agentic-soc.pdf) (source: [docs/rfc/0001-agentic-soc.md](docs/rfc/0001-agentic-soc.md))
+Agentic SOC is a Security Operations Center for a simulated company of 200 people and 250 hosts. A seeded simulator emits three asynchronous streams, sign-ins, network flows and endpoint processes, and hides a multi-stage intrusion among benign look-alikes. Three detectors score the streams online, a correlation engine links their alerts into incidents, and a triage agent running locally on gpt-oss:20b investigates the risky ones through seven MCP tools, decides a verdict and contains the attack. Its actions go back into the simulator, where blocked addresses, revoked sessions and isolated hosts stall the attacker. Over ten seeded 48-hour runs the agent's reference analyst stopped every intrusion before exfiltration without a single false containment, where playbooks on the same detectors made 46. An AI4CI course project; the design is in the [RFC](docs/rfc/0001-agentic-soc.md).
 
-![Architecture](docs/rfc/figures/architecture.svg)
+<p align="center">
+  <a href="https://chris91ss.github.io/ai4ci-agentic-soc/"><img src="docs/assets/demo.gif" width="857" alt="The live demo: the overview of a recorded run replaying, the incident queue, an incident the agent contained with its alert lanes, the agent's investigation over MCP tool by tool, the evidence behind the verdict, and the evaluation of the agent against the baselines"></a>
+</p>
+<p align="center"><em>The <a href="https://chris91ss.github.io/ai4ci-agentic-soc/">live demo</a> on GitHub Pages: a recorded run, an incident the agent contained, its investigation, its evidence, and the evaluation.</em></p>
 
-## Components
+## What's inside
 
-| Component | Package | Status |
-|-----------|---------|--------|
-| Seeded enterprise simulator (sign-ins, flows, processes, ATT&CK campaign) | `agentic_soc.simulator` | done |
-| Kafka-compatible event broker (Redpanda) | `agentic_soc.broker` | done |
-| Ingestion: schema validation, dead-letter, dedupe, normalise, enrich | `agentic_soc.ingestion` | done |
-| Storage: TimescaleDB (hot), Parquet (cold), labels, audit log | `agentic_soc.storage` | done |
-| Offline ETL in DuckDB, drift checks (PSI/KS), retraining | `agentic_soc.etl`, `agentic_soc.drift` | done |
-| Online inference: event-time windows, entity resolution, M1–M3 | `agentic_soc.features`, `agentic_soc.detectors` | done |
-| Correlation engine, risk router and playbooks | `agentic_soc.correlation`, `agentic_soc.routing` | done |
-| MCP server and policy gate | `agentic_soc.mcp_server`, `agentic_soc.actions` | done |
-| Local-LLM triage agent (ReAct) | `agentic_soc.agent` | done |
-| Evidence verifier for the agent's actions (RFC stretch goal) | `agentic_soc.agent.verifier` | done |
-| Closed-loop pipeline (in-process and live on the broker) | `agentic_soc.pipeline` | done |
-| Evidence bundles behind every verdict, analyst feedback and FP statistics | `agentic_soc.evidence` | done |
-| FastAPI backend (REST + server-sent events) and Next.js SOC console | `agentic_soc.api`, `web/` | done |
-| Evaluation (model level, end to end, S1 drift, S2 load) | `agentic_soc.evaluation` | done |
+| Part | What it does | How it is checked |
+| --- | --- | --- |
+| **[Simulated enterprise](#the-simulated-enterprise)** | 200 users and 250 hosts with roles, offices, schedules and network zones; three streams with their own rates, delivery delays, duplicates and malformed events; one ATT&CK campaign among benign look-alikes; containment applied back to the simulation | Unit tests of volumes, seasonality, determinism under a seed, and of how each containment changes what the simulator emits |
+| **[Streaming and storage](#how-an-incident-is-handled)** | Redpanda topics, schema validation with a dead-letter topic, de-duplication, normalisation and enrichment; TimescaleDB as the hot store, a Parquet lake and DuckDB for the offline ETL | Unit tests, and integration tests against Redpanda and TimescaleDB |
+| **[Detectors](#detectors)** | M1, Isolation Forests on sign-ins per account and per source address; M2, LightGBM on flows with beacon-periodicity features; M3, rarity of parent-child process pairs; event-time windows with watermarks; served over REST | Scored on held-out test weeks: PR-AUC, recall at 1% FPR, false positives per day, detection delay |
+| **[Correlation and routing](#how-an-incident-is-handled)** | Alerts linked by user, host and address into risk-scored incidents; low-risk ones are logged, the rest go to the agent by priority, and to deterministic playbooks when it times out or its queue saturates | Unit tests, and the S2 load run |
+| **[Triage agent](#the-triage-agent)** | gpt-oss:20b on Ollama in a ReAct loop over seven MCP tools, returning a JSON-schema decision; log fields reach it only as quoted data, dismissals must cite evidence, actions pass a policy gate, and an optional verifier vetoes actions its evidence does not justify | Tests with a planted prompt injection and malformed tool calls; three seeds on the local LLM |
+| **[Evidence and feedback](#the-console)** | Every verdict stored with the events, detector scores, entity baselines and tool calls it cites, filterable by entity, stream, detector and time; analyst feedback feeds per-detector false-positive statistics | Tests that every cited item exists and that feedback reaches the statistics |
+| **[Console](#the-console)** | Next.js 16 with Tabler icons, framer-motion and Recharts: overview, incident queue, timelines, agent trace, evidence, approvals, metrics with the drift monitor, the evaluation and the audit log; live over server-sent events, or a recorded run replayed as a static site | Lint and build in CI; this README's images are regenerated from the static build in headless Chrome |
+| **[Evaluation](#results)** | `soc evaluate`: the detectors on held-out weeks, ten seeds of the agent against rules and against detectors with playbooks, paired Wilcoxon tests, S1 drift, S2 load, and the local LLM | The raw numbers and the report in [docs/evaluation](docs/evaluation/README.md) |
 
-## Development
+**Contents:** [Try it](#try-it) · [The console](#the-console) · [How an incident is handled](#how-an-incident-is-handled) · [The simulated enterprise](#the-simulated-enterprise) · [Detectors](#detectors) · [The triage agent](#the-triage-agent) · [Results](#results) · [Running it](#running-it) · [Layout](#repository-layout) · [Tests and CI](#tests-and-ci) · [Credits](#authors-and-credits)
 
-Requirements: Python 3.12 and [uv](https://docs.astral.sh/uv/).
+## Try it
 
-```bash
-make install   # uv sync
-make test      # fast unit tests
-make lint      # ruff
-uv run soc --help
-```
+**[Open the live demo](https://chris91ss.github.io/ai4ci-agentic-soc/).** It replays a recorded 72-hour run of scenario S1: on the second day most of the company moves to remote work, the drift monitor alarms and M1 is retrained, and on the third day the intrusion begins. The replay plays the pipeline's log at 15 simulated minutes a second (pause, restart or speed it up in the top bar); every incident, the agent's investigation, the evidence, the metrics and the evaluation can be opened. Approvals and feedback are read-only in the demo. Press <kbd>⌘</kbd> <kbd>K</kbd> to search incidents and entities.
 
-On macOS, LightGBM needs OpenMP: `brew install libomp`.
-
-## Running the SOC
-
-```bash
-uv run soc etl build          # simulate the dataset plan into data/ (lake + feature tables)
-uv run soc train              # train M1-M3 into the model registry (models/)
-uv run soc run                # closed loop: simulator + SOC in one process (scripted analyst)
-uv run soc run --llm ollama:gpt-oss:20b          # the triage agent on a local LLM (Ollama)
-uv run soc run --mode detectors                  # baseline: detectors + playbooks, no agent
-uv run soc run --llm ollama:gpt-oss:20b --verifier   # veto agent actions its evidence does not justify
-```
-
-With `--verifier` every containment the agent proposes is checked against the alerts it cited
-before it executes: a blocked address must have sprayed, signed in as a stolen account or be the
-far end of C2 or exfiltration (and not a corporate or cloud egress); an account must have been
-used from attacker-like infrastructure or have run attacker tooling; an isolated host must show
-late-stage activity or C2. Vetoed actions are logged and audited and the incident stays with an
-analyst.
-
-Scenario S1 (drift) moves most staff to remote work through a newly adopted ZTNA service, so
-sign-ins come from new networks abroad and later in the day. The drift monitor compares the
-live M1 feature windows with M1's training distribution (PSI and KS) and alarms; with
-`--retrain-on-drift` M1 is retrained offline on the recent sign-ins with refreshed baselines and
-swapped in:
+Or run the whole loop yourself, with the console attached to the live pipeline:
 
 ```bash
-uv run soc run --scenario config/scenarios/s1-remote-work.yaml --hours 72 --retrain-on-drift
+brew install libomp                      # macOS: LightGBM needs OpenMP
+uv sync
+uv run soc etl build                     # simulate the dataset plan into data/ (about 7 minutes)
+uv run soc train                         # train M1-M3 into models/
+uv run soc demo --speed 120              # simulator, pipeline and console API; the attack starts 1.5 h in
+cd web && npm install && npm run dev     # the console, on http://localhost:3000
 ```
 
-Scenario S2 (high load) adds a one-hour burst of user activity, about ten times the usual event
-rate, on a working-day morning while the intrusion is under way. Streamed live through Redpanda
-it shows consumer lag, end-to-end latency and the router shedding incidents to the playbooks
-when the agent cannot keep up (`--scenario config/scenarios/s2-burst.yaml`).
+The demo uses the scripted analyst; with [Ollama](https://ollama.com) and `ollama pull gpt-oss:20b`, `--llm ollama:gpt-oss:20b` puts the local model in its place, in `soc demo` as in `soc run`.
 
-`soc run` writes `data/soc-runs/<mode>-seed<seed>/` with the SOC store (`soc.db`), the run
-summary, the pipeline log and the simulator's ground truth. The agent's latency is charged in
-simulated time, so the attack keeps going while it investigates; high-impact actions are
-auto-approved in these unattended runs (`--approval-delay` models an analyst's response time).
+## The console
 
-The console API (FastAPI) serves a recorded run read-only, or a live demo in which the
-simulator, the pipeline and the API share one process and an analyst approves or rejects held
-actions:
+<p align="center">
+  <img src="docs/assets/overview.png" width="857" alt="The overview of the recorded run: 545 thousand events, 251 alerts, 77 incidents and 5 containments, the stream health chart of sign-ins, flows and processes, the incident status donut, the highest-priority incidents, and the activity replay">
+</p>
 
-```bash
-uv run soc api --run data/soc-runs/agent-seed201   # http://127.0.0.1:8000/api, read-only
-uv run soc demo --speed 120                        # live: attack 1.5 h in, analyst approvals
+- **The overview** counts the run's events, alerts, incidents, containments and the agent's latency, charts the three streams as they were ingested, and replays the pipeline's activity: alerts, incidents, routing, decisions and actions, as they happened.
+- **The incident queue** ranks incidents by priority and risk, with the detectors, techniques and entities of each.
+
+<p align="center">
+  <img src="docs/assets/incident.png" width="857" alt="An incident the agent contained: INC-00055, priority 1, malicious with 96% confidence, risk 0.95; rare process launches and a network sweep from the foothold workstation, the ATT&CK techniques coloured by tactic, the users and hosts involved, and the alert lanes of M1, M2 and M3 over three hours with the agent's responses">
+</p>
+
+- **An incident** shows its risk and where it comes from, the ATT&CK techniques along the kill chain, every entity involved, and its alerts on one lane per detector, with the agent's responses beneath. Hovering an alert explains it; a click opens it with its top features.
+
+<p align="center">
+  <img src="docs/assets/trace.png" width="857" alt="The agent's trace for that incident: a malicious verdict that notes a prompt injection in the log data, the actions it took, isolating the workstation and blocking the attacker's address, the alerts it cited, and its nine ReAct steps over MCP, from get_incident to score_flows and get_entity_timeline">
+</p>
+
+- **The agent trace** shows each decision with its rationale, the actions it proposed and the evidence it cited, and every step of the investigation: which MCP tool it called, with which arguments, how long it took, and what came back. Here it also noticed the attacker's instruction to AI analysts, planted in a command line, and flagged it instead of obeying it.
+- **The evidence** behind a verdict lists the triggering events, the detector scores with their top features, the baselines of the entities involved and the tool calls, each with the ID the agent cited, filterable by entity, stream, detector and time window, so a suspected false positive can be checked rather than taken on trust.
+- **Response** holds the actions, with approve and reject for the high-impact ones in a live run, and the analyst's verdict, which feeds the per-detector false-positive statistics on the **Metrics** page, beside the drift monitor. The **Audit log** is hash-chained and can be verified from the console.
+
+## How an incident is handled
+
+```mermaid
+flowchart LR
+    sim["Simulator<br/>200 users, 250 hosts,<br/>one ATT&CK campaign"] -- "sign-ins, flows,<br/>processes" --> broker[("Redpanda")]
+    broker --> ingest["Ingestion<br/>validate, de-duplicate,<br/>enrich"]
+    ingest --> store[("TimescaleDB<br/>Parquet")]
+    ingest --> windows["Event-time windows<br/>entity resolution"]
+    windows --> detectors["M1 · M2 · M3"]
+    detectors --> correlation["Correlation<br/>risk-scored incidents"]
+    correlation --> router{"Risk router"}
+    router -- "low risk" --> logged["Logged"]
+    router -- "escalated" --> agent["Triage agent<br/>gpt-oss:20b, ReAct"]
+    router -- "agent slow or down" --> playbooks["Playbooks"]
+    agent <-- "7 tools" --> mcp["MCP server"]
+    mcp --> gate["Policy gate<br/>evidence verifier"]
+    playbooks --> gate
+    gate -- "revoke sessions, disable account,<br/>isolate host, block address" --> sim
 ```
 
-The SOC console (`web/`, Next.js with Tabler icons and framer-motion) shows stream health,
-the incident queue, incident timelines with the agent's tool trace and evidence, approvals,
-analyst feedback, metrics with the drift monitor, the evaluation results and the audit log; see
-[web/README.md](web/README.md):
+Every event carries its own time, and the pipeline works in event time: windows close when their watermark passes, so late, out-of-order and duplicated deliveries land where they belong. Entity resolution links the identifiers each stream uses for the same thing: an address is a host's DHCP or VPN lease at that moment, an account is a person. The correlation engine then links alerts that share a user, host or address within a time window, and scores each incident on the strength of its evidence, how many detectors corroborate it, how far along the kill chain it is, and what is at stake.
 
-```bash
-cd web && npm install && npm run dev               # http://localhost:3000
-```
+The agent's latency is charged in simulated time: while it investigates, the attack goes on. When its queue saturates or it stops answering, a circuit breaker hands incidents to the playbooks, which act on the same detectors without investigating. Executed actions are published on an `actions` topic, and the simulator applies them: a blocked address stops reaching the company, a revoked session has to sign in again, a disabled account cannot, and an isolated host stops emitting flows, so the campaign stalls or pivots.
 
-A static replay of one recorded run (scenario S1 with retraining) is published on GitHub Pages
-at https://chris91ss.github.io/ai4ci-agentic-soc/; `soc export` writes a run's data for it (see
-[web/README.md](web/README.md#static-demo-github-pages)).
+## The simulated enterprise
 
-Endpoints: `/api/health`, `/api/stream-health`, `/api/incidents[/{id}[/evidence|/trace|/feedback]]`,
-`/api/entities/{entity}[/timeline]`, `/api/actions[/{id}/approve|/reject]`, `/api/metrics`,
-`/api/audit[/verify]`, `/api/evaluation` (the results in `docs/evaluation`) and `/api/events`
-(server-sent events of the live pipeline).
+The company has two offices in Romania, 200 employees with a workstation each, 50 servers (domain controllers, file, database, application, ERP, mail, backup, build, jump hosts and more), VPN and SaaS sign-ins, and, in scenario S1, a ZTNA egress for remote work. Benign activity follows diurnal and weekly cycles, with heavy-tailed flow sizes and the look-alikes that make detection hard: password typos, business travel and consumer VPNs, admin RDP sessions on patch night, nightly backups and archive jobs, Intune's encoded PowerShell.
 
-Live mode streams through Redpanda instead (`make up` starts it and TimescaleDB):
+The campaign is one ATT&CK-mapped intrusion ([`campaign.py`](src/agentic_soc/simulator/campaign.py)): a password spray against the VPN portal from rented servers, a VPN logon with a sprayed account through the MFA-less legacy endpoint and RDP to the victim's workstation, discovery, a PowerShell download cradle installing an implant that beacons to C2 with jitter, an LSASS dump that yields an administrator's account, lateral movement with PsExec and RDP to a file and a database server, collection with 7-Zip, and exfiltration over the C2 channel. It reacts to containment: blocked addresses make it rotate to spare infrastructure, a revoked session makes it switch to another sprayed account, a disabled account stops the steps that need it, and an isolated host loses its implant; with no way forward left, it stalls. The download cradle's command line and some of the spray's user agents carry an instruction to AI analysts to ignore the activity, to test indirect prompt injection.
 
-```bash
-uv run soc simulate --broker kafka://localhost:19092 --speed 60 --out data/runs/live
-uv run soc pipeline --inventory data/runs/live/inventory.json --db $SOC_DB --api-port 8000
-```
+Ground truth is kept for every event, the dataset plan of `soc etl build` splits training, validation and test weeks in time, and runs are deterministic under a seed. Scenario S1 ([`config/scenarios/s1-remote-work.yaml`](config/scenarios/s1-remote-work.yaml)) moves 80% of staff to remote work behind a ZTNA service on the second morning; S2 ([`config/scenarios/s2-burst.yaml`](config/scenarios/s2-burst.yaml)) adds an hour with ten times the event rate during the intrusion.
 
-## Evaluation
+## Detectors
 
-`soc evaluate` runs the experiments of the RFC's evaluation plan and collects them in
-[docs/evaluation](docs/evaluation/README.md) (`results.json` plus a Markdown report):
+| Detector | Model | Features | Test weeks: PR-AUC | Recall at 1% FPR | False positives per day |
+| --- | --- | --- | ---: | ---: | ---: |
+| M1, per account | Isolation Forest | New networks, countries and devices, unusual hours, failures, MFA, against the account's baseline | 0.996 | 0.994 | 16.0 |
+| M1, per source address | Isolation Forest | Accounts tried, unknown usernames, failures, successes after failing, hosting, anonymiser and foreign sources | 0.979 | 1.000 | 4.3 |
+| M2 | LightGBM | Volume, ports and direction of a host's flows, the networks they reach, fan-out, and the regularity of repeated connections (beacons) | 0.999 | 1.000 | 0.8 |
+| M3 | Parent-child n-gram rarity | Process pairs rare among the host's peers, encoded commands, living-off-the-land binaries | 0.749 | 1.000 | 4.5 |
 
-```bash
-uv run soc evaluate models                    # M1-M3 on the held-out test weeks: PR-AUC, recall at 1% FPR, FP/day
-uv run soc evaluate e2e --seeds 401-410       # agent vs detectors + playbooks vs rules, paired over seeds
-uv run soc evaluate llm --seeds 401-403       # the agent on gpt-oss:20b through Ollama, same seeds
-uv run soc evaluate llm --seeds 401-403 --verifier   # ... with the evidence verifier
-uv run soc evaluate s1 --seeds 301-303        # S1 drift, with and without retraining
-uv run soc evaluate s2                        # S2 burst through Redpanda (make up): lag, latency, shedding
-```
+They score event-time windows per entity (fifteen minutes for sign-ins and flows, ten for processes), each at a threshold calibrated on the validation weeks, and explain each alert by its top features. `soc serve-detectors` serves them over REST; the agent reaches them through the MCP scoring tools.
 
-End-to-end runs are 48-hour closed loops on successive weeks; each reports the time to detect and
-to contain (from the start of the intrusion), how far the attacker got, exfiltrated data, false
-containments (executed actions on entities outside the attack) and the agent's verdict quality.
-Paired Wilcoxon signed-rank tests compare the agent with each baseline on the same seeds.
+## The triage agent
+
+The agent runs on gpt-oss:20b through Ollama, so no telemetry leaves the machine. Each incident it is given starts a ReAct loop over seven MCP tools:
+
+| Tool | What it returns |
+| --- | --- |
+| `get_incident` | Risk and its breakdown, detectors, techniques, entities, the strongest alert of every kind, actions already taken |
+| `get_entity_timeline` | The events of a user, host or address in a time window, across the three streams |
+| `get_asset_context` | Role, criticality and owner of a host; usual countries, hours and devices of an account; GeoIP, network category and the recent lease of an address |
+| `score_signins`, `score_flows`, `score_processes` | M1, M2 or M3 run on an entity's windows, with each alert's top features |
+| `propose_action` | A containment action through the policy gate |
+
+It ends with a decision validated against a JSON Schema: verdict, ATT&CK techniques, cited evidence, actions and confidence. The guardrails come from the problems the RFC set out (P5):
+
+- **Untrusted data is quoted.** Every log field reaches the model wrapped as untrusted data, and text that looks like an instruction is flagged, so a command line cannot steer it.
+- **Dismissals must cite evidence,** and a high-risk incident it dismisses is escalated to an analyst instead.
+- **No hallucinated evidence.** Every evidence ID and action target in a decision must have appeared in a tool result of the conversation; an invalid decision gets two repair attempts with schema-constrained output.
+- **Actions pass a policy gate** with an allow-list and impact levels: revoking sessions and blocking an external address run at once; disabling an account and isolating a host wait for an analyst's approval, auto-approved in unattended evaluation runs. Only an analyst may isolate protected infrastructure (domain controllers, VPN, proxy, EDR, backup, mail), and internal, office and major providers' addresses and service accounts are refused.
+- **The evidence verifier** (`--verifier`), the RFC's stretch goal, checks each action against the alerts the agent cited before it runs: a blocked address must have sprayed, signed in as a stolen account or be the far end of C2 or exfiltration, and not be a corporate or cloud egress; an account must have been used from attacker-like infrastructure or have run attacker tooling; an isolated host must show late-stage activity or C2. It is deterministic and reads only the cited alerts, never the rationale.
+- **Malformed tool calls** are rejected by the MCP layer with the reason, and the model tries again.
+
+The evaluation also uses a scripted analyst: a deterministic expert system that speaks the same chat protocol, calls the same tools and sees only their results, never the ground truth. It is the agent's reference policy, so that ten seeds of three configurations run in minutes rather than hours, and it is what the local LLM is compared against.
 
 ## Results
 
-Full tables and the raw numbers: [docs/evaluation](docs/evaluation/README.md) (also on the
-console's Evaluation page).
+The report with every table and the raw numbers is in [docs/evaluation](docs/evaluation/README.md), and on the console's Evaluation page.
 
-**End to end (10 seeds, 48 h each, same attacks for every configuration).** Every configuration
-stopped every intrusion before exfiltration, but at very different costs:
+<p align="center">
+  <img src="docs/assets/evaluation.png" width="857" alt="The evaluation page: over ten seeds each, the agent stopped 10 of 10 intrusions with 0 false containments, detectors with playbooks 10 of 10 with 46, and Sigma-style rules 10 of 10 with 33; median times to detect and contain, exfiltrated data, incidents and actions per run">
+</p>
+
+**End to end: ten seeds of 48 hours, the same attacks for every configuration.** Every configuration stopped every intrusion before exfiltration, at very different costs:
 
 | | Agent (scripted analyst) | Detectors + playbooks | Rules + playbooks |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | Stopped before exfiltration | 10/10 | 10/10 | 10/10 |
-| False containments (all runs) | **0** | 46 | 33 |
+| False containments, all runs | **0** | 46 | 33 |
 | Runs without a false containment | **10/10** | 1/10 | 0/10 |
 | Time to contain, median | 16 min | 12 min | 15 min |
 | Incidents per run (alerts → incidents) | 30 (−81%) | 31 (−83%) | 113 (−67%) |
 
-The agent's 73 containment actions all hit the attacker (action correctness 1.00; verdict
-precision 1.00, recall 0.68, F1 0.81 – the attack incidents it did not call malicious it left
-"suspicious" for an analyst; no invalid tool calls). Compared on the same seeds (Wilcoxon), it
-makes fewer false containments than the detectors' playbooks (median −3.5 per run, p = 0.004)
-and the rules (−3.0, p = 0.002) and raises 83 fewer incidents per run than the rules (p = 0.002),
-but contains about 3 minutes later than the playbooks (p = 0.002): it investigates before acting,
-and its latency (about 2 minutes per triage) is charged in simulated time while the attack goes on.
-In exchange the attacker usually got one kill-chain stage further (median +1 against both
-baselines, not significant), typically to its C2 beacon, but was stopped before credential access
-in 9 of 10 runs and before collection in all.
+The agent's 73 containment actions all hit the attacker (action correctness 1.00; verdict precision 1.00, recall 0.68, F1 0.81; the attack incidents it did not call malicious it left "suspicious" for an analyst; no invalid tool calls). Compared on the same seeds with Wilcoxon signed-rank tests, it makes fewer false containments than the detectors' playbooks (median −3.5 per run, p = 0.004) and the rules (−3.0, p = 0.002) and raises 83 fewer incidents per run than the rules (p = 0.002), but contains about 3 minutes later than the playbooks (p = 0.002): it investigates before acting, and its latency, about 2 minutes per triage, is charged in simulated time while the attack goes on. In exchange the attacker usually got one kill-chain stage further (median +1 against both baselines, not significant), typically to its C2 beacon, but was stopped before credential access in 9 of 10 runs and before collection in all.
 
-**Detectors (held-out test weeks).** PR-AUC 0.996 (M1 per account), 0.979 (M1 per source IP),
-0.999 (M2 flows) and 0.749 (M3 process rarity); recall at 1% FPR of at least 0.99 for all four.
+**Local LLM: gpt-oss:20b through Ollama, three seeds.** Every intrusion was still stopped before exfiltration, contained in about 15 minutes (median), as by the scripted analyst on the same seeds. It is a noisier analyst: 18% of its tool calls were malformed and rejected by the MCP layer, its verdict precision was 0.57 (recall 0.80), and in one run it revoked the sessions of two accounts outside the attack (action correctness 0.92). With the evidence verifier the same seeds produced one false containment instead of two (action correctness 0.93), at the same time to contain.
 
-**S1, drift (3 seeds, 72 h).** When most staff move to remote work through a new ZTNA egress, the
-drift monitor alarms 4 hours after the shift (M1's per-IP features, PSI above 1). False M1 alerts
-jump from 0.5–0.7 per hour to about 14 per hour. Without retraining they stay at 8–10 per hour
-the next day (7–12 times the pre-shift busy-hour rate) and never recover within the run; with
-retraining (two retrains, 7 and 35 hours after the shift) they fall to 1.8–2.7 per hour, and M1
-is back within twice its pre-shift rate by the next morning in 2 of 3 runs (25–30 h). The agent
-checks where a suspicious sign-in came from before revoking sessions, so in neither configuration
-did the look-alike sign-ins through the company's ZTNA egress lead to a false containment, and
-every intrusion was stopped before exfiltration.
+<p align="center">
+  <img src="docs/assets/drift.png" width="857" alt="Scenario S1 on seed 301: false M1 alerts per hour around the move to remote work; both runs jump to about 28 an hour at the shift, the drift monitor alarms 4 hours later, and after the retrains the run with retraining stays near zero while the one without climbs back above 20 the next morning">
+</p>
 
-**S2, high load (Redpanda, 60× real time).** A one-hour burst raised the event rate 10.9-fold,
-to about 3,000 events per second. The pipeline kept up: the p95 stream lag stayed at the
-simulator's one-minute tick and the consumer lag peaked at about 3,200 messages, around one
-second of input. With the local LLM four times slower during the burst, 4 of 15 triages timed
-out, the circuit breaker opened once and the playbooks decided those incidents; the intrusion was
-stopped before credential access in both runs.
+**S1, drift: three seeds of 72 hours.** When most staff move to remote work through a new ZTNA egress, the drift monitor alarms 4 hours after the shift (M1's per-address features, PSI above 1). False M1 alerts jump from 0.5–0.7 an hour to about 14. Without retraining they stay at 8–10 an hour the next day, 7–12 times the pre-shift busy-hour rate, and never recover within the run; with retraining, 7 and 35 hours after the shift, they fall to 1.8–2.7 an hour, and M1 is back within twice its pre-shift rate by the next morning in 2 of 3 runs. The agent checks where a suspicious sign-in came from before revoking sessions, so in neither configuration did the look-alike sign-ins through the company's own ZTNA egress lead to a false containment, and every intrusion was stopped before exfiltration.
 
-**Local LLM (gpt-oss:20b through Ollama, 3 seeds).** With the scripted analyst replaced by
-gpt-oss:20b every intrusion was still stopped before exfiltration, contained in about 15 minutes
-(median) as with the scripted analyst on the same seeds. It is a noisier analyst: 18% of its tool
-calls were malformed and rejected by the MCP layer, its verdict precision was 0.57 (recall 0.80)
-and in one run it revoked the sessions of two accounts outside the attack (action correctness
-0.92). With the evidence verifier, which vetoes containments the cited alerts do not justify, the
-same seeds produced one false containment instead of two (action correctness 0.93) at the same
-time to contain.
+**S2, high load: Redpanda at 60 times real time.** A one-hour burst raised the event rate 10.9-fold, to about 3,000 events a second. The pipeline kept up: the p95 stream lag stayed at the simulator's one-minute tick, and the consumer lag peaked at about 3,200 messages, around one second of input. With the local LLM four times slower during the burst, 4 of 15 triages timed out, the circuit breaker opened once and the playbooks decided those incidents; the intrusion was stopped before credential access in both runs.
 
+**What the numbers leave open.** Everything runs on one simulated company and one campaign, whose look-alikes were written by the same team that wrote the detectors; the default calibration of benign activity is hand-set priors shaped like the LANL data, and `soc calibrate` refits it from the public datasets, which are not redistributed here. The ten-seed comparison uses the scripted analyst; the local LLM ran on three seeds, too few to test, and on a laptop GPU, so its latency, not its reasoning alone, shapes the time to contain. The detectors' test weeks come from the same simulator as their training weeks.
+
+## Running it
+
+Requirements: Python 3.12 and [uv](https://docs.astral.sh/uv/), Node 20 or later for the console, and Docker for the live stack (`make up` starts Redpanda and TimescaleDB). On macOS, LightGBM needs OpenMP: `brew install libomp`.
+
+```bash
+uv run soc etl build                              # the dataset plan into data/ (lake + feature tables)
+uv run soc train                                  # M1-M3 into the model registry (models/)
+uv run soc run                                    # closed loop in one process, with the scripted analyst
+uv run soc run --llm ollama:gpt-oss:20b           # ... with the agent on the local LLM
+uv run soc run --llm ollama:gpt-oss:20b --verifier   # ... and the evidence verifier
+uv run soc run --mode detectors                   # baseline: detectors + playbooks, no agent
+uv run soc run --mode rules                       # baseline: Sigma-style rules + playbooks
+uv run soc run --scenario config/scenarios/s1-remote-work.yaml --hours 72 --retrain-on-drift
+```
+
+`soc run` writes `data/soc-runs/<mode>-seed<seed>/`: the SOC store (`soc.db`), the run summary, the pipeline log and the simulator's ground truth. High-impact actions are auto-approved in these unattended runs; `--approval-delay` models an analyst's response time instead.
+
+The console API (FastAPI) serves a recorded run read-only, or a live demo in which the simulator, the pipeline and the API share one process and an analyst approves or rejects held actions. `soc export` writes a recorded run as the static files the GitHub Pages demo replays; [web/README.md](web/README.md) has the details.
+
+```bash
+uv run soc api --run data/soc-runs/agent-seed201      # http://127.0.0.1:8000/api, read-only
+uv run soc demo --speed 120                           # live, with approvals
+uv run soc export --run data/soc-runs/s1-retrain-seed301   # into web/public/data
+```
+
+Endpoints: `/api/health`, `/api/stream-health`, `/api/incidents[/{id}[/evidence|/trace|/feedback]]`, `/api/entities/{entity}[/timeline]`, `/api/actions[/{id}/approve|/reject]`, `/api/metrics`, `/api/audit[/verify]`, `/api/evaluation`, `/api/log` and `/api/events` (server-sent events of the live pipeline).
+
+Live mode streams through Redpanda, with the simulator and the pipeline in separate processes:
+
+```bash
+make up
+uv run soc simulate --broker kafka://localhost:19092 --speed 60 --out data/runs/live
+uv run soc pipeline --inventory data/runs/live/inventory.json --db $SOC_DB --api-port 8000
+```
+
+`soc evaluate` runs the experiments of the RFC's evaluation plan and merges each into [docs/evaluation](docs/evaluation/README.md):
+
+```bash
+uv run soc evaluate models                        # M1-M3 on the held-out test weeks
+uv run soc evaluate e2e --seeds 401-410           # agent vs detectors + playbooks vs rules, paired over seeds
+uv run soc evaluate llm --seeds 401-403           # the agent on gpt-oss:20b, same seeds
+uv run soc evaluate llm --seeds 401-403 --verifier   # ... with the evidence verifier
+uv run soc evaluate s1 --seeds 301-303            # S1 drift, with and without retraining
+uv run soc evaluate s2                            # S2 burst through Redpanda (make up)
+```
+
+End-to-end runs are 48-hour closed loops on successive weeks. Each reports the time to detect and to contain from the start of the intrusion, how far the attacker got, exfiltrated data, false containments (executed actions on anything outside the attack, or on a future victim before it), the alert-to-incident reduction and the agent's verdict quality.
+
+## Repository layout
+
+```text
+.
+├── .github/workflows/
+│   ├── ci.yml                  # Python lint and tests, the console's lint and build
+│   └── pages.yml               # the static console, deployed to GitHub Pages
+├── src/agentic_soc/
+│   ├── schemas/                # versioned event schemas (OCSF-inspired) and the agent's decision
+│   ├── simulator/              # the enterprise, benign activity, the campaign, delivery, containment
+│   ├── broker/                 # Kafka (Redpanda) and an in-memory broker for tests
+│   ├── ingestion/              # validation, dead letters, de-duplication, enrichment, inventory
+│   ├── storage/                # TimescaleDB or SQLite hot store, Parquet lake, hash-chained audit log
+│   ├── etl/                    # DuckDB: lake, analytics, time-split datasets, replays
+│   ├── features/               # event-time windows, watermarks, entity resolution, profiles
+│   ├── detectors/              # M1-M3, the model registry and the REST scoring service
+│   ├── drift/                  # PSI and KS references, the drift monitor, retraining M1
+│   ├── correlation/            # incidents and their risk
+│   ├── routing/                # the risk router, the circuit breaker, the playbooks
+│   ├── rules/                  # the Sigma-style rules baseline
+│   ├── actions/                # the action manager and the policy gate
+│   ├── mcp_server/             # the SOC tools and untrusted-data quoting
+│   ├── agent/                  # the ReAct agent, Ollama client, scripted analyst, evidence verifier
+│   ├── evidence/               # evidence bundles and analyst feedback
+│   ├── pipeline/               # the SOC pipeline, in process (virtual time) and live (threads)
+│   ├── api/                    # the console API, server-sent events, the static export
+│   ├── evaluation/             # metrics, end to end, model level, S2 load, the report
+│   └── cli.py                  # soc
+├── web/                        # the Next.js console; scripts/capture.mjs makes this README's images
+├── config/                     # the simulator, its calibration and the scenarios S1 and S2
+├── deploy/docker-compose.yml   # Redpanda and TimescaleDB
+├── docs/
+│   ├── rfc/                    # RFC-0001 and its architecture figure
+│   ├── evaluation/             # results.json and the report
+│   └── assets/                 # this README's images
+└── tests/                      # unit tests, and integration tests against the live stack
+```
+
+## Tests and CI
+
+```bash
+make lint                       # ruff check and format
+make test                       # unit tests, about 2 minutes
+make up && make test-integration   # against Redpanda and TimescaleDB
+SOC_TEST_LLM=1 uv run pytest -m llm   # the agent on gpt-oss:20b (Ollama serving it)
+cd web && npm run lint && npm run build
+```
+
+| Workflow | Job | What it checks |
+| --- | --- | --- |
+| CI | Python | `uv sync --frozen`, ruff, and the 181 unit tests: the simulator, ingestion, storage, features, the detectors, correlation, routing, the policy gate, MCP tools and quoting, the agent with a planted prompt injection, the pipeline in a closed loop and live on a broker, drift, evidence, the API, the static export and the evaluation |
+| CI | Web | `npm ci`, ESLint and the production build of the console |
+| Pages | Build and deploy | The console exported as a static site with the recorded run, then deployed to GitHub Pages |
+
+`node web/scripts/capture.mjs` regenerates this README's images, the demo GIF and the link preview from the static build.
+
+## Authors and credits
+
+Adi, Cristi and Dragos, for the AI4CI course; the design is [RFC-0001](docs/rfc/0001-agentic-soc.md).
+
+- The activity model is shaped after the [LANL Comprehensive, Multi-Source Cyber-Security Events](https://csr.lanl.gov/data/cyber1/) (Kent, 2015) and the [Login Data Set for Risk-Based Authentication](https://doi.org/10.5281/zenodo.6782156) (Wiefling et al., 2022); neither is redistributed.
+- The agent runs [gpt-oss-20b](https://huggingface.co/openai/gpt-oss-20b) (Apache 2.0) on [Ollama](https://ollama.com), with tools served by the [Model Context Protocol](https://modelcontextprotocol.io) Python SDK.
+- The pipeline uses [Redpanda](https://redpanda.com), [TimescaleDB](https://www.timescale.com), [DuckDB](https://duckdb.org), [Apache Arrow](https://arrow.apache.org), [scikit-learn](https://scikit-learn.org), [LightGBM](https://lightgbm.readthedocs.io), [FastAPI](https://fastapi.tiangolo.com) and [SQLAlchemy](https://www.sqlalchemy.org).
+- The console uses [Next.js](https://nextjs.org), [Tailwind CSS](https://tailwindcss.com), [Tabler icons](https://tabler.io/icons), [framer-motion](https://motion.dev), [TanStack Query](https://tanstack.com/query), [Recharts](https://recharts.org), [Radix UI](https://www.radix-ui.com), [cmdk](https://cmdk.paco.me) and [sonner](https://sonner.emilkowal.ski).
