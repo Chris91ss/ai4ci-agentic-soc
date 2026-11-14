@@ -454,6 +454,9 @@ def run(
     retrain_on_drift: bool = typer.Option(
         False, "--retrain-on-drift", help="Retrain M1 offline when the drift monitor alarms."
     ),
+    verifier: bool = typer.Option(
+        False, "--verifier", help="Veto agent actions the cited evidence does not justify."
+    ),
 ) -> None:
     """Closed-loop run: simulator and SOC in one process, containment flowing back to the attack."""
     import time
@@ -477,7 +480,7 @@ def run(
     store.init_schema()
     sim = Simulator(cfg)
     pipeline_cfg = PipelineConfig(mode=mode, llm=llm, approval_delay_s=approval_delay,  # type: ignore[arg-type]
-                                  retrain_on_drift=retrain_on_drift)  # fmt: skip
+                                  retrain_on_drift=retrain_on_drift, verifier=verifier)  # fmt: skip
     runner = InProcessRun(sim, ModelRegistry(models).load_set(), pipeline_cfg, store)
     console.print(f"closed-loop run: {mode} ({llm if mode == 'agent' else 'playbooks'}), "
                   f"seed {cfg.seed}, org {org_seed}, {cfg.duration_h:g}h from {cfg.start:%Y-%m-%d %H:%M} -> {out}")  # fmt: skip
@@ -773,6 +776,9 @@ def evaluate_llm(
     llm: str = typer.Option("ollama:gpt-oss:20b"),
     hours: float = typer.Option(48.0),
     workers: int = typer.Option(1, help="Parallel runs (one local LLM serves them all)."),
+    verifier: bool = typer.Option(
+        False, help="Check the agent's actions with the evidence verifier."
+    ),
     models: Path = typer.Option(Path("models")),
     out: Path = typer.Option(EVAL_DIR),
 ) -> None:
@@ -782,14 +788,26 @@ def evaluate_llm(
 
     seed_list = _seeds(seeds)
     all_seeds = _seeds("401-410")
-    specs = [RunSpec(mode="agent", seed=s, hours=hours, llm=llm, models=str(models),
+    specs = [RunSpec(mode="agent", seed=s, hours=hours, llm=llm, models=str(models), verifier=verifier,
                      start=seed_start(all_seeds.index(s) if s in all_seeds else i))
              for i, s in enumerate(seed_list)]  # fmt: skip
     rows = run_many(specs, workers, _progress)
-    # The scripted analyst on the same seeds (from `soc evaluate e2e`), for a paired comparison.
     path = out / "results.json"
-    e2e_runs = json.loads(path.read_text()).get("e2e", {}).get("runs", []) if path.exists() else []
-    scripted = [r for r in e2e_runs if r.get("config") == "agent" and r["seed"] in seed_list]
+    earlier = json.loads(path.read_text()) if path.exists() else {}
+    # Earlier runs of other configurations or seeds are kept, and the scripted analyst on the
+    # same seeds (from `soc evaluate e2e`) is added for a paired comparison.
+    fresh = {(r.get("config"), r.get("seed")) for r in rows}
+    rows = [
+        r
+        for r in earlier.get("llm", {}).get("runs", [])
+        if (r.get("config"), r.get("seed")) not in fresh
+    ] + rows
+    seeds_run = {r.get("seed") for r in rows}
+    scripted = [
+        r
+        for r in earlier.get("e2e", {}).get("runs", [])
+        if r.get("config") == "agent" and r["seed"] in seeds_run
+    ]
     result = {"runs": rows, "summary": aggregate(rows + scripted)}
     console.print(f"report: {_update_results('llm', result, out)}")
 

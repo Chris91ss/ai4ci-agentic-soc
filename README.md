@@ -19,6 +19,7 @@ RFC: [docs/rfc/0001-agentic-soc.pdf](docs/rfc/0001-agentic-soc.pdf) (source: [do
 | Correlation engine, risk router and playbooks | `agentic_soc.correlation`, `agentic_soc.routing` | done |
 | MCP server and policy gate | `agentic_soc.mcp_server`, `agentic_soc.actions` | done |
 | Local-LLM triage agent (ReAct) | `agentic_soc.agent` | done |
+| Evidence verifier for the agent's actions (RFC stretch goal) | `agentic_soc.agent.verifier` | done |
 | Closed-loop pipeline (in-process and live on the broker) | `agentic_soc.pipeline` | done |
 | Evidence bundles behind every verdict, analyst feedback and FP statistics | `agentic_soc.evidence` | done |
 | FastAPI backend (REST + server-sent events) and Next.js SOC console | `agentic_soc.api`, `web/` | done |
@@ -45,7 +46,15 @@ uv run soc train              # train M1-M3 into the model registry (models/)
 uv run soc run                # closed loop: simulator + SOC in one process (scripted analyst)
 uv run soc run --llm ollama:gpt-oss:20b          # the triage agent on a local LLM (Ollama)
 uv run soc run --mode detectors                  # baseline: detectors + playbooks, no agent
+uv run soc run --llm ollama:gpt-oss:20b --verifier   # veto agent actions its evidence does not justify
 ```
+
+With `--verifier` every containment the agent proposes is checked against the alerts it cited
+before it executes: a blocked address must have sprayed, signed in as a stolen account or be the
+far end of C2 or exfiltration (and not a corporate or cloud egress); an account must have been
+used from attacker-like infrastructure or have run attacker tooling; an isolated host must show
+late-stage activity or C2. Vetoed actions are logged and audited and the incident stays with an
+analyst.
 
 Scenario S1 (drift) moves most staff to remote work through a newly adopted ZTNA service, so
 sign-ins come from new networks abroad and later in the day. The drift monitor compares the

@@ -217,6 +217,14 @@ class ScriptedLLM:
             verdict, confidence = "suspicious", 0.5
             reasons.append("anomalous but not corroborated; needs an analyst")
         actions = self._containment(incident, context, scores) if verdict == "malicious" else []
+        # Cite the alert behind every action, so each one can be checked against its evidence.
+        cited = {e["id"] for e in evidence}
+        for action in actions:
+            because = action.pop("because")
+            if because not in cited:
+                cited.add(because)
+                evidence.append({"id": because, "kind": "alert",
+                                 "note": f"{action['type']} {action['target']}"})  # fmt: skip
         primary = actions[0] if actions else {"type": "none"}
         return {
             "incident_id": incident_id,
@@ -257,7 +265,7 @@ class ScriptedLLM:
     def _containment(
         self, incident: dict[str, Any], context: dict[str, Any], scores: dict[Any, Any]
     ) -> list[dict[str, str]]:
-        candidates: list[tuple[int, str, str]] = []
+        candidates: list[tuple[int, str, str, str]] = []  # priority, action, target, alert
 
         def protected_host(host: str) -> bool:
             return bool(context.get(f"host:{host}", {}).get("protected_infrastructure"))
@@ -301,7 +309,7 @@ class ScriptedLLM:
             ips, hosts, users = ents.get("ips", []), ents.get("hosts", []), ents.get("users", [])
             if alert["detector"] == "M2" and t & C2_EXFIL:
                 if len(ips) > 1 and blockable(ips[1]):
-                    candidates.append((1, "block_ip", ips[1]))
+                    candidates.append((1, "block_ip", ips[1], alert["alert_id"]))
                 source = (
                     hosts[0]
                     if hosts
@@ -310,12 +318,16 @@ class ScriptedLLM:
                     else None
                 )
                 if source and not protected_host(source):
-                    candidates.append((0, "isolate_host", source))
+                    candidates.append((0, "isolate_host", source, alert["alert_id"]))
             if alert["detector"] == "M3" and t & HOST_COMPROMISE:
                 for host in hosts[:1]:
                     if not protected_host(host):
-                        candidates.append((0, "isolate_host", host))
-                candidates += [(2, "disable_account", u) for u in users if u.startswith("adm-")]
+                        candidates.append((0, "isolate_host", host, alert["alert_id"]))
+                candidates += [
+                    (2, "disable_account", u, alert["alert_id"])
+                    for u in users
+                    if u.startswith("adm-")
+                ]
             if alert["detector"] == "M1" and "T1078" in t and attacker_source(ips):
                 for user in users:
                     kind = context.get(f"user:{user}", {}).get("account_kind", "user")
@@ -324,14 +336,17 @@ class ScriptedLLM:
                             2 if kind == "admin" else 3,
                             "disable_account" if kind == "admin" else "revoke_sessions",
                             user,
+                            alert["alert_id"],
                         )
                     )
             if "T1110.003" in t:
-                candidates += [(4, "block_ip", ip) for ip in ips if blockable(ip)]
+                candidates += [
+                    (4, "block_ip", ip, alert["alert_id"]) for ip in ips if blockable(ip)
+                ]
         seen: set[tuple[str, str]] = set()
         out: list[dict[str, str]] = []
-        for _, action_type, target in sorted(candidates):
+        for _, action_type, target, alert_id in sorted(candidates):
             if (action_type, target) not in seen:
                 seen.add((action_type, target))
-                out.append({"type": action_type, "target": target})
+                out.append({"type": action_type, "target": target, "because": alert_id})
         return out[:3]

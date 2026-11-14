@@ -32,6 +32,7 @@ class RunSpec:
     scenarios: tuple[str, ...] = ()
     llm: str = "scripted"
     retrain_on_drift: bool = False
+    verifier: bool = False
     models: str = "models"
     overrides: dict[str, Any] = field(default_factory=dict)
 
@@ -41,7 +42,11 @@ class RunSpec:
         base = self.mode
         if self.mode == "agent" and self.llm != "scripted":
             base = f"agent:{self.llm.split(':', 1)[-1]}"
-        return base + ("+retrain" if self.retrain_on_drift else "")
+        return (
+            base
+            + ("+retrain" if self.retrain_on_drift else "")
+            + ("+verifier" if self.verifier else "")
+        )
 
     @property
     def name(self) -> str:
@@ -74,7 +79,10 @@ def run_one(spec: RunSpec) -> dict[str, Any]:
         store = Store(f"sqlite:///{Path(tmp) / 'soc.db'}")
         store.init_schema()
         pipeline_config = PipelineConfig(
-            mode=spec.mode, llm=spec.llm, retrain_on_drift=spec.retrain_on_drift
+            mode=spec.mode,
+            llm=spec.llm,
+            retrain_on_drift=spec.retrain_on_drift,
+            verifier=spec.verifier,
         )  # type: ignore[arg-type]
         runner = InProcessRun(sim, ModelRegistry(spec.models).load_set(), pipeline_config, store)
         outcome = runner.run()

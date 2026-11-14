@@ -13,6 +13,7 @@ from typing import Any, Literal
 from agentic_soc.actions import ActionManager, BrokerActionSink, PolicyConfig, PolicyGate
 from agentic_soc.agent import OllamaLLM, ScriptedLLM, TriageAgent, dismissal_guardrail
 from agentic_soc.agent.react import compact_json
+from agentic_soc.agent.verifier import EvidenceVerifier
 from agentic_soc.broker.base import Broker
 from agentic_soc.correlation import CorrelationEngine, IncidentState, IncidentUpdate
 from agentic_soc.detectors.base import Score
@@ -45,6 +46,8 @@ class PipelineConfig:
     from_beginning: bool = True  # False: a fresh consumer group starts at the end of the topics
     wall_time_scale: float = 1.0  # real LLM: simulated seconds per wall-clock second
     agent_max_steps: int = 12
+    # A deterministic verifier vetoes agent actions the cited evidence does not justify.
+    verifier: bool = False
     # Unattended runs approve high-impact actions automatically: at once through the policy gate
     # (approval_delay_s = 0), or after a simulated analyst's response time.
     auto_approve: bool = True
@@ -128,6 +131,9 @@ class SocPipeline:
         )
         self.mcp = build_server(SocTools(self.ctx))
         self.evidence = EvidenceBuilder(store, inventory, profiles, self.features.resolver)
+        self.verifier = (
+            EvidenceVerifier(inventory, self.features.resolver) if cfg.verifier else None
+        )
         m1 = self.local_m1()
         self.drift: DriftMonitor | None = None
         if cfg.drift_monitor and m1 is not None and m1.references:
@@ -348,6 +354,10 @@ class SocPipeline:
         evidence_ids = [e.id for e in decision.evidence]
         if decision.verdict != "benign":
             for action in decision.all_actions():
+                if decided_by == "agent" and not self._verified(
+                    state, action, set(evidence_ids), now
+                ):
+                    continue
                 self._propose(state.incident_id, action.type, action.target or "", decided_by,
                               decision.rationale[:600], evidence_ids)  # fmt: skip
         state.verdict, state.decided_by = decision.verdict, decided_by
@@ -387,6 +397,20 @@ class SocPipeline:
                   verdict=decision.verdict, actions=[[a["type"], a["target"]] for a in actions],
                   latency_s=round(latency_s, 1), note=note)  # fmt: skip
         self.persist_incident(state)
+
+    def _verified(self, state: IncidentState, action: Any, cited: set[str], now: datetime) -> bool:
+        if self.verifier is None:
+            return True
+        review = self.verifier.review(
+            action.type, action.target or "", list(state.alerts.values()), cited
+        )
+        if not review.approved:
+            self.stats["actions_vetoed"] += 1
+            self._log("action_vetoed", incident_id=state.incident_id, type=action.type,
+                      target=action.target, reason=review.reason)  # fmt: skip
+            self.store.audit("verifier", "veto", "incident", state.incident_id,
+                             {"type": action.type, "target": action.target, "reason": review.reason}, ts=now)  # fmt: skip
+        return review.approved
 
     def _propose(
         self,
