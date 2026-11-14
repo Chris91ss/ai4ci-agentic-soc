@@ -1,0 +1,4052 @@
+{
+ "models": {
+  "test_runs": [
+   "test-1",
+   "test-2"
+  ],
+  "test_days": 4.0,
+  "kinds": {
+   "M1-user": {
+    "rows": 13449,
+    "positives": 323,
+    "pr_auc": 0.996,
+    "roc_auc": 0.9998,
+    "recall_at_1pct_fpr": 0.9938,
+    "threshold": 0.99548,
+    "recall_at_threshold": 0.9907,
+    "fpr_at_threshold": 0.004876,
+    "false_positives_per_day": 16.0,
+    "precision_at_threshold": 0.8333,
+    "recall_by_stage": {
+     "initial_access": 0.5,
+     "lateral_movement": 0.667,
+     "spray": 1.0
+    },
+    "detection_delay_min": {
+     "initial_access": [
+      4.4,
+      1.4
+     ],
+     "lateral_movement": [
+      11.1,
+      10.8
+     ],
+     "spray": [
+      11.0,
+      13.1
+     ]
+    }
+   },
+   "M1-ip": {
+    "rows": 2438,
+    "positives": 28,
+    "pr_auc": 0.9789,
+    "roc_auc": 0.9997,
+    "recall_at_1pct_fpr": 1.0,
+    "threshold": 0.99218,
+    "recall_at_threshold": 1.0,
+    "fpr_at_threshold": 0.007054,
+    "false_positives_per_day": 4.25,
+    "precision_at_threshold": 0.6222,
+    "recall_by_stage": {
+     "initial_access": 1.0,
+     "spray": 1.0
+    },
+    "detection_delay_min": {
+     "initial_access": [
+      4.4,
+      1.4
+     ],
+     "spray": [
+      11.0,
+      13.1
+     ]
+    }
+   },
+   "M2": {
+    "rows": 492957,
+    "positives": 481,
+    "pr_auc": 0.9989,
+    "roc_auc": 1.0,
+    "recall_at_1pct_fpr": 1.0,
+    "threshold": 0.5,
+    "recall_at_threshold": 0.9688,
+    "fpr_at_threshold": 6e-06,
+    "false_positives_per_day": 0.75,
+    "precision_at_threshold": 0.9936,
+    "recall_by_stage": {
+     "collection": 0.0,
+     "command_and_control": 1.0,
+     "discovery": 0.967,
+     "exfiltration": 1.0,
+     "initial_access": 0.0,
+     "lateral_movement": 0.7,
+     "spray": 1.0
+    },
+    "detection_delay_min": {
+     "command_and_control": [
+      8.6,
+      13.0
+     ],
+     "discovery": [
+      4.3,
+      4.3
+     ],
+     "exfiltration": [
+      19.1
+     ],
+     "lateral_movement": [
+      11.1,
+      10.8
+     ],
+     "spray": [
+      11.0,
+      13.1
+     ]
+    }
+   },
+   "M3": {
+    "rows": 63812,
+    "positives": 18,
+    "pr_auc": 0.7488,
+    "roc_auc": 0.9444,
+    "recall_at_1pct_fpr": 1.0,
+    "threshold": 0.99949,
+    "recall_at_threshold": 0.8889,
+    "fpr_at_threshold": 0.000282,
+    "false_positives_per_day": 4.5,
+    "precision_at_threshold": 0.4706,
+    "recall_by_stage": {
+     "collection": 1.0,
+     "credential_access": 1.0,
+     "discovery": 1.0,
+     "execution": 1.0,
+     "initial_access": 1.0,
+     "lateral_movement": 0.667
+    },
+    "detection_delay_min": {
+     "collection": [
+      4.1,
+      11.2
+     ],
+     "credential_access": [
+      2.3,
+      5.2
+     ],
+     "discovery": [
+      4.3,
+      9.3
+     ],
+     "execution": [
+      8.7,
+      8.1
+     ],
+     "initial_access": [
+      9.4,
+      11.4
+     ],
+     "lateral_movement": [
+      1.1,
+      0.8
+     ]
+    }
+   }
+  }
+ },
+ "generated": "2026-11-14 16:03 UTC",
+ "e2e": {
+  "runs": [
+   {
+    "mode": "agent",
+    "seed": 401,
+    "campaign_start": "2026-03-16T17:00:22.885Z",
+    "campaign_status": "stalled",
+    "stall_reason": "foothold WS-0187 isolated before credential_access",
+    "furthest_stage": "command_and_control",
+    "furthest_stage_index": 5,
+    "detected": true,
+    "mttd_min": 15.6,
+    "detectors_on_attack": [
+     "M1-ip",
+     "M1-user",
+     "M2",
+     "M3"
+    ],
+    "contained": true,
+    "mttc_min": 18.6,
+    "stopped_before_exfiltration": true,
+    "exfil_gb": 0.0,
+    "actions_executed": 9,
+    "actions_on_attack": 9,
+    "false_containments": 0,
+    "false_containments_by_type": {},
+    "alerts": 141,
+    "incidents": 26,
+    "attack_incidents": 3,
+    "alert_to_incident_ratio": 5.42,
+    "alert_reduction": 0.8156,
+    "events": 416481,
+    "drift_alarms": 0,
+    "retrains": 0,
+    "agent": {
+     "decisions": 14,
+     "incidents_decided": 9,
+     "verdict": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "tp": 2,
+      "fp": 0,
+      "fn": 0
+     },
+     "attack_incidents_flagged": 2,
+     "attack_incidents_decided": 2,
+     "attack_dismissals_escalated": 0,
+     "action_correctness": 1.0,
+     "invalid_tool_call_rate": 0.0,
+     "llm_calls": 118,
+     "tool_calls": 104,
+     "invalid_tool_calls": 0,
+     "latency_mean_s": 126.5,
+     "latency_p95_s": 165.04,
+     "timeouts": 0,
+     "failures": 0,
+     "escalated_dismissals": 0
+    },
+    "drift": null,
+    "name": "agent-seed401",
+    "config": "agent",
+    "start": "2026-03-16T00:00:00+00:00",
+    "wall_s": 159.8
+   },
+   {
+    "mode": "agent",
+    "seed": 402,
+    "campaign_start": "2026-03-23T21:33:37.167Z",
+    "campaign_status": "stalled",
+    "stall_reason": "foothold WS-0064 isolated before credential_access",
+    "furthest_stage": "command_and_control",
+    "furthest_stage_index": 5,
+    "detected": true,
+    "mttd_min": 12.4,
+    "detectors_on_attack": [
+     "M1-ip",
+     "M1-user",
+     "M2",
+     "M3"
+    ],
+    "contained": true,
+    "mttc_min": 15.4,
+    "stopped_before_exfiltration": true,
+    "exfil_gb": 0.0,
+    "actions_executed": 6,
+    "actions_on_attack": 6,
+    "false_containments": 0,
+    "false_containments_by_type": {},
+    "alerts": 283,
+    "incidents": 32,
+    "attack_incidents": 2,
+    "alert_to_incident_ratio": 8.84,
+    "alert_reduction": 0.8869,
+    "events": 413501,
+    "drift_alarms": 0,
+    "retrains": 0,
+    "agent": {
+     "decisions": 9,
+     "incidents_decided": 4,
+     "verdict": {
+      "precision": 1.0,
+      "recall": 0.5,
+      "f1": 0.6666666666666666,
+      "tp": 1,
+      "fp": 0,
+      "fn": 1
+     },
+     "attack_incidents_flagged": 2,
+     "attack_incidents_decided": 2,
+     "attack_dismissals_escalated": 0,
+     "action_correctness": 1.0,
+     "invalid_tool_call_rate": 0.0,
+     "llm_calls": 68,
+     "tool_calls": 59,
+     "invalid_tool_calls": 0,
+     "latency_mean_s": 113.4,
+     "latency_p95_s": 150.18,
+     "timeouts": 0,
+     "failures": 0,
+     "escalated_dismissals": 0
+    },
+    "drift": null,
+    "name": "agent-seed402",
+    "config": "agent",
+    "start": "2026-03-23T00:00:00+00:00",
+    "wall_s": 160.4
+   },
+   {
+    "mode": "agent",
+    "seed": 403,
+    "campaign_start": "2026-03-30T20:35:26.134Z",
+    "campaign_status": "stalled",
+    "stall_reason": "foothold WS-0158 isolated before credential_access",
+    "furthest_stage": "command_and_control",
+    "furthest_stage_index": 5,
+    "detected": true,
+    "mttd_min": 10.6,
+    "detectors_on_attack": [
+     "M1-ip",
+     "M1-user",
+     "M2",
+     "M3"
+    ],
+    "contained": true,
+    "mttc_min": 13.6,
+    "stopped_before_exfiltration": true,
+    "exfil_gb": 0.0,
+    "actions_executed": 9,
+    "actions_on_attack": 9,
+    "false_containments": 0,
+    "false_containments_by_type": {},
+    "alerts": 169,
+    "incidents": 31,
+    "attack_incidents": 3,
+    "alert_to_incident_ratio": 5.45,
+    "alert_reduction": 0.8166,
+    "events": 425970,
+    "drift_alarms": 0,
+    "retrains": 0,
+    "agent": {
+     "decisions": 12,
+     "incidents_decided": 6,
+     "verdict": {
+      "precision": 1.0,
+      "recall": 0.6666666666666666,
+      "f1": 0.8,
+      "tp": 2,
+      "fp": 0,
+      "fn": 1
+     },
+     "attack_incidents_flagged": 3,
+     "attack_incidents_decided": 3,
+     "attack_dismissals_escalated": 0,
+     "action_correctness": 1.0,
+     "invalid_tool_call_rate": 0.0,
+     "llm_calls": 93,
+     "tool_calls": 81,
+     "invalid_tool_calls": 0,
+     "latency_mean_s": 116.3,
+     "latency_p95_s": 150.06,
+     "timeouts": 0,
+     "failures": 0,
+     "escalated_dismissals": 0
+    },
+    "drift": null,
+    "name": "agent-seed403",
+    "config": "agent",
+    "start": "2026-03-30T00:00:00+00:00",
+    "wall_s": 164.6
+   },
+   {
+    "mode": "agent",
+    "seed": 404,
+    "campaign_start": "2026-04-06T20:31:55.022Z",
+    "campaign_status": "stalled",
+    "stall_reason": "foothold WS-0085 isolated before credential_access",
+    "furthest_stage": "command_and_control",
+    "furthest_stage_index": 5,
+    "detected": true,
+    "mttd_min": 14.1,
+    "detectors_on_attack": [
+     "M1-ip",
+     "M1-user",
+     "M2",
+     "M3"
+    ],
+    "contained": true,
+    "mttc_min": 17.1,
+    "stopped_before_exfiltration": true,
+    "exfil_gb": 0.0,
+    "actions_executed": 7,
+    "actions_on_attack": 7,
+    "false_containments": 0,
+    "false_containments_by_type": {},
+    "alerts": 118,
+    "incidents": 29,
+    "attack_incidents": 3,
+    "alert_to_incident_ratio": 4.07,
+    "alert_reduction": 0.7542,
+    "events": 416686,
+    "drift_alarms": 0,
+    "retrains": 0,
+    "agent": {
+     "decisions": 9,
+     "incidents_decided": 5,
+     "verdict": {
+      "precision": 1.0,
+      "recall": 0.6666666666666666,
+      "f1": 0.8,
+      "tp": 2,
+      "fp": 0,
+      "fn": 1
+     },
+     "attack_incidents_flagged": 3,
+     "attack_incidents_decided": 3,
+     "attack_dismissals_escalated": 0,
+     "action_correctness": 1.0,
+     "invalid_tool_call_rate": 0.0,
+     "llm_calls": 70,
+     "tool_calls": 61,
+     "invalid_tool_calls": 0,
+     "latency_mean_s": 116.7,
+     "latency_p95_s": 165.04,
+     "timeouts": 0,
+     "failures": 0,
+     "escalated_dismissals": 0
+    },
+    "drift": null,
+    "name": "agent-seed404",
+    "config": "agent",
+    "start": "2026-04-06T00:00:00+00:00",
+    "wall_s": 159.8
+   },
+   {
+    "mode": "agent",
+    "seed": 405,
+    "campaign_start": "2026-04-13T18:27:00.907Z",
+    "campaign_status": "stalled",
+    "stall_reason": "foothold WS-0085 isolated before collection",
+    "furthest_stage": "lateral_movement",
+    "furthest_stage_index": 7,
+    "detected": true,
+    "mttd_min": 4.0,
+    "detectors_on_attack": [
+     "M1-ip",
+     "M1-user",
+     "M2",
+     "M3"
+    ],
+    "contained": true,
+    "mttc_min": 6.0,
+    "stopped_before_exfiltration": true,
+    "exfil_gb": 0.0,
+    "actions_executed": 6,
+    "actions_on_attack": 6,
+    "false_containments": 0,
+    "false_containments_by_type": {},
+    "alerts": 290,
+    "incidents": 28,
+    "attack_incidents": 4,
+    "alert_to_incident_ratio": 10.36,
+    "alert_reduction": 0.9034,
+    "events": 416138,
+    "drift_alarms": 0,
+    "retrains": 0,
+    "agent": {
+     "decisions": 13,
+     "incidents_decided": 6,
+     "verdict": {
+      "precision": 1.0,
+      "recall": 0.5,
+      "f1": 0.6666666666666666,
+      "tp": 1,
+      "fp": 0,
+      "fn": 1
+     },
+     "attack_incidents_flagged": 2,
+     "attack_incidents_decided": 2,
+     "attack_dismissals_escalated": 0,
+     "action_correctness": 1.0,
+     "invalid_tool_call_rate": 0.0,
+     "llm_calls": 107,
+     "tool_calls": 94,
+     "invalid_tool_calls": 0,
+     "latency_mean_s": 123.5,
+     "latency_p95_s": 165.04,
+     "timeouts": 0,
+     "failures": 0,
+     "escalated_dismissals": 0
+    },
+    "drift": null,
+    "name": "agent-seed405",
+    "config": "agent",
+    "start": "2026-04-13T00:00:00+00:00",
+    "wall_s": 163.7
+   },
+   {
+    "mode": "agent",
+    "seed": 406,
+    "campaign_start": "2026-04-20T21:35:42.184Z",
+    "campaign_status": "stalled",
+    "stall_reason": "no usable compromised account before discovery",
+    "furthest_stage": "spray",
+    "furthest_stage_index": 1,
+    "detected": true,
+    "mttd_min": 10.3,
+    "detectors_on_attack": [
+     "M1-ip",
+     "M1-user",
+     "M2"
+    ],
+    "contained": true,
+    "mttc_min": 13.3,
+    "stopped_before_exfiltration": true,
+    "exfil_gb": 0.0,
+    "actions_executed": 7,
+    "actions_on_attack": 7,
+    "false_containments": 0,
+    "false_containments_by_type": {},
+    "alerts": 108,
+    "incidents": 30,
+    "attack_incidents": 3,
+    "alert_to_incident_ratio": 3.6,
+    "alert_reduction": 0.7222,
+    "events": 425796,
+    "drift_alarms": 0,
+    "retrains": 0,
+    "agent": {
+     "decisions": 13,
+     "incidents_decided": 11,
+     "verdict": {
+      "precision": 1.0,
+      "recall": 0.6666666666666666,
+      "f1": 0.8,
+      "tp": 2,
+      "fp": 0,
+      "fn": 1
+     },
+     "attack_incidents_flagged": 3,
+     "attack_incidents_decided": 3,
+     "attack_dismissals_escalated": 0,
+     "action_correctness": 1.0,
+     "invalid_tool_call_rate": 0.0,
+     "llm_calls": 92,
+     "tool_calls": 79,
+     "invalid_tool_calls": 0,
+     "latency_mean_s": 106.2,
+     "latency_p95_s": 135.03,
+     "timeouts": 0,
+     "failures": 0,
+     "escalated_dismissals": 0
+    },
+    "drift": null,
+    "name": "agent-seed406",
+    "config": "agent",
+    "start": "2026-04-20T00:00:00+00:00",
+    "wall_s": 165.4
+   },
+   {
+    "mode": "agent",
+    "seed": 407,
+    "campaign_start": "2026-04-27T20:45:57.654Z",
+    "campaign_status": "stalled",
+    "stall_reason": "foothold WS-0187 isolated before credential_access",
+    "furthest_stage": "command_and_control",
+    "furthest_stage_index": 5,
+    "detected": true,
+    "mttd_min": 15.0,
+    "detectors_on_attack": [
+     "M1-ip",
+     "M1-user",
+     "M2",
+     "M3"
+    ],
+    "contained": true,
+    "mttc_min": 18.0,
+    "stopped_before_exfiltration": true,
+    "exfil_gb": 0.0,
+    "actions_executed": 5,
+    "actions_on_attack": 5,
+    "false_containments": 0,
+    "false_containments_by_type": {},
+    "alerts": 242,
+    "incidents": 23,
+    "attack_incidents": 2,
+    "alert_to_incident_ratio": 10.52,
+    "alert_reduction": 0.905,
+    "events": 425195,
+    "drift_alarms": 0,
+    "retrains": 0,
+    "agent": {
+     "decisions": 10,
+     "incidents_decided": 5,
+     "verdict": {
+      "precision": 1.0,
+      "recall": 0.5,
+      "f1": 0.6666666666666666,
+      "tp": 1,
+      "fp": 0,
+      "fn": 1
+     },
+     "attack_incidents_flagged": 2,
+     "attack_incidents_decided": 2,
+     "attack_dismissals_escalated": 0,
+     "action_correctness": 1.0,
+     "invalid_tool_call_rate": 0.0,
+     "llm_calls": 82,
+     "tool_calls": 72,
+     "invalid_tool_calls": 0,
+     "latency_mean_s": 123.0,
+     "latency_p95_s": 150.04,
+     "timeouts": 0,
+     "failures": 0,
+     "escalated_dismissals": 0
+    },
+    "drift": null,
+    "name": "agent-seed407",
+    "config": "agent",
+    "start": "2026-04-27T00:00:00+00:00",
+    "wall_s": 165.1
+   },
+   {
+    "mode": "agent",
+    "seed": 408,
+    "campaign_start": "2026-05-04T17:29:54.276Z",
+    "campaign_status": "stalled",
+    "stall_reason": "no usable compromised account before execution",
+    "furthest_stage": "discovery",
+    "furthest_stage_index": 3,
+    "detected": true,
+    "mttd_min": 1.1,
+    "detectors_on_attack": [
+     "M1-ip",
+     "M1-user",
+     "M2",
+     "M3"
+    ],
+    "contained": true,
+    "mttc_min": 19.1,
+    "stopped_before_exfiltration": true,
+    "exfil_gb": 0.0,
+    "actions_executed": 7,
+    "actions_on_attack": 7,
+    "false_containments": 0,
+    "false_containments_by_type": {},
+    "alerts": 131,
+    "incidents": 29,
+    "attack_incidents": 2,
+    "alert_to_incident_ratio": 4.52,
+    "alert_reduction": 0.7786,
+    "events": 420153,
+    "drift_alarms": 0,
+    "retrains": 0,
+    "agent": {
+     "decisions": 10,
+     "incidents_decided": 4,
+     "verdict": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "tp": 2,
+      "fp": 0,
+      "fn": 0
+     },
+     "attack_incidents_flagged": 2,
+     "attack_incidents_decided": 2,
+     "attack_dismissals_escalated": 0,
+     "action_correctness": 1.0,
+     "invalid_tool_call_rate": 0.0,
+     "llm_calls": 77,
+     "tool_calls": 67,
+     "invalid_tool_calls": 0,
+     "latency_mean_s": 115.5,
+     "latency_p95_s": 150.04,
+     "timeouts": 0,
+     "failures": 0,
+     "escalated_dismissals": 0
+    },
+    "drift": null,
+    "name": "agent-seed408",
+    "config": "agent",
+    "start": "2026-05-04T00:00:00+00:00",
+    "wall_s": 161.6
+   },
+   {
+    "mode": "agent",
+    "seed": 409,
+    "campaign_start": "2026-05-11T21:31:12.840Z",
+    "campaign_status": "stalled",
+    "stall_reason": "foothold WS-0039 isolated before credential_access",
+    "furthest_stage": "command_and_control",
+    "furthest_stage_index": 5,
+    "detected": true,
+    "mttd_min": 14.8,
+    "detectors_on_attack": [
+     "M1-ip",
+     "M1-user",
+     "M2",
+     "M3"
+    ],
+    "contained": true,
+    "mttc_min": 17.8,
+    "stopped_before_exfiltration": true,
+    "exfil_gb": 0.0,
+    "actions_executed": 10,
+    "actions_on_attack": 10,
+    "false_containments": 0,
+    "false_containments_by_type": {},
+    "alerts": 193,
+    "incidents": 43,
+    "attack_incidents": 3,
+    "alert_to_incident_ratio": 4.49,
+    "alert_reduction": 0.7772,
+    "events": 416422,
+    "drift_alarms": 0,
+    "retrains": 0,
+    "agent": {
+     "decisions": 12,
+     "incidents_decided": 6,
+     "verdict": {
+      "precision": 1.0,
+      "recall": 0.6666666666666666,
+      "f1": 0.8,
+      "tp": 2,
+      "fp": 0,
+      "fn": 1
+     },
+     "attack_incidents_flagged": 3,
+     "attack_incidents_decided": 3,
+     "attack_dismissals_escalated": 0,
+     "action_correctness": 1.0,
+     "invalid_tool_call_rate": 0.0,
+     "llm_calls": 99,
+     "tool_calls": 87,
+     "invalid_tool_calls": 0,
+     "latency_mean_s": 123.8,
+     "latency_p95_s": 150.03,
+     "timeouts": 0,
+     "failures": 0,
+     "escalated_dismissals": 0
+    },
+    "drift": null,
+    "name": "agent-seed409",
+    "config": "agent",
+    "start": "2026-05-11T00:00:00+00:00",
+    "wall_s": 86.6
+   },
+   {
+    "mode": "agent",
+    "seed": 410,
+    "campaign_start": "2026-05-18T18:06:32.325Z",
+    "campaign_status": "stalled",
+    "stall_reason": "no usable compromised account before execution",
+    "furthest_stage": "discovery",
+    "furthest_stage_index": 3,
+    "detected": true,
+    "mttd_min": 9.5,
+    "detectors_on_attack": [
+     "M1-ip",
+     "M1-user",
+     "M2",
+     "M3"
+    ],
+    "contained": true,
+    "mttc_min": 12.5,
+    "stopped_before_exfiltration": true,
+    "exfil_gb": 0.0,
+    "actions_executed": 7,
+    "actions_on_attack": 7,
+    "false_containments": 0,
+    "false_containments_by_type": {},
+    "alerts": 143,
+    "incidents": 30,
+    "attack_incidents": 4,
+    "alert_to_incident_ratio": 4.77,
+    "alert_reduction": 0.7902,
+    "events": 422434,
+    "drift_alarms": 0,
+    "retrains": 0,
+    "agent": {
+     "decisions": 9,
+     "incidents_decided": 4,
+     "verdict": {
+      "precision": 1.0,
+      "recall": 0.6666666666666666,
+      "f1": 0.8,
+      "tp": 2,
+      "fp": 0,
+      "fn": 1
+     },
+     "attack_incidents_flagged": 3,
+     "attack_incidents_decided": 3,
+     "attack_dismissals_escalated": 0,
+     "action_correctness": 1.0,
+     "invalid_tool_call_rate": 0.0,
+     "llm_calls": 66,
+     "tool_calls": 57,
+     "invalid_tool_calls": 0,
+     "latency_mean_s": 110.0,
+     "latency_p95_s": 150.02,
+     "timeouts": 0,
+     "failures": 0,
+     "escalated_dismissals": 0
+    },
+    "drift": null,
+    "name": "agent-seed410",
+    "config": "agent",
+    "start": "2026-05-18T00:00:00+00:00",
+    "wall_s": 86.6
+   },
+   {
+    "mode": "detectors",
+    "seed": 401,
+    "campaign_start": "2026-03-16T17:00:22.885Z",
+    "campaign_status": "stalled",
+    "stall_reason": "access infrastructure blocked before execution",
+    "furthest_stage": "discovery",
+    "furthest_stage_index": 3,
+    "detected": true,
+    "mttd_min": 15.6,
+    "detectors_on_attack": [
+     "M1-ip",
+     "M1-user",
+     "M2",
+     "M3"
+    ],
+    "contained": true,
+    "mttc_min": 15.6,
+    "stopped_before_exfiltration": true,
+    "exfil_gb": 0.0,
+    "actions_executed": 21,
+    "actions_on_attack": 10,
+    "false_containments": 11,
+    "false_containments_by_type": {
+     "block_ip": 6,
+     "revoke_sessions": 5
+    },
+    "alerts": 246,
+    "incidents": 26,
+    "attack_incidents": 3,
+    "alert_to_incident_ratio": 9.46,
+    "alert_reduction": 0.8943,
+    "events": 417017,
+    "drift_alarms": 0,
+    "retrains": 0,
+    "drift": null,
+    "name": "detectors-seed401",
+    "config": "detectors",
+    "start": "2026-03-16T00:00:00+00:00",
+    "wall_s": 586.8
+   },
+   {
+    "mode": "detectors",
+    "seed": 402,
+    "campaign_start": "2026-03-23T21:33:37.167Z",
+    "campaign_status": "stalled",
+    "stall_reason": "access infrastructure blocked before execution",
+    "furthest_stage": "discovery",
+    "furthest_stage_index": 3,
+    "detected": true,
+    "mttd_min": 12.4,
+    "detectors_on_attack": [
+     "M1-ip",
+     "M1-user",
+     "M2",
+     "M3"
+    ],
+    "contained": true,
+    "mttc_min": 12.4,
+    "stopped_before_exfiltration": true,
+    "exfil_gb": 0.0,
+    "actions_executed": 14,
+    "actions_on_attack": 10,
+    "false_containments": 4,
+    "false_containments_by_type": {
+     "block_ip": 2,
+     "revoke_sessions": 2
+    },
+    "alerts": 275,
+    "incidents": 34,
+    "attack_incidents": 4,
+    "alert_to_incident_ratio": 8.09,
+    "alert_reduction": 0.8764,
+    "events": 413748,
+    "drift_alarms": 0,
+    "retrains": 0,
+    "drift": null,
+    "name": "detectors-seed402",
+    "config": "detectors",
+    "start": "2026-03-23T00:00:00+00:00",
+    "wall_s": 243.9
+   },
+   {
+    "mode": "detectors",
+    "seed": 403,
+    "campaign_start": "2026-03-30T20:35:26.134Z",
+    "campaign_status": "stalled",
+    "stall_reason": "no usable compromised account before execution",
+    "furthest_stage": "discovery",
+    "furthest_stage_index": 3,
+    "detected": true,
+    "mttd_min": 10.6,
+    "detectors_on_attack": [
+     "M1-ip",
+     "M1-user",
+     "M2",
+     "M3"
+    ],
+    "contained": true,
+    "mttc_min": 10.6,
+    "stopped_before_exfiltration": true,
+    "exfil_gb": 0.0,
+    "actions_executed": 15,
+    "actions_on_attack": 9,
+    "false_containments": 6,
+    "false_containments_by_type": {
+     "block_ip": 2,
+     "revoke_sessions": 2,
+     "isolate_host": 2
+    },
+    "alerts": 163,
+    "incidents": 37,
+    "attack_incidents": 5,
+    "alert_to_incident_ratio": 4.41,
+    "alert_reduction": 0.773,
+    "events": 426087,
+    "drift_alarms": 0,
+    "retrains": 0,
+    "drift": null,
+    "name": "detectors-seed403",
+    "config": "detectors",
+    "start": "2026-03-30T00:00:00+00:00",
+    "wall_s": 196.6
+   },
+   {
+    "mode": "detectors",
+    "seed": 404,
+    "campaign_start": "2026-04-06T20:31:55.022Z",
+    "campaign_status": "stalled",
+    "stall_reason": "foothold WS-0085 isolated before credential_access",
+    "furthest_stage": "command_and_control",
+    "furthest_stage_index": 5,
+    "detected": true,
+    "mttd_min": 14.1,
+    "detectors_on_attack": [
+     "M1-ip",
+     "M1-user",
+     "M2",
+     "M3"
+    ],
+    "contained": true,
+    "mttc_min": 14.1,
+    "stopped_before_exfiltration": true,
+    "exfil_gb": 0.0,
+    "actions_executed": 11,
+    "actions_on_attack": 9,
+    "false_containments": 2,
+    "false_containments_by_type": {
+     "block_ip": 1,
+     "revoke_sessions": 1
+    },
+    "alerts": 231,
+    "incidents": 29,
+    "attack_incidents": 4,
+    "alert_to_incident_ratio": 7.97,
+    "alert_reduction": 0.8745,
+    "events": 416925,
+    "drift_alarms": 0,
+    "retrains": 0,
+    "drift": null,
+    "name": "detectors-seed404",
+    "config": "detectors",
+    "start": "2026-04-06T00:00:00+00:00",
+    "wall_s": 173.6
+   },
+   {
+    "mode": "detectors",
+    "seed": 405,
+    "campaign_start": "2026-04-13T18:27:00.907Z",
+    "campaign_status": "stalled",
+    "stall_reason": "no usable compromised account before discovery",
+    "furthest_stage": "spray",
+    "furthest_stage_index": 1,
+    "detected": true,
+    "mttd_min": 4.0,
+    "detectors_on_attack": [
+     "M1-ip",
+     "M1-user",
+     "M2"
+    ],
+    "contained": true,
+    "mttc_min": 4.0,
+    "stopped_before_exfiltration": true,
+    "exfil_gb": 0.0,
+    "actions_executed": 14,
+    "actions_on_attack": 6,
+    "false_containments": 8,
+    "false_containments_by_type": {
+     "block_ip": 4,
+     "revoke_sessions": 4
+    },
+    "alerts": 124,
+    "incidents": 30,
+    "attack_incidents": 4,
+    "alert_to_incident_ratio": 4.13,
+    "alert_reduction": 0.7581,
+    "events": 416123,
+    "drift_alarms": 0,
+    "retrains": 0,
+    "drift": null,
+    "name": "detectors-seed405",
+    "config": "detectors",
+    "start": "2026-04-13T00:00:00+00:00",
+    "wall_s": 189.2
+   },
+   {
+    "mode": "detectors",
+    "seed": 406,
+    "campaign_start": "2026-04-20T21:35:42.184Z",
+    "campaign_status": "stalled",
+    "stall_reason": "foothold WS-0085 isolated before credential_access",
+    "furthest_stage": "command_and_control",
+    "furthest_stage_index": 5,
+    "detected": true,
+    "mttd_min": 10.3,
+    "detectors_on_attack": [
+     "M1-ip",
+     "M1-user",
+     "M2",
+     "M3"
+    ],
+    "contained": true,
+    "mttc_min": 10.3,
+    "stopped_before_exfiltration": true,
+    "exfil_gb": 0.0,
+    "actions_executed": 16,
+    "actions_on_attack": 10,
+    "false_containments": 6,
+    "false_containments_by_type": {
+     "isolate_host": 2,
+     "block_ip": 2,
+     "revoke_sessions": 2
+    },
+    "alerts": 223,
+    "incidents": 26,
+    "attack_incidents": 3,
+    "alert_to_incident_ratio": 8.58,
+    "alert_reduction": 0.8834,
+    "events": 424873,
+    "drift_alarms": 0,
+    "retrains": 0,
+    "drift": null,
+    "name": "detectors-seed406",
+    "config": "detectors",
+    "start": "2026-04-20T00:00:00+00:00",
+    "wall_s": 182.7
+   },
+   {
+    "mode": "detectors",
+    "seed": 407,
+    "campaign_start": "2026-04-27T20:45:57.654Z",
+    "campaign_status": "stalled",
+    "stall_reason": "foothold WS-0145 isolated before credential_access",
+    "furthest_stage": "command_and_control",
+    "furthest_stage_index": 5,
+    "detected": true,
+    "mttd_min": 15.0,
+    "detectors_on_attack": [
+     "M1-ip",
+     "M1-user",
+     "M2",
+     "M3"
+    ],
+    "contained": true,
+    "mttc_min": 15.0,
+    "stopped_before_exfiltration": true,
+    "exfil_gb": 0.0,
+    "actions_executed": 12,
+    "actions_on_attack": 9,
+    "false_containments": 3,
+    "false_containments_by_type": {
+     "isolate_host": 1,
+     "block_ip": 1,
+     "revoke_sessions": 1
+    },
+    "alerts": 246,
+    "incidents": 24,
+    "attack_incidents": 3,
+    "alert_to_incident_ratio": 10.25,
+    "alert_reduction": 0.9024,
+    "events": 424105,
+    "drift_alarms": 0,
+    "retrains": 0,
+    "drift": null,
+    "name": "detectors-seed407",
+    "config": "detectors",
+    "start": "2026-04-27T00:00:00+00:00",
+    "wall_s": 173.3
+   },
+   {
+    "mode": "detectors",
+    "seed": 408,
+    "campaign_start": "2026-05-04T17:29:54.276Z",
+    "campaign_status": "stalled",
+    "stall_reason": "access infrastructure blocked before execution",
+    "furthest_stage": "discovery",
+    "furthest_stage_index": 3,
+    "detected": true,
+    "mttd_min": 1.1,
+    "detectors_on_attack": [
+     "M1-ip",
+     "M1-user",
+     "M2",
+     "M3"
+    ],
+    "contained": true,
+    "mttc_min": 1.1,
+    "stopped_before_exfiltration": true,
+    "exfil_gb": 0.0,
+    "actions_executed": 12,
+    "actions_on_attack": 9,
+    "false_containments": 3,
+    "false_containments_by_type": {
+     "isolate_host": 3
+    },
+    "alerts": 224,
+    "incidents": 34,
+    "attack_incidents": 4,
+    "alert_to_incident_ratio": 6.59,
+    "alert_reduction": 0.8482,
+    "events": 418722,
+    "drift_alarms": 0,
+    "retrains": 0,
+    "drift": null,
+    "name": "detectors-seed408",
+    "config": "detectors",
+    "start": "2026-05-04T00:00:00+00:00",
+    "wall_s": 169.8
+   },
+   {
+    "mode": "detectors",
+    "seed": 409,
+    "campaign_start": "2026-05-11T21:31:12.840Z",
+    "campaign_status": "stalled",
+    "stall_reason": "access infrastructure blocked before discovery",
+    "furthest_stage": "spray",
+    "furthest_stage_index": 1,
+    "detected": true,
+    "mttd_min": 14.8,
+    "detectors_on_attack": [
+     "M1-ip",
+     "M1-user",
+     "M2"
+    ],
+    "contained": true,
+    "mttc_min": 14.8,
+    "stopped_before_exfiltration": true,
+    "exfil_gb": 0.0,
+    "actions_executed": 13,
+    "actions_on_attack": 10,
+    "false_containments": 3,
+    "false_containments_by_type": {
+     "isolate_host": 1,
+     "block_ip": 1,
+     "revoke_sessions": 1
+    },
+    "alerts": 125,
+    "incidents": 43,
+    "attack_incidents": 5,
+    "alert_to_incident_ratio": 2.91,
+    "alert_reduction": 0.656,
+    "events": 416054,
+    "drift_alarms": 0,
+    "retrains": 0,
+    "drift": null,
+    "name": "detectors-seed409",
+    "config": "detectors",
+    "start": "2026-05-11T00:00:00+00:00",
+    "wall_s": 165.8
+   },
+   {
+    "mode": "detectors",
+    "seed": 410,
+    "campaign_start": "2026-05-18T18:06:32.325Z",
+    "campaign_status": "stalled",
+    "stall_reason": "foothold WS-0064 isolated before credential_access",
+    "furthest_stage": "command_and_control",
+    "furthest_stage_index": 5,
+    "detected": true,
+    "mttd_min": 9.5,
+    "detectors_on_attack": [
+     "M1-ip",
+     "M1-user",
+     "M2",
+     "M3"
+    ],
+    "contained": true,
+    "mttc_min": 9.5,
+    "stopped_before_exfiltration": true,
+    "exfil_gb": 0.0,
+    "actions_executed": 12,
+    "actions_on_attack": 12,
+    "false_containments": 0,
+    "false_containments_by_type": {},
+    "alerts": 251,
+    "incidents": 30,
+    "attack_incidents": 6,
+    "alert_to_incident_ratio": 8.37,
+    "alert_reduction": 0.8805,
+    "events": 422719,
+    "drift_alarms": 0,
+    "retrains": 0,
+    "drift": null,
+    "name": "detectors-seed410",
+    "config": "detectors",
+    "start": "2026-05-18T00:00:00+00:00",
+    "wall_s": 145.6
+   },
+   {
+    "mode": "rules",
+    "seed": 401,
+    "campaign_start": "2026-03-16T17:00:22.885Z",
+    "campaign_status": "stalled",
+    "stall_reason": "no usable compromised account before discovery",
+    "furthest_stage": "spray",
+    "furthest_stage_index": 1,
+    "detected": true,
+    "mttd_min": 15.6,
+    "detectors_on_attack": [
+     "rule:R01",
+     "rule:R03",
+     "rule:R04"
+    ],
+    "contained": true,
+    "mttc_min": 15.6,
+    "stopped_before_exfiltration": true,
+    "exfil_gb": 0.0,
+    "actions_executed": 12,
+    "actions_on_attack": 11,
+    "false_containments": 1,
+    "false_containments_by_type": {
+     "revoke_sessions": 1
+    },
+    "alerts": 251,
+    "incidents": 94,
+    "attack_incidents": 4,
+    "alert_to_incident_ratio": 2.67,
+    "alert_reduction": 0.6255,
+    "events": 416977,
+    "drift_alarms": 0,
+    "retrains": 0,
+    "drift": null,
+    "name": "rules-seed401",
+    "config": "rules",
+    "start": "2026-03-16T00:00:00+00:00",
+    "wall_s": 485.3
+   },
+   {
+    "mode": "rules",
+    "seed": 402,
+    "campaign_start": "2026-03-23T21:33:37.167Z",
+    "campaign_status": "stalled",
+    "stall_reason": "no usable compromised account before discovery",
+    "furthest_stage": "spray",
+    "furthest_stage_index": 1,
+    "detected": true,
+    "mttd_min": 12.4,
+    "detectors_on_attack": [
+     "rule:R01",
+     "rule:R03",
+     "rule:R04"
+    ],
+    "contained": true,
+    "mttc_min": 12.4,
+    "stopped_before_exfiltration": true,
+    "exfil_gb": 0.0,
+    "actions_executed": 10,
+    "actions_on_attack": 8,
+    "false_containments": 2,
+    "false_containments_by_type": {
+     "revoke_sessions": 2
+    },
+    "alerts": 463,
+    "incidents": 124,
+    "attack_incidents": 4,
+    "alert_to_incident_ratio": 3.73,
+    "alert_reduction": 0.7322,
+    "events": 413620,
+    "drift_alarms": 0,
+    "retrains": 0,
+    "drift": null,
+    "name": "rules-seed402",
+    "config": "rules",
+    "start": "2026-03-23T00:00:00+00:00",
+    "wall_s": 147.7
+   },
+   {
+    "mode": "rules",
+    "seed": 403,
+    "campaign_start": "2026-03-30T20:35:26.134Z",
+    "campaign_status": "stalled",
+    "stall_reason": "foothold WS-0064 isolated before credential_access",
+    "furthest_stage": "command_and_control",
+    "furthest_stage_index": 5,
+    "detected": true,
+    "mttd_min": 10.6,
+    "detectors_on_attack": [
+     "rule:R01",
+     "rule:R03",
+     "rule:R04",
+     "rule:R05",
+     "rule:R07",
+     "rule:R10"
+    ],
+    "contained": true,
+    "mttc_min": 25.6,
+    "stopped_before_exfiltration": true,
+    "exfil_gb": 0.0,
+    "actions_executed": 14,
+    "actions_on_attack": 10,
+    "false_containments": 4,
+    "false_containments_by_type": {
+     "revoke_sessions": 3,
+     "isolate_host": 1
+    },
+    "alerts": 302,
+    "incidents": 110,
+    "attack_incidents": 3,
+    "alert_to_incident_ratio": 2.75,
+    "alert_reduction": 0.6358,
+    "events": 426263,
+    "drift_alarms": 0,
+    "retrains": 0,
+    "drift": null,
+    "name": "rules-seed403",
+    "config": "rules",
+    "start": "2026-03-30T00:00:00+00:00",
+    "wall_s": 134.9
+   },
+   {
+    "mode": "rules",
+    "seed": 404,
+    "campaign_start": "2026-04-06T20:31:55.022Z",
+    "campaign_status": "stalled",
+    "stall_reason": "foothold WS-0064 isolated before credential_access",
+    "furthest_stage": "command_and_control",
+    "furthest_stage_index": 5,
+    "detected": true,
+    "mttd_min": 14.1,
+    "detectors_on_attack": [
+     "rule:R01",
+     "rule:R03",
+     "rule:R04",
+     "rule:R05",
+     "rule:R07"
+    ],
+    "contained": true,
+    "mttc_min": 29.1,
+    "stopped_before_exfiltration": true,
+    "exfil_gb": 0.0,
+    "actions_executed": 15,
+    "actions_on_attack": 10,
+    "false_containments": 5,
+    "false_containments_by_type": {
+     "revoke_sessions": 4,
+     "isolate_host": 1
+    },
+    "alerts": 445,
+    "incidents": 118,
+    "attack_incidents": 4,
+    "alert_to_incident_ratio": 3.77,
+    "alert_reduction": 0.7348,
+    "events": 417098,
+    "drift_alarms": 0,
+    "retrains": 0,
+    "drift": null,
+    "name": "rules-seed404",
+    "config": "rules",
+    "start": "2026-04-06T00:00:00+00:00",
+    "wall_s": 134.5
+   },
+   {
+    "mode": "rules",
+    "seed": 405,
+    "campaign_start": "2026-04-13T18:27:00.907Z",
+    "campaign_status": "stalled",
+    "stall_reason": "no usable compromised account before execution",
+    "furthest_stage": "discovery",
+    "furthest_stage_index": 3,
+    "detected": true,
+    "mttd_min": 19.0,
+    "detectors_on_attack": [
+     "rule:R01",
+     "rule:R03",
+     "rule:R04",
+     "rule:R07",
+     "rule:R10"
+    ],
+    "contained": true,
+    "mttc_min": 19.0,
+    "stopped_before_exfiltration": true,
+    "exfil_gb": 0.0,
+    "actions_executed": 13,
+    "actions_on_attack": 11,
+    "false_containments": 2,
+    "false_containments_by_type": {
+     "revoke_sessions": 2
+    },
+    "alerts": 328,
+    "incidents": 109,
+    "attack_incidents": 5,
+    "alert_to_incident_ratio": 3.01,
+    "alert_reduction": 0.6677,
+    "events": 416438,
+    "drift_alarms": 0,
+    "retrains": 0,
+    "drift": null,
+    "name": "rules-seed405",
+    "config": "rules",
+    "start": "2026-04-13T00:00:00+00:00",
+    "wall_s": 139.6
+   },
+   {
+    "mode": "rules",
+    "seed": 406,
+    "campaign_start": "2026-04-20T21:35:42.184Z",
+    "campaign_status": "stalled",
+    "stall_reason": "no usable compromised account before execution",
+    "furthest_stage": "discovery",
+    "furthest_stage_index": 3,
+    "detected": true,
+    "mttd_min": 10.3,
+    "detectors_on_attack": [
+     "rule:R01",
+     "rule:R03",
+     "rule:R04",
+     "rule:R07",
+     "rule:R10"
+    ],
+    "contained": true,
+    "mttc_min": 10.3,
+    "stopped_before_exfiltration": true,
+    "exfil_gb": 0.0,
+    "actions_executed": 12,
+    "actions_on_attack": 10,
+    "false_containments": 2,
+    "false_containments_by_type": {
+     "revoke_sessions": 2
+    },
+    "alerts": 365,
+    "incidents": 126,
+    "attack_incidents": 4,
+    "alert_to_incident_ratio": 2.9,
+    "alert_reduction": 0.6548,
+    "events": 426043,
+    "drift_alarms": 0,
+    "retrains": 0,
+    "drift": null,
+    "name": "rules-seed406",
+    "config": "rules",
+    "start": "2026-04-20T00:00:00+00:00",
+    "wall_s": 136.9
+   },
+   {
+    "mode": "rules",
+    "seed": 407,
+    "campaign_start": "2026-04-27T20:45:57.654Z",
+    "campaign_status": "stalled",
+    "stall_reason": "foothold WS-0085 isolated before credential_access",
+    "furthest_stage": "command_and_control",
+    "furthest_stage_index": 5,
+    "detected": true,
+    "mttd_min": 15.0,
+    "detectors_on_attack": [
+     "rule:R01",
+     "rule:R03",
+     "rule:R04",
+     "rule:R05",
+     "rule:R07",
+     "rule:R10"
+    ],
+    "contained": true,
+    "mttc_min": 30.0,
+    "stopped_before_exfiltration": true,
+    "exfil_gb": 0.0,
+    "actions_executed": 12,
+    "actions_on_attack": 10,
+    "false_containments": 2,
+    "false_containments_by_type": {
+     "revoke_sessions": 1,
+     "isolate_host": 1
+    },
+    "alerts": 272,
+    "incidents": 107,
+    "attack_incidents": 5,
+    "alert_to_incident_ratio": 2.54,
+    "alert_reduction": 0.6066,
+    "events": 425140,
+    "drift_alarms": 0,
+    "retrains": 0,
+    "drift": null,
+    "name": "rules-seed407",
+    "config": "rules",
+    "start": "2026-04-27T00:00:00+00:00",
+    "wall_s": 130.5
+   },
+   {
+    "mode": "rules",
+    "seed": 408,
+    "campaign_start": "2026-05-04T17:29:54.276Z",
+    "campaign_status": "stalled",
+    "stall_reason": "no usable compromised account before execution",
+    "furthest_stage": "discovery",
+    "furthest_stage_index": 3,
+    "detected": true,
+    "mttd_min": 1.1,
+    "detectors_on_attack": [
+     "rule:R01",
+     "rule:R03",
+     "rule:R04",
+     "rule:R07",
+     "rule:R10"
+    ],
+    "contained": true,
+    "mttc_min": 1.1,
+    "stopped_before_exfiltration": true,
+    "exfil_gb": 0.0,
+    "actions_executed": 15,
+    "actions_on_attack": 10,
+    "false_containments": 5,
+    "false_containments_by_type": {
+     "revoke_sessions": 3,
+     "isolate_host": 2
+    },
+    "alerts": 311,
+    "incidents": 105,
+    "attack_incidents": 5,
+    "alert_to_incident_ratio": 2.96,
+    "alert_reduction": 0.6624,
+    "events": 420229,
+    "drift_alarms": 0,
+    "retrains": 0,
+    "drift": null,
+    "name": "rules-seed408",
+    "config": "rules",
+    "start": "2026-05-04T00:00:00+00:00",
+    "wall_s": 133.2
+   },
+   {
+    "mode": "rules",
+    "seed": 409,
+    "campaign_start": "2026-05-11T21:31:12.840Z",
+    "campaign_status": "stalled",
+    "stall_reason": "no usable compromised account before discovery",
+    "furthest_stage": "spray",
+    "furthest_stage_index": 1,
+    "detected": true,
+    "mttd_min": 14.8,
+    "detectors_on_attack": [
+     "rule:R01",
+     "rule:R03",
+     "rule:R04"
+    ],
+    "contained": true,
+    "mttc_min": 14.8,
+    "stopped_before_exfiltration": true,
+    "exfil_gb": 0.0,
+    "actions_executed": 15,
+    "actions_on_attack": 9,
+    "false_containments": 6,
+    "false_containments_by_type": {
+     "revoke_sessions": 4,
+     "isolate_host": 1,
+     "block_ip": 1
+    },
+    "alerts": 453,
+    "incidents": 125,
+    "attack_incidents": 4,
+    "alert_to_incident_ratio": 3.62,
+    "alert_reduction": 0.7241,
+    "events": 416443,
+    "drift_alarms": 0,
+    "retrains": 0,
+    "drift": null,
+    "name": "rules-seed409",
+    "config": "rules",
+    "start": "2026-05-11T00:00:00+00:00",
+    "wall_s": 126.7
+   },
+   {
+    "mode": "rules",
+    "seed": 410,
+    "campaign_start": "2026-05-18T18:06:32.325Z",
+    "campaign_status": "stalled",
+    "stall_reason": "no usable compromised account before discovery",
+    "furthest_stage": "spray",
+    "furthest_stage_index": 1,
+    "detected": true,
+    "mttd_min": 9.5,
+    "detectors_on_attack": [
+     "rule:R01",
+     "rule:R03",
+     "rule:R04"
+    ],
+    "contained": true,
+    "mttc_min": 9.5,
+    "stopped_before_exfiltration": true,
+    "exfil_gb": 0.0,
+    "actions_executed": 13,
+    "actions_on_attack": 9,
+    "false_containments": 4,
+    "false_containments_by_type": {
+     "revoke_sessions": 1,
+     "isolate_host": 3
+    },
+    "alerts": 385,
+    "incidents": 114,
+    "attack_incidents": 4,
+    "alert_to_incident_ratio": 3.38,
+    "alert_reduction": 0.7039,
+    "events": 422545,
+    "drift_alarms": 0,
+    "retrains": 0,
+    "drift": null,
+    "name": "rules-seed410",
+    "config": "rules",
+    "start": "2026-05-18T00:00:00+00:00",
+    "wall_s": 92.9
+   }
+  ],
+  "summary": {
+   "agent": {
+    "runs": 10,
+    "detected": 1.0,
+    "mttd_min_median": 11.5,
+    "mttd_min_mean": 10.74,
+    "contained": 1.0,
+    "mttc_min_median": 16.25,
+    "mttc_min_mean": 15.14,
+    "stopped_before_exfiltration": 1.0,
+    "exfil_gb_mean": 0.0,
+    "furthest_stage_mean": 4.4,
+    "furthest_stage": {
+     "command_and_control": 6,
+     "lateral_movement": 1,
+     "spray": 1,
+     "discovery": 2
+    },
+    "false_containments_mean": 0.0,
+    "false_containments_total": 0,
+    "runs_without_false_containment": 1.0,
+    "actions_executed_mean": 7.3,
+    "alerts_mean": 181.8,
+    "incidents_mean": 30.1,
+    "alert_reduction_mean": 0.81,
+    "wall_s_mean": 147.36,
+    "agent": {
+     "decisions": 111,
+     "verdict": {
+      "precision": 1.0,
+      "recall": 0.68,
+      "f1": 0.8095238095238095,
+      "tp": 17,
+      "fp": 0,
+      "fn": 8
+     },
+     "attack_incidents_flagged": 25,
+     "attack_incidents_decided": 25,
+     "action_correctness_mean": 1.0,
+     "invalid_tool_call_rate": 0.0,
+     "latency_mean_s": 117.49,
+     "latency_p95_s": 165.04,
+     "timeouts": 0,
+     "escalated_dismissals": 0
+    }
+   },
+   "detectors": {
+    "runs": 10,
+    "detected": 1.0,
+    "mttd_min_median": 11.5,
+    "mttd_min_mean": 10.74,
+    "contained": 1.0,
+    "mttc_min_median": 11.5,
+    "mttc_min_mean": 10.74,
+    "stopped_before_exfiltration": 1.0,
+    "exfil_gb_mean": 0.0,
+    "furthest_stage_mean": 3.4,
+    "furthest_stage": {
+     "discovery": 4,
+     "command_and_control": 4,
+     "spray": 2
+    },
+    "false_containments_mean": 4.6,
+    "false_containments_total": 46,
+    "runs_without_false_containment": 0.1,
+    "actions_executed_mean": 14.0,
+    "alerts_mean": 210.8,
+    "incidents_mean": 31.3,
+    "alert_reduction_mean": 0.83,
+    "wall_s_mean": 222.73
+   },
+   "rules": {
+    "runs": 10,
+    "detected": 1.0,
+    "mttd_min_median": 13.25,
+    "mttd_min_mean": 12.24,
+    "contained": 1.0,
+    "mttc_min_median": 15.2,
+    "mttc_min_mean": 16.74,
+    "stopped_before_exfiltration": 1.0,
+    "exfil_gb_mean": 0.0,
+    "furthest_stage_mean": 2.8,
+    "furthest_stage": {
+     "spray": 4,
+     "command_and_control": 3,
+     "discovery": 3
+    },
+    "false_containments_mean": 3.3,
+    "false_containments_total": 33,
+    "runs_without_false_containment": 0.0,
+    "actions_executed_mean": 13.1,
+    "alerts_mean": 357.5,
+    "incidents_mean": 113.2,
+    "alert_reduction_mean": 0.67,
+    "wall_s_mean": 166.22
+   }
+  },
+  "tests": {
+   "agent_vs_detectors": {
+    "false_containments": {
+     "n": 10,
+     "median_difference": -3.5,
+     "p_value": 0.0039
+    },
+    "furthest_stage_index": {
+     "n": 10,
+     "median_difference": 1.0,
+     "p_value": 0.3438
+    },
+    "exfil_gb": {
+     "n": 10,
+     "median_difference": 0.0,
+     "p_value": null
+    },
+    "mttc_min": {
+     "n": 10,
+     "median_difference": 3.0,
+     "p_value": 0.002
+    },
+    "incidents": {
+     "n": 10,
+     "median_difference": -0.5,
+     "p_value": 0.1562
+    }
+   },
+   "agent_vs_rules": {
+    "false_containments": {
+     "n": 10,
+     "median_difference": -3.0,
+     "p_value": 0.002
+    },
+    "furthest_stage_index": {
+     "n": 10,
+     "median_difference": 1.0,
+     "p_value": 0.0938
+    },
+    "exfil_gb": {
+     "n": 10,
+     "median_difference": 0.0,
+     "p_value": null
+    },
+    "mttc_min": {
+     "n": 10,
+     "median_difference": 3.0,
+     "p_value": 0.8047
+    },
+    "incidents": {
+     "n": 10,
+     "median_difference": -83.0,
+     "p_value": 0.002
+    }
+   }
+  }
+ },
+ "s1": {
+  "runs": [
+   {
+    "mode": "agent",
+    "seed": 301,
+    "campaign_start": "2026-03-11T08:07:54.314Z",
+    "campaign_status": "stalled",
+    "stall_reason": "foothold WS-0064 isolated before credential_access",
+    "furthest_stage": "command_and_control",
+    "furthest_stage_index": 5,
+    "detected": true,
+    "mttd_min": 8.1,
+    "detectors_on_attack": [
+     "M1-ip",
+     "M1-user",
+     "M2",
+     "M3"
+    ],
+    "contained": true,
+    "mttc_min": 11.1,
+    "stopped_before_exfiltration": true,
+    "exfil_gb": 0.0,
+    "actions_executed": 7,
+    "actions_on_attack": 7,
+    "false_containments": 0,
+    "false_containments_by_type": {},
+    "alerts": 395,
+    "incidents": 105,
+    "attack_incidents": 14,
+    "alert_to_incident_ratio": 3.76,
+    "alert_reduction": 0.7342,
+    "events": 545372,
+    "drift_alarms": 1,
+    "retrains": 0,
+    "agent": {
+     "decisions": 54,
+     "incidents_decided": 47,
+     "verdict": {
+      "precision": 1.0,
+      "recall": 0.25,
+      "f1": 0.4,
+      "tp": 2,
+      "fp": 0,
+      "fn": 6
+     },
+     "attack_incidents_flagged": 2,
+     "attack_incidents_decided": 8,
+     "attack_dismissals_escalated": 6,
+     "action_correctness": 1.0,
+     "invalid_tool_call_rate": 0.0,
+     "llm_calls": 385,
+     "tool_calls": 331,
+     "invalid_tool_calls": 0,
+     "latency_mean_s": 107.0,
+     "latency_p95_s": 135.03,
+     "timeouts": 0,
+     "failures": 0,
+     "escalated_dismissals": 0
+    },
+    "drift": {
+     "onset": "2026-03-10T06:00:00+00:00",
+     "alarm_delay_h": 4.02,
+     "alarms": 1,
+     "retrains": [],
+     "false_alerts_per_h_before": 0.46,
+     "false_alerts_per_busy_h_before": 0.78,
+     "busy_hours_after": 18,
+     "false_alerts_per_h_first_6h": 14.17,
+     "false_alerts_per_h_next_day": 9.67,
+     "next_day_vs_before": 12.4,
+     "recovery_h": null,
+     "hourly_false_alerts": [
+      {
+       "hour": "2026-03-09T00:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T01:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T02:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T03:00:00+00:00",
+       "false_alerts": 1.0
+      },
+      {
+       "hour": "2026-03-09T04:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T05:00:00+00:00",
+       "false_alerts": 2.0
+      },
+      {
+       "hour": "2026-03-09T06:00:00+00:00",
+       "false_alerts": 2.0
+      },
+      {
+       "hour": "2026-03-09T07:00:00+00:00",
+       "false_alerts": 1.0
+      },
+      {
+       "hour": "2026-03-09T08:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T09:00:00+00:00",
+       "false_alerts": 1.0
+      },
+      {
+       "hour": "2026-03-09T10:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T11:00:00+00:00",
+       "false_alerts": 1.0
+      },
+      {
+       "hour": "2026-03-09T12:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T13:00:00+00:00",
+       "false_alerts": 2.0
+      },
+      {
+       "hour": "2026-03-09T14:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T15:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T16:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T17:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T18:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T19:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T20:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T21:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T22:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T23:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-10T00:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-10T01:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-10T02:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-10T03:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-10T04:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-10T05:00:00+00:00",
+       "false_alerts": 4.0
+      },
+      {
+       "hour": "2026-03-10T06:00:00+00:00",
+       "false_alerts": 11.0
+      },
+      {
+       "hour": "2026-03-10T07:00:00+00:00",
+       "false_alerts": 22.0
+      },
+      {
+       "hour": "2026-03-10T08:00:00+00:00",
+       "false_alerts": 28.0
+      },
+      {
+       "hour": "2026-03-10T09:00:00+00:00",
+       "false_alerts": 16.0
+      },
+      {
+       "hour": "2026-03-10T10:00:00+00:00",
+       "false_alerts": 6.0
+      },
+      {
+       "hour": "2026-03-10T11:00:00+00:00",
+       "false_alerts": 2.0
+      },
+      {
+       "hour": "2026-03-10T12:00:00+00:00",
+       "false_alerts": 4.0
+      },
+      {
+       "hour": "2026-03-10T13:00:00+00:00",
+       "false_alerts": 6.0
+      },
+      {
+       "hour": "2026-03-10T14:00:00+00:00",
+       "false_alerts": 2.0
+      },
+      {
+       "hour": "2026-03-10T15:00:00+00:00",
+       "false_alerts": 14.0
+      },
+      {
+       "hour": "2026-03-10T16:00:00+00:00",
+       "false_alerts": 3.0
+      },
+      {
+       "hour": "2026-03-10T17:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-10T18:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-10T19:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-10T20:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-10T21:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-10T22:00:00+00:00",
+       "false_alerts": 1.0
+      },
+      {
+       "hour": "2026-03-10T23:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-11T00:00:00+00:00",
+       "false_alerts": 1.0
+      },
+      {
+       "hour": "2026-03-11T01:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-11T02:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-11T03:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-11T04:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-11T05:00:00+00:00",
+       "false_alerts": 5.0
+      },
+      {
+       "hour": "2026-03-11T06:00:00+00:00",
+       "false_alerts": 18.0
+      },
+      {
+       "hour": "2026-03-11T07:00:00+00:00",
+       "false_alerts": 17.0
+      },
+      {
+       "hour": "2026-03-11T08:00:00+00:00",
+       "false_alerts": 22.0
+      },
+      {
+       "hour": "2026-03-11T09:00:00+00:00",
+       "false_alerts": 16.0
+      },
+      {
+       "hour": "2026-03-11T10:00:00+00:00",
+       "false_alerts": 2.0
+      },
+      {
+       "hour": "2026-03-11T11:00:00+00:00",
+       "false_alerts": 2.0
+      },
+      {
+       "hour": "2026-03-11T12:00:00+00:00",
+       "false_alerts": 8.0
+      },
+      {
+       "hour": "2026-03-11T13:00:00+00:00",
+       "false_alerts": 7.0
+      },
+      {
+       "hour": "2026-03-11T14:00:00+00:00",
+       "false_alerts": 7.0
+      },
+      {
+       "hour": "2026-03-11T15:00:00+00:00",
+       "false_alerts": 14.0
+      },
+      {
+       "hour": "2026-03-11T16:00:00+00:00",
+       "false_alerts": 3.0
+      },
+      {
+       "hour": "2026-03-11T17:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-11T18:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-11T19:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-11T20:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-11T21:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-11T22:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-11T23:00:00+00:00",
+       "false_alerts": 0.0
+      }
+     ]
+    },
+    "name": "agent-seed301",
+    "config": "agent",
+    "start": "2026-03-09T00:00:00+00:00",
+    "wall_s": 187.9
+   },
+   {
+    "mode": "agent",
+    "seed": 302,
+    "campaign_start": "2026-03-11T07:48:43.288Z",
+    "campaign_status": "stalled",
+    "stall_reason": "foothold WS-0187 isolated before credential_access",
+    "furthest_stage": "command_and_control",
+    "furthest_stage_index": 5,
+    "detected": true,
+    "mttd_min": 12.3,
+    "detectors_on_attack": [
+     "M1-ip",
+     "M1-user",
+     "M2",
+     "M3"
+    ],
+    "contained": true,
+    "mttc_min": 15.3,
+    "stopped_before_exfiltration": true,
+    "exfil_gb": 0.0,
+    "actions_executed": 5,
+    "actions_on_attack": 5,
+    "false_containments": 0,
+    "false_containments_by_type": {},
+    "alerts": 348,
+    "incidents": 113,
+    "attack_incidents": 16,
+    "alert_to_incident_ratio": 3.08,
+    "alert_reduction": 0.6753,
+    "events": 552755,
+    "drift_alarms": 1,
+    "retrains": 0,
+    "agent": {
+     "decisions": 53,
+     "incidents_decided": 48,
+     "verdict": {
+      "precision": 1.0,
+      "recall": 0.4,
+      "f1": 0.5714285714285715,
+      "tp": 4,
+      "fp": 0,
+      "fn": 6
+     },
+     "attack_incidents_flagged": 4,
+     "attack_incidents_decided": 10,
+     "attack_dismissals_escalated": 6,
+     "action_correctness": 1.0,
+     "invalid_tool_call_rate": 0.0,
+     "llm_calls": 391,
+     "tool_calls": 338,
+     "invalid_tool_calls": 0,
+     "latency_mean_s": 110.7,
+     "latency_p95_s": 150.06,
+     "timeouts": 0,
+     "failures": 0,
+     "escalated_dismissals": 0
+    },
+    "drift": {
+     "onset": "2026-03-10T06:00:00+00:00",
+     "alarm_delay_h": 4.02,
+     "alarms": 1,
+     "retrains": [],
+     "false_alerts_per_h_before": 0.54,
+     "false_alerts_per_busy_h_before": 0.88,
+     "busy_hours_after": 18,
+     "false_alerts_per_h_first_6h": 13.83,
+     "false_alerts_per_h_next_day": 7.83,
+     "next_day_vs_before": 8.9,
+     "recovery_h": null,
+     "hourly_false_alerts": [
+      {
+       "hour": "2026-03-09T00:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T01:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T02:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T03:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T04:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T05:00:00+00:00",
+       "false_alerts": 1.0
+      },
+      {
+       "hour": "2026-03-09T06:00:00+00:00",
+       "false_alerts": 3.0
+      },
+      {
+       "hour": "2026-03-09T07:00:00+00:00",
+       "false_alerts": 4.0
+      },
+      {
+       "hour": "2026-03-09T08:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T09:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T10:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T11:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T12:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T13:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T14:00:00+00:00",
+       "false_alerts": 2.0
+      },
+      {
+       "hour": "2026-03-09T15:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T16:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T17:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T18:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T19:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T20:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T21:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T22:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T23:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-10T00:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-10T01:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-10T02:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-10T03:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-10T04:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-10T05:00:00+00:00",
+       "false_alerts": 4.0
+      },
+      {
+       "hour": "2026-03-10T06:00:00+00:00",
+       "false_alerts": 9.0
+      },
+      {
+       "hour": "2026-03-10T07:00:00+00:00",
+       "false_alerts": 26.0
+      },
+      {
+       "hour": "2026-03-10T08:00:00+00:00",
+       "false_alerts": 34.0
+      },
+      {
+       "hour": "2026-03-10T09:00:00+00:00",
+       "false_alerts": 12.0
+      },
+      {
+       "hour": "2026-03-10T10:00:00+00:00",
+       "false_alerts": 2.0
+      },
+      {
+       "hour": "2026-03-10T11:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-10T12:00:00+00:00",
+       "false_alerts": 5.0
+      },
+      {
+       "hour": "2026-03-10T13:00:00+00:00",
+       "false_alerts": 5.0
+      },
+      {
+       "hour": "2026-03-10T14:00:00+00:00",
+       "false_alerts": 3.0
+      },
+      {
+       "hour": "2026-03-10T15:00:00+00:00",
+       "false_alerts": 9.0
+      },
+      {
+       "hour": "2026-03-10T16:00:00+00:00",
+       "false_alerts": 6.0
+      },
+      {
+       "hour": "2026-03-10T17:00:00+00:00",
+       "false_alerts": 2.0
+      },
+      {
+       "hour": "2026-03-10T18:00:00+00:00",
+       "false_alerts": 1.0
+      },
+      {
+       "hour": "2026-03-10T19:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-10T20:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-10T21:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-10T22:00:00+00:00",
+       "false_alerts": 1.0
+      },
+      {
+       "hour": "2026-03-10T23:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-11T00:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-11T01:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-11T02:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-11T03:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-11T04:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-11T05:00:00+00:00",
+       "false_alerts": 5.0
+      },
+      {
+       "hour": "2026-03-11T06:00:00+00:00",
+       "false_alerts": 9.0
+      },
+      {
+       "hour": "2026-03-11T07:00:00+00:00",
+       "false_alerts": 18.0
+      },
+      {
+       "hour": "2026-03-11T08:00:00+00:00",
+       "false_alerts": 26.0
+      },
+      {
+       "hour": "2026-03-11T09:00:00+00:00",
+       "false_alerts": 13.0
+      },
+      {
+       "hour": "2026-03-11T10:00:00+00:00",
+       "false_alerts": 3.0
+      },
+      {
+       "hour": "2026-03-11T11:00:00+00:00",
+       "false_alerts": 4.0
+      },
+      {
+       "hour": "2026-03-11T12:00:00+00:00",
+       "false_alerts": 4.0
+      },
+      {
+       "hour": "2026-03-11T13:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-11T14:00:00+00:00",
+       "false_alerts": 5.0
+      },
+      {
+       "hour": "2026-03-11T15:00:00+00:00",
+       "false_alerts": 6.0
+      },
+      {
+       "hour": "2026-03-11T16:00:00+00:00",
+       "false_alerts": 4.0
+      },
+      {
+       "hour": "2026-03-11T17:00:00+00:00",
+       "false_alerts": 2.0
+      },
+      {
+       "hour": "2026-03-11T18:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-11T19:00:00+00:00",
+       "false_alerts": 1.0
+      },
+      {
+       "hour": "2026-03-11T20:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-11T21:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-11T22:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-11T23:00:00+00:00",
+       "false_alerts": 0.0
+      }
+     ]
+    },
+    "name": "agent-seed302",
+    "config": "agent",
+    "start": "2026-03-09T00:00:00+00:00",
+    "wall_s": 189.5
+   },
+   {
+    "mode": "agent",
+    "seed": 303,
+    "campaign_start": "2026-03-11T06:18:34.761Z",
+    "campaign_status": "stalled",
+    "stall_reason": "staging host isolated before exfiltration",
+    "furthest_stage": "collection",
+    "furthest_stage_index": 8,
+    "detected": true,
+    "mttd_min": 12.4,
+    "detectors_on_attack": [
+     "M1-ip",
+     "M1-user",
+     "M2",
+     "M3"
+    ],
+    "contained": true,
+    "mttc_min": 15.4,
+    "stopped_before_exfiltration": true,
+    "exfil_gb": 0.0,
+    "actions_executed": 7,
+    "actions_on_attack": 7,
+    "false_containments": 0,
+    "false_containments_by_type": {},
+    "alerts": 487,
+    "incidents": 106,
+    "attack_incidents": 14,
+    "alert_to_incident_ratio": 4.59,
+    "alert_reduction": 0.7823,
+    "events": 552017,
+    "drift_alarms": 1,
+    "retrains": 0,
+    "agent": {
+     "decisions": 62,
+     "incidents_decided": 53,
+     "verdict": {
+      "precision": 1.0,
+      "recall": 0.3333333333333333,
+      "f1": 0.5,
+      "tp": 3,
+      "fp": 0,
+      "fn": 6
+     },
+     "attack_incidents_flagged": 4,
+     "attack_incidents_decided": 9,
+     "attack_dismissals_escalated": 5,
+     "action_correctness": 1.0,
+     "invalid_tool_call_rate": 0.0,
+     "llm_calls": 458,
+     "tool_calls": 396,
+     "invalid_tool_calls": 0,
+     "latency_mean_s": 110.8,
+     "latency_p95_s": 150.04,
+     "timeouts": 0,
+     "failures": 0,
+     "escalated_dismissals": 0
+    },
+    "drift": {
+     "onset": "2026-03-10T06:00:00+00:00",
+     "alarm_delay_h": 4.02,
+     "alarms": 1,
+     "retrains": [],
+     "false_alerts_per_h_before": 0.71,
+     "false_alerts_per_busy_h_before": 1.25,
+     "busy_hours_after": 18,
+     "false_alerts_per_h_first_6h": 14.17,
+     "false_alerts_per_h_next_day": 9.42,
+     "next_day_vs_before": 7.5,
+     "recovery_h": null,
+     "hourly_false_alerts": [
+      {
+       "hour": "2026-03-09T00:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T01:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T02:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T03:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T04:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T05:00:00+00:00",
+       "false_alerts": 1.0
+      },
+      {
+       "hour": "2026-03-09T06:00:00+00:00",
+       "false_alerts": 1.0
+      },
+      {
+       "hour": "2026-03-09T07:00:00+00:00",
+       "false_alerts": 5.0
+      },
+      {
+       "hour": "2026-03-09T08:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T09:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T10:00:00+00:00",
+       "false_alerts": 2.0
+      },
+      {
+       "hour": "2026-03-09T11:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T12:00:00+00:00",
+       "false_alerts": 1.0
+      },
+      {
+       "hour": "2026-03-09T13:00:00+00:00",
+       "false_alerts": 1.0
+      },
+      {
+       "hour": "2026-03-09T14:00:00+00:00",
+       "false_alerts": 1.0
+      },
+      {
+       "hour": "2026-03-09T15:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T16:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T17:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T18:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T19:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T20:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T21:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T22:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T23:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-10T00:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-10T01:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-10T02:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-10T03:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-10T04:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-10T05:00:00+00:00",
+       "false_alerts": 6.0
+      },
+      {
+       "hour": "2026-03-10T06:00:00+00:00",
+       "false_alerts": 10.0
+      },
+      {
+       "hour": "2026-03-10T07:00:00+00:00",
+       "false_alerts": 21.0
+      },
+      {
+       "hour": "2026-03-10T08:00:00+00:00",
+       "false_alerts": 26.0
+      },
+      {
+       "hour": "2026-03-10T09:00:00+00:00",
+       "false_alerts": 9.0
+      },
+      {
+       "hour": "2026-03-10T10:00:00+00:00",
+       "false_alerts": 14.0
+      },
+      {
+       "hour": "2026-03-10T11:00:00+00:00",
+       "false_alerts": 5.0
+      },
+      {
+       "hour": "2026-03-10T12:00:00+00:00",
+       "false_alerts": 7.0
+      },
+      {
+       "hour": "2026-03-10T13:00:00+00:00",
+       "false_alerts": 8.0
+      },
+      {
+       "hour": "2026-03-10T14:00:00+00:00",
+       "false_alerts": 5.0
+      },
+      {
+       "hour": "2026-03-10T15:00:00+00:00",
+       "false_alerts": 7.0
+      },
+      {
+       "hour": "2026-03-10T16:00:00+00:00",
+       "false_alerts": 1.0
+      },
+      {
+       "hour": "2026-03-10T17:00:00+00:00",
+       "false_alerts": 3.0
+      },
+      {
+       "hour": "2026-03-10T18:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-10T19:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-10T20:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-10T21:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-10T22:00:00+00:00",
+       "false_alerts": 1.0
+      },
+      {
+       "hour": "2026-03-10T23:00:00+00:00",
+       "false_alerts": 1.0
+      },
+      {
+       "hour": "2026-03-11T00:00:00+00:00",
+       "false_alerts": 1.0
+      },
+      {
+       "hour": "2026-03-11T01:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-11T02:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-11T03:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-11T04:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-11T05:00:00+00:00",
+       "false_alerts": 4.0
+      },
+      {
+       "hour": "2026-03-11T06:00:00+00:00",
+       "false_alerts": 12.0
+      },
+      {
+       "hour": "2026-03-11T07:00:00+00:00",
+       "false_alerts": 20.0
+      },
+      {
+       "hour": "2026-03-11T08:00:00+00:00",
+       "false_alerts": 28.0
+      },
+      {
+       "hour": "2026-03-11T09:00:00+00:00",
+       "false_alerts": 11.0
+      },
+      {
+       "hour": "2026-03-11T10:00:00+00:00",
+       "false_alerts": 11.0
+      },
+      {
+       "hour": "2026-03-11T11:00:00+00:00",
+       "false_alerts": 6.0
+      },
+      {
+       "hour": "2026-03-11T12:00:00+00:00",
+       "false_alerts": 8.0
+      },
+      {
+       "hour": "2026-03-11T13:00:00+00:00",
+       "false_alerts": 3.0
+      },
+      {
+       "hour": "2026-03-11T14:00:00+00:00",
+       "false_alerts": 3.0
+      },
+      {
+       "hour": "2026-03-11T15:00:00+00:00",
+       "false_alerts": 8.0
+      },
+      {
+       "hour": "2026-03-11T16:00:00+00:00",
+       "false_alerts": 1.0
+      },
+      {
+       "hour": "2026-03-11T17:00:00+00:00",
+       "false_alerts": 2.0
+      },
+      {
+       "hour": "2026-03-11T18:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-11T19:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-11T20:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-11T21:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-11T22:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-11T23:00:00+00:00",
+       "false_alerts": 0.0
+      }
+     ]
+    },
+    "name": "agent-seed303",
+    "config": "agent",
+    "start": "2026-03-09T00:00:00+00:00",
+    "wall_s": 135.5
+   },
+   {
+    "mode": "agent",
+    "seed": 301,
+    "campaign_start": "2026-03-11T08:07:54.314Z",
+    "campaign_status": "stalled",
+    "stall_reason": "foothold WS-0156 isolated before credential_access",
+    "furthest_stage": "command_and_control",
+    "furthest_stage_index": 5,
+    "detected": true,
+    "mttd_min": 8.1,
+    "detectors_on_attack": [
+     "M1-ip",
+     "M1-user",
+     "M2",
+     "M3"
+    ],
+    "contained": true,
+    "mttc_min": 11.1,
+    "stopped_before_exfiltration": true,
+    "exfil_gb": 0.0,
+    "actions_executed": 5,
+    "actions_on_attack": 5,
+    "false_containments": 0,
+    "false_containments_by_type": {},
+    "alerts": 251,
+    "incidents": 77,
+    "attack_incidents": 4,
+    "alert_to_incident_ratio": 3.26,
+    "alert_reduction": 0.6932,
+    "events": 545156,
+    "drift_alarms": 2,
+    "retrains": 2,
+    "agent": {
+     "decisions": 26,
+     "incidents_decided": 20,
+     "verdict": {
+      "precision": 1.0,
+      "recall": 0.6666666666666666,
+      "f1": 0.8,
+      "tp": 2,
+      "fp": 0,
+      "fn": 1
+     },
+     "attack_incidents_flagged": 2,
+     "attack_incidents_decided": 3,
+     "attack_dismissals_escalated": 1,
+     "action_correctness": 1.0,
+     "invalid_tool_call_rate": 0.0,
+     "llm_calls": 202,
+     "tool_calls": 176,
+     "invalid_tool_calls": 0,
+     "latency_mean_s": 116.6,
+     "latency_p95_s": 150.12,
+     "timeouts": 0,
+     "failures": 0,
+     "escalated_dismissals": 0
+    },
+    "drift": {
+     "onset": "2026-03-10T06:00:00+00:00",
+     "alarm_delay_h": 4.02,
+     "alarms": 2,
+     "retrains": [
+      "2026-03-10T13:01:00+00:00",
+      "2026-03-11T17:01:00+00:00"
+     ],
+     "false_alerts_per_h_before": 0.46,
+     "false_alerts_per_busy_h_before": 0.78,
+     "busy_hours_after": 18,
+     "false_alerts_per_h_first_6h": 14.17,
+     "false_alerts_per_h_next_day": 2.25,
+     "next_day_vs_before": 2.9,
+     "recovery_h": 30.0,
+     "hourly_false_alerts": [
+      {
+       "hour": "2026-03-09T00:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T01:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T02:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T03:00:00+00:00",
+       "false_alerts": 1.0
+      },
+      {
+       "hour": "2026-03-09T04:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T05:00:00+00:00",
+       "false_alerts": 2.0
+      },
+      {
+       "hour": "2026-03-09T06:00:00+00:00",
+       "false_alerts": 2.0
+      },
+      {
+       "hour": "2026-03-09T07:00:00+00:00",
+       "false_alerts": 1.0
+      },
+      {
+       "hour": "2026-03-09T08:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T09:00:00+00:00",
+       "false_alerts": 1.0
+      },
+      {
+       "hour": "2026-03-09T10:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T11:00:00+00:00",
+       "false_alerts": 1.0
+      },
+      {
+       "hour": "2026-03-09T12:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T13:00:00+00:00",
+       "false_alerts": 2.0
+      },
+      {
+       "hour": "2026-03-09T14:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T15:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T16:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T17:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T18:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T19:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T20:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T21:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T22:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T23:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-10T00:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-10T01:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-10T02:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-10T03:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-10T04:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-10T05:00:00+00:00",
+       "false_alerts": 4.0
+      },
+      {
+       "hour": "2026-03-10T06:00:00+00:00",
+       "false_alerts": 11.0
+      },
+      {
+       "hour": "2026-03-10T07:00:00+00:00",
+       "false_alerts": 22.0
+      },
+      {
+       "hour": "2026-03-10T08:00:00+00:00",
+       "false_alerts": 28.0
+      },
+      {
+       "hour": "2026-03-10T09:00:00+00:00",
+       "false_alerts": 16.0
+      },
+      {
+       "hour": "2026-03-10T10:00:00+00:00",
+       "false_alerts": 6.0
+      },
+      {
+       "hour": "2026-03-10T11:00:00+00:00",
+       "false_alerts": 2.0
+      },
+      {
+       "hour": "2026-03-10T12:00:00+00:00",
+       "false_alerts": 4.0
+      },
+      {
+       "hour": "2026-03-10T13:00:00+00:00",
+       "false_alerts": 2.0
+      },
+      {
+       "hour": "2026-03-10T14:00:00+00:00",
+       "false_alerts": 1.0
+      },
+      {
+       "hour": "2026-03-10T15:00:00+00:00",
+       "false_alerts": 4.0
+      },
+      {
+       "hour": "2026-03-10T16:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-10T17:00:00+00:00",
+       "false_alerts": 1.0
+      },
+      {
+       "hour": "2026-03-10T18:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-10T19:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-10T20:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-10T21:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-10T22:00:00+00:00",
+       "false_alerts": 3.0
+      },
+      {
+       "hour": "2026-03-10T23:00:00+00:00",
+       "false_alerts": 4.0
+      },
+      {
+       "hour": "2026-03-11T00:00:00+00:00",
+       "false_alerts": 2.0
+      },
+      {
+       "hour": "2026-03-11T01:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-11T02:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-11T03:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-11T04:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-11T05:00:00+00:00",
+       "false_alerts": 1.0
+      },
+      {
+       "hour": "2026-03-11T06:00:00+00:00",
+       "false_alerts": 2.0
+      },
+      {
+       "hour": "2026-03-11T07:00:00+00:00",
+       "false_alerts": 1.0
+      },
+      {
+       "hour": "2026-03-11T08:00:00+00:00",
+       "false_alerts": 1.0
+      },
+      {
+       "hour": "2026-03-11T09:00:00+00:00",
+       "false_alerts": 4.0
+      },
+      {
+       "hour": "2026-03-11T10:00:00+00:00",
+       "false_alerts": 1.0
+      },
+      {
+       "hour": "2026-03-11T11:00:00+00:00",
+       "false_alerts": 1.0
+      },
+      {
+       "hour": "2026-03-11T12:00:00+00:00",
+       "false_alerts": 2.0
+      },
+      {
+       "hour": "2026-03-11T13:00:00+00:00",
+       "false_alerts": 2.0
+      },
+      {
+       "hour": "2026-03-11T14:00:00+00:00",
+       "false_alerts": 6.0
+      },
+      {
+       "hour": "2026-03-11T15:00:00+00:00",
+       "false_alerts": 6.0
+      },
+      {
+       "hour": "2026-03-11T16:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-11T17:00:00+00:00",
+       "false_alerts": 1.0
+      },
+      {
+       "hour": "2026-03-11T18:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-11T19:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-11T20:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-11T21:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-11T22:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-11T23:00:00+00:00",
+       "false_alerts": 0.0
+      }
+     ]
+    },
+    "name": "agent+retrain-seed301",
+    "config": "agent+retrain",
+    "start": "2026-03-09T00:00:00+00:00",
+    "wall_s": 182.9
+   },
+   {
+    "mode": "agent",
+    "seed": 302,
+    "campaign_start": "2026-03-11T07:48:43.288Z",
+    "campaign_status": "stalled",
+    "stall_reason": "foothold WS-0187 isolated before credential_access",
+    "furthest_stage": "command_and_control",
+    "furthest_stage_index": 5,
+    "detected": true,
+    "mttd_min": 12.3,
+    "detectors_on_attack": [
+     "M1-ip",
+     "M1-user",
+     "M2",
+     "M3"
+    ],
+    "contained": true,
+    "mttc_min": 15.3,
+    "stopped_before_exfiltration": true,
+    "exfil_gb": 0.0,
+    "actions_executed": 5,
+    "actions_on_attack": 5,
+    "false_containments": 0,
+    "false_containments_by_type": {},
+    "alerts": 247,
+    "incidents": 91,
+    "attack_incidents": 5,
+    "alert_to_incident_ratio": 2.71,
+    "alert_reduction": 0.6316,
+    "events": 552755,
+    "drift_alarms": 2,
+    "retrains": 2,
+    "agent": {
+     "decisions": 43,
+     "incidents_decided": 34,
+     "verdict": {
+      "precision": 1.0,
+      "recall": 0.5,
+      "f1": 0.6666666666666666,
+      "tp": 2,
+      "fp": 0,
+      "fn": 2
+     },
+     "attack_incidents_flagged": 2,
+     "attack_incidents_decided": 4,
+     "attack_dismissals_escalated": 2,
+     "action_correctness": 1.0,
+     "invalid_tool_call_rate": 0.0,
+     "llm_calls": 322,
+     "tool_calls": 279,
+     "invalid_tool_calls": 0,
+     "latency_mean_s": 112.4,
+     "latency_p95_s": 150.06,
+     "timeouts": 0,
+     "failures": 0,
+     "escalated_dismissals": 0
+    },
+    "drift": {
+     "onset": "2026-03-10T06:00:00+00:00",
+     "alarm_delay_h": 4.02,
+     "alarms": 2,
+     "retrains": [
+      "2026-03-10T13:01:00+00:00",
+      "2026-03-11T17:01:00+00:00"
+     ],
+     "false_alerts_per_h_before": 0.54,
+     "false_alerts_per_busy_h_before": 0.88,
+     "busy_hours_after": 18,
+     "false_alerts_per_h_first_6h": 13.83,
+     "false_alerts_per_h_next_day": 2.67,
+     "next_day_vs_before": 3.1,
+     "recovery_h": null,
+     "hourly_false_alerts": [
+      {
+       "hour": "2026-03-09T00:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T01:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T02:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T03:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T04:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T05:00:00+00:00",
+       "false_alerts": 1.0
+      },
+      {
+       "hour": "2026-03-09T06:00:00+00:00",
+       "false_alerts": 3.0
+      },
+      {
+       "hour": "2026-03-09T07:00:00+00:00",
+       "false_alerts": 4.0
+      },
+      {
+       "hour": "2026-03-09T08:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T09:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T10:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T11:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T12:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T13:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T14:00:00+00:00",
+       "false_alerts": 2.0
+      },
+      {
+       "hour": "2026-03-09T15:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T16:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T17:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T18:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T19:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T20:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T21:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T22:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T23:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-10T00:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-10T01:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-10T02:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-10T03:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-10T04:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-10T05:00:00+00:00",
+       "false_alerts": 4.0
+      },
+      {
+       "hour": "2026-03-10T06:00:00+00:00",
+       "false_alerts": 9.0
+      },
+      {
+       "hour": "2026-03-10T07:00:00+00:00",
+       "false_alerts": 26.0
+      },
+      {
+       "hour": "2026-03-10T08:00:00+00:00",
+       "false_alerts": 34.0
+      },
+      {
+       "hour": "2026-03-10T09:00:00+00:00",
+       "false_alerts": 12.0
+      },
+      {
+       "hour": "2026-03-10T10:00:00+00:00",
+       "false_alerts": 2.0
+      },
+      {
+       "hour": "2026-03-10T11:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-10T12:00:00+00:00",
+       "false_alerts": 5.0
+      },
+      {
+       "hour": "2026-03-10T13:00:00+00:00",
+       "false_alerts": 5.0
+      },
+      {
+       "hour": "2026-03-10T14:00:00+00:00",
+       "false_alerts": 1.0
+      },
+      {
+       "hour": "2026-03-10T15:00:00+00:00",
+       "false_alerts": 8.0
+      },
+      {
+       "hour": "2026-03-10T16:00:00+00:00",
+       "false_alerts": 5.0
+      },
+      {
+       "hour": "2026-03-10T17:00:00+00:00",
+       "false_alerts": 3.0
+      },
+      {
+       "hour": "2026-03-10T18:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-10T19:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-10T20:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-10T21:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-10T22:00:00+00:00",
+       "false_alerts": 3.0
+      },
+      {
+       "hour": "2026-03-10T23:00:00+00:00",
+       "false_alerts": 4.0
+      },
+      {
+       "hour": "2026-03-11T00:00:00+00:00",
+       "false_alerts": 1.0
+      },
+      {
+       "hour": "2026-03-11T01:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-11T02:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-11T03:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-11T04:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-11T05:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-11T06:00:00+00:00",
+       "false_alerts": 2.0
+      },
+      {
+       "hour": "2026-03-11T07:00:00+00:00",
+       "false_alerts": 2.0
+      },
+      {
+       "hour": "2026-03-11T08:00:00+00:00",
+       "false_alerts": 6.0
+      },
+      {
+       "hour": "2026-03-11T09:00:00+00:00",
+       "false_alerts": 3.0
+      },
+      {
+       "hour": "2026-03-11T10:00:00+00:00",
+       "false_alerts": 2.0
+      },
+      {
+       "hour": "2026-03-11T11:00:00+00:00",
+       "false_alerts": 2.0
+      },
+      {
+       "hour": "2026-03-11T12:00:00+00:00",
+       "false_alerts": 3.0
+      },
+      {
+       "hour": "2026-03-11T13:00:00+00:00",
+       "false_alerts": 1.0
+      },
+      {
+       "hour": "2026-03-11T14:00:00+00:00",
+       "false_alerts": 4.0
+      },
+      {
+       "hour": "2026-03-11T15:00:00+00:00",
+       "false_alerts": 5.0
+      },
+      {
+       "hour": "2026-03-11T16:00:00+00:00",
+       "false_alerts": 1.0
+      },
+      {
+       "hour": "2026-03-11T17:00:00+00:00",
+       "false_alerts": 1.0
+      },
+      {
+       "hour": "2026-03-11T18:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-11T19:00:00+00:00",
+       "false_alerts": 1.0
+      },
+      {
+       "hour": "2026-03-11T20:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-11T21:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-11T22:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-11T23:00:00+00:00",
+       "false_alerts": 0.0
+      }
+     ]
+    },
+    "name": "agent+retrain-seed302",
+    "config": "agent+retrain",
+    "start": "2026-03-09T00:00:00+00:00",
+    "wall_s": 187.7
+   },
+   {
+    "mode": "agent",
+    "seed": 303,
+    "campaign_start": "2026-03-11T06:18:34.761Z",
+    "campaign_status": "stalled",
+    "stall_reason": "foothold WS-0039 isolated before credential_access",
+    "furthest_stage": "command_and_control",
+    "furthest_stage_index": 5,
+    "detected": true,
+    "mttd_min": 12.4,
+    "detectors_on_attack": [
+     "M1-ip",
+     "M1-user",
+     "M2",
+     "M3"
+    ],
+    "contained": true,
+    "mttc_min": 15.4,
+    "stopped_before_exfiltration": true,
+    "exfil_gb": 0.0,
+    "actions_executed": 4,
+    "actions_on_attack": 4,
+    "false_containments": 0,
+    "false_containments_by_type": {},
+    "alerts": 360,
+    "incidents": 86,
+    "attack_incidents": 5,
+    "alert_to_incident_ratio": 4.19,
+    "alert_reduction": 0.7611,
+    "events": 551780,
+    "drift_alarms": 2,
+    "retrains": 2,
+    "agent": {
+     "decisions": 35,
+     "incidents_decided": 28,
+     "verdict": {
+      "precision": 1.0,
+      "recall": 0.5,
+      "f1": 0.6666666666666666,
+      "tp": 1,
+      "fp": 0,
+      "fn": 1
+     },
+     "attack_incidents_flagged": 2,
+     "attack_incidents_decided": 2,
+     "attack_dismissals_escalated": 0,
+     "action_correctness": 1.0,
+     "invalid_tool_call_rate": 0.0,
+     "llm_calls": 263,
+     "tool_calls": 228,
+     "invalid_tool_calls": 0,
+     "latency_mean_s": 112.7,
+     "latency_p95_s": 150.04,
+     "timeouts": 0,
+     "failures": 0,
+     "escalated_dismissals": 0
+    },
+    "drift": {
+     "onset": "2026-03-10T06:00:00+00:00",
+     "alarm_delay_h": 4.02,
+     "alarms": 2,
+     "retrains": [
+      "2026-03-10T13:01:00+00:00",
+      "2026-03-11T17:01:00+00:00"
+     ],
+     "false_alerts_per_h_before": 0.71,
+     "false_alerts_per_busy_h_before": 1.25,
+     "busy_hours_after": 18,
+     "false_alerts_per_h_first_6h": 14.17,
+     "false_alerts_per_h_next_day": 1.75,
+     "next_day_vs_before": 1.4,
+     "recovery_h": 25.0,
+     "hourly_false_alerts": [
+      {
+       "hour": "2026-03-09T00:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T01:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T02:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T03:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T04:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T05:00:00+00:00",
+       "false_alerts": 1.0
+      },
+      {
+       "hour": "2026-03-09T06:00:00+00:00",
+       "false_alerts": 1.0
+      },
+      {
+       "hour": "2026-03-09T07:00:00+00:00",
+       "false_alerts": 5.0
+      },
+      {
+       "hour": "2026-03-09T08:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T09:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T10:00:00+00:00",
+       "false_alerts": 2.0
+      },
+      {
+       "hour": "2026-03-09T11:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T12:00:00+00:00",
+       "false_alerts": 1.0
+      },
+      {
+       "hour": "2026-03-09T13:00:00+00:00",
+       "false_alerts": 1.0
+      },
+      {
+       "hour": "2026-03-09T14:00:00+00:00",
+       "false_alerts": 1.0
+      },
+      {
+       "hour": "2026-03-09T15:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T16:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T17:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T18:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T19:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T20:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T21:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T22:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-09T23:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-10T00:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-10T01:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-10T02:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-10T03:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-10T04:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-10T05:00:00+00:00",
+       "false_alerts": 6.0
+      },
+      {
+       "hour": "2026-03-10T06:00:00+00:00",
+       "false_alerts": 10.0
+      },
+      {
+       "hour": "2026-03-10T07:00:00+00:00",
+       "false_alerts": 21.0
+      },
+      {
+       "hour": "2026-03-10T08:00:00+00:00",
+       "false_alerts": 26.0
+      },
+      {
+       "hour": "2026-03-10T09:00:00+00:00",
+       "false_alerts": 9.0
+      },
+      {
+       "hour": "2026-03-10T10:00:00+00:00",
+       "false_alerts": 14.0
+      },
+      {
+       "hour": "2026-03-10T11:00:00+00:00",
+       "false_alerts": 5.0
+      },
+      {
+       "hour": "2026-03-10T12:00:00+00:00",
+       "false_alerts": 7.0
+      },
+      {
+       "hour": "2026-03-10T13:00:00+00:00",
+       "false_alerts": 5.0
+      },
+      {
+       "hour": "2026-03-10T14:00:00+00:00",
+       "false_alerts": 4.0
+      },
+      {
+       "hour": "2026-03-10T15:00:00+00:00",
+       "false_alerts": 2.0
+      },
+      {
+       "hour": "2026-03-10T16:00:00+00:00",
+       "false_alerts": 2.0
+      },
+      {
+       "hour": "2026-03-10T17:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-10T18:00:00+00:00",
+       "false_alerts": 1.0
+      },
+      {
+       "hour": "2026-03-10T19:00:00+00:00",
+       "false_alerts": 1.0
+      },
+      {
+       "hour": "2026-03-10T20:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-10T21:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-10T22:00:00+00:00",
+       "false_alerts": 2.0
+      },
+      {
+       "hour": "2026-03-10T23:00:00+00:00",
+       "false_alerts": 4.0
+      },
+      {
+       "hour": "2026-03-11T00:00:00+00:00",
+       "false_alerts": 4.0
+      },
+      {
+       "hour": "2026-03-11T01:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-11T02:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-11T03:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-11T04:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-11T05:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-11T06:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-11T07:00:00+00:00",
+       "false_alerts": 1.0
+      },
+      {
+       "hour": "2026-03-11T08:00:00+00:00",
+       "false_alerts": 4.0
+      },
+      {
+       "hour": "2026-03-11T09:00:00+00:00",
+       "false_alerts": 2.0
+      },
+      {
+       "hour": "2026-03-11T10:00:00+00:00",
+       "false_alerts": 1.0
+      },
+      {
+       "hour": "2026-03-11T11:00:00+00:00",
+       "false_alerts": 1.0
+      },
+      {
+       "hour": "2026-03-11T12:00:00+00:00",
+       "false_alerts": 3.0
+      },
+      {
+       "hour": "2026-03-11T13:00:00+00:00",
+       "false_alerts": 3.0
+      },
+      {
+       "hour": "2026-03-11T14:00:00+00:00",
+       "false_alerts": 2.0
+      },
+      {
+       "hour": "2026-03-11T15:00:00+00:00",
+       "false_alerts": 4.0
+      },
+      {
+       "hour": "2026-03-11T16:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-11T17:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-11T18:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-11T19:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-11T20:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-11T21:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-11T22:00:00+00:00",
+       "false_alerts": 0.0
+      },
+      {
+       "hour": "2026-03-11T23:00:00+00:00",
+       "false_alerts": 0.0
+      }
+     ]
+    },
+    "name": "agent+retrain-seed303",
+    "config": "agent+retrain",
+    "start": "2026-03-09T00:00:00+00:00",
+    "wall_s": 131.6
+   }
+  ],
+  "summary": {
+   "agent": {
+    "runs": 3,
+    "detected": 1.0,
+    "mttd_min_median": 12.3,
+    "mttd_min_mean": 10.93,
+    "contained": 1.0,
+    "mttc_min_median": 15.3,
+    "mttc_min_mean": 13.93,
+    "stopped_before_exfiltration": 1.0,
+    "exfil_gb_mean": 0.0,
+    "furthest_stage_mean": 6.0,
+    "furthest_stage": {
+     "command_and_control": 2,
+     "collection": 1
+    },
+    "false_containments_mean": 0.0,
+    "false_containments_total": 0,
+    "runs_without_false_containment": 1.0,
+    "actions_executed_mean": 6.33,
+    "alerts_mean": 410.0,
+    "incidents_mean": 108.0,
+    "alert_reduction_mean": 0.73,
+    "wall_s_mean": 170.97,
+    "agent": {
+     "decisions": 169,
+     "verdict": {
+      "precision": 1.0,
+      "recall": 0.3333333333333333,
+      "f1": 0.5,
+      "tp": 9,
+      "fp": 0,
+      "fn": 18
+     },
+     "attack_incidents_flagged": 10,
+     "attack_incidents_decided": 27,
+     "action_correctness_mean": 1.0,
+     "invalid_tool_call_rate": 0.0,
+     "latency_mean_s": 109.5,
+     "latency_p95_s": 150.06,
+     "timeouts": 0,
+     "escalated_dismissals": 0
+    }
+   },
+   "agent+retrain": {
+    "runs": 3,
+    "detected": 1.0,
+    "mttd_min_median": 12.3,
+    "mttd_min_mean": 10.93,
+    "contained": 1.0,
+    "mttc_min_median": 15.3,
+    "mttc_min_mean": 13.93,
+    "stopped_before_exfiltration": 1.0,
+    "exfil_gb_mean": 0.0,
+    "furthest_stage_mean": 5.0,
+    "furthest_stage": {
+     "command_and_control": 3
+    },
+    "false_containments_mean": 0.0,
+    "false_containments_total": 0,
+    "runs_without_false_containment": 1.0,
+    "actions_executed_mean": 4.67,
+    "alerts_mean": 286.0,
+    "incidents_mean": 84.67,
+    "alert_reduction_mean": 0.7,
+    "wall_s_mean": 167.4,
+    "agent": {
+     "decisions": 104,
+     "verdict": {
+      "precision": 1.0,
+      "recall": 0.5555555555555556,
+      "f1": 0.7142857142857143,
+      "tp": 5,
+      "fp": 0,
+      "fn": 4
+     },
+     "attack_incidents_flagged": 6,
+     "attack_incidents_decided": 9,
+     "action_correctness_mean": 1.0,
+     "invalid_tool_call_rate": 0.0,
+     "latency_mean_s": 113.9,
+     "latency_p95_s": 150.12,
+     "timeouts": 0,
+     "escalated_dismissals": 0
+    }
+   }
+  }
+ }
+}

@@ -104,7 +104,7 @@ uv run soc pipeline --inventory data/runs/live/inventory.json --db $SOC_DB --api
 ## Evaluation
 
 `soc evaluate` runs the experiments of the RFC's evaluation plan and collects them in
-`docs/evaluation/` (`results.json` plus a Markdown report):
+[docs/evaluation](docs/evaluation/README.md) (`results.json` plus a Markdown report):
 
 ```bash
 uv run soc evaluate models                    # M1-M3 on the held-out test weeks: PR-AUC, recall at 1% FPR, FP/day
@@ -118,3 +118,44 @@ End-to-end runs are 48-hour closed loops on successive weeks; each reports the t
 to contain (from the start of the intrusion), how far the attacker got, exfiltrated data, false
 containments (executed actions on entities outside the attack) and the agent's verdict quality.
 Paired Wilcoxon signed-rank tests compare the agent with each baseline on the same seeds.
+
+## Results
+
+Full tables and the raw numbers: [docs/evaluation](docs/evaluation/README.md) (also on the
+console's Evaluation page).
+
+**End to end (10 seeds, 48 h each, same attacks for every configuration).** Every configuration
+stopped every intrusion before exfiltration, but at very different costs:
+
+| | Agent (scripted analyst) | Detectors + playbooks | Rules + playbooks |
+|---|---|---|---|
+| Stopped before exfiltration | 10/10 | 10/10 | 10/10 |
+| False containments (all runs) | **0** | 46 | 33 |
+| Runs without a false containment | **10/10** | 1/10 | 0/10 |
+| Time to contain, median | 16 min | 12 min | 15 min |
+| Incidents per run (alerts → incidents) | 30 (−81%) | 31 (−83%) | 113 (−67%) |
+
+The agent's 73 containment actions all hit the attacker (action correctness 1.00; verdict
+precision 1.00, recall 0.68, F1 0.81 – the attack incidents it did not call malicious it left
+"suspicious" for an analyst; no invalid tool calls). Compared on the same seeds (Wilcoxon), it
+makes fewer false containments than the detectors' playbooks (median −3.5 per run, p = 0.004)
+and the rules (−3.0, p = 0.002) and raises 83 fewer incidents per run than the rules (p = 0.002),
+but contains about 3 minutes later than the playbooks (p = 0.002): it investigates before acting,
+and its latency (about 2 minutes per triage) is charged in simulated time while the attack goes on.
+In exchange the attacker usually got one kill-chain stage further (median +1 against both
+baselines, not significant), typically to its C2 beacon, but was stopped before credential access
+in 9 of 10 runs and before collection in all.
+
+**Detectors (held-out test weeks).** PR-AUC 0.996 (M1 per account), 0.979 (M1 per source IP),
+0.999 (M2 flows) and 0.749 (M3 process rarity); recall at 1% FPR of at least 0.99 for all four.
+
+**S1, drift (3 seeds, 72 h).** When most staff move to remote work through a new ZTNA egress, the
+drift monitor alarms 4 hours after the shift (M1's per-IP features, PSI above 1). False M1 alerts
+jump from 0.5–0.7 per hour to about 14 per hour. Without retraining they stay at 8–10 per hour
+the next day (7–12 times the pre-shift busy-hour rate) and never recover within the run; with
+retraining (two retrains, 7 and 35 hours after the shift) they fall to 1.8–2.7 per hour, and M1
+is back within twice its pre-shift rate by the next morning in 2 of 3 runs (25–30 h). The agent
+checks where a suspicious sign-in came from before revoking sessions, so in neither configuration
+did the look-alike sign-ins through the company's ZTNA egress lead to a false containment, and
+every intrusion was stopped before exfiltration.
+
