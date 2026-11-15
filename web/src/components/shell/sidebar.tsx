@@ -7,6 +7,7 @@ import {
   IconFingerprint,
   IconFlask,
   IconLayoutDashboard,
+  IconRobot,
   IconShieldHalfFilled,
   IconStack2,
   IconUsers,
@@ -16,8 +17,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 
-import { useActions, useIncidents } from "@/lib/queries";
+import { Dot } from "@/components/ui/badge";
+import { Tooltip } from "@/components/ui/tabs";
+import { useLive } from "@/lib/live";
+import { useActions, useHealth, useIncidents } from "@/lib/queries";
 import { cn } from "@/lib/utils";
+
+const REPOSITORY = "https://github.com/Chris91ss/ai4ci-agentic-soc";
 
 const NAV: { href: string; label: string; icon: ReactNode; match: string[] }[] = [
   { href: "/", label: "Overview", icon: <IconLayoutDashboard size={18} />, match: ["/"] },
@@ -43,6 +49,67 @@ function Counter({ value, tone }: { value: number; tone: "danger" | "warn" }) {
     >
       {value}
     </motion.span>
+  );
+}
+
+/** What the console is showing: the live pipeline or a recorded run, its agent, and how far the replay is. */
+function RunCard() {
+  const live = useLive();
+  const { data: health } = useHealth();
+  const run = health?.run ?? {};
+  const isLive = live.mode === "live";
+  const llm = String(health?.llm ?? run.llm ?? "scripted");
+  const agent = llm === "scripted" ? "scripted analyst" : llm.replace(/^ollama:/, "");
+  const name = typeof run.name === "string" ? run.name : isLive ? "live pipeline" : "recorded run";
+  const progress = Math.round(live.progress * 100);
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+      className="m-3 rounded-xl border border-line bg-raised/50 p-3"
+    >
+      <div className="flex items-center gap-2">
+        <Dot tone={isLive ? (live.connected ? "ok" : "danger") : "brand"} pulse={isLive ? live.connected : live.playing} />
+        <span className="text-[10px] font-medium uppercase tracking-wider text-faint">
+          {isLive ? (live.connected ? "Live pipeline" : "Disconnected") : "Recorded run"}
+        </span>
+        <Tooltip content="Source code on GitHub">
+          <a
+            href={REPOSITORY}
+            target="_blank"
+            rel="noreferrer"
+            aria-label="Source code on GitHub"
+            className="ml-auto grid size-6 place-items-center rounded-md text-faint transition-colors hover:bg-hover hover:text-ink"
+          >
+            <IconBrandGithub size={14} />
+          </a>
+        </Tooltip>
+      </div>
+      <div className="mt-1.5 truncate font-mono text-xs text-ink" title={name}>
+        {name}
+      </div>
+      {isLive ? null : (
+        <div className="mt-2.5">
+          <div className="h-1 overflow-hidden rounded-full bg-hover">
+            <motion.div
+              className="h-full rounded-full bg-gradient-to-r from-brand-strong to-brand"
+              animate={{ width: `${progress}%` }}
+              transition={{ ease: "linear", duration: 0.25 }}
+            />
+          </div>
+          <div className="mt-1 flex justify-between font-mono text-[10px] text-faint">
+            <span>{live.playing ? "replaying" : progress >= 100 ? "replayed" : "paused"}</span>
+            <span>{progress}%</span>
+          </div>
+        </div>
+      )}
+      <div className="mt-2.5 flex items-center gap-1.5 text-[11px] text-dim">
+        <IconRobot size={13} className="shrink-0 text-brand" />
+        <span className="truncate">{agent}</span>
+        {run.seed !== undefined ? <span className="ml-auto shrink-0 font-mono text-faint">seed {String(run.seed)}</span> : null}
+      </div>
+    </motion.div>
   );
 }
 
@@ -97,17 +164,7 @@ export function Sidebar() {
           );
         })}
       </nav>
-      <div className="border-t border-line px-5 py-4 text-[11px] leading-relaxed text-faint">
-        <a
-          href="https://github.com/Chris91ss/ai4ci-agentic-soc"
-          target="_blank"
-          rel="noreferrer"
-          className="mb-2 inline-flex items-center gap-1.5 text-dim hover:text-ink"
-        >
-          <IconBrandGithub size={14} /> Chris91ss/ai4ci-agentic-soc
-        </a>
-        <p>Simulated enterprise · local LLM agent over MCP · M1–M3 detectors</p>
-      </div>
+      <RunCard />
     </aside>
   );
 }
