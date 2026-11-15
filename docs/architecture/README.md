@@ -372,11 +372,13 @@ Weeks are the semester's: week 8 starts on 16 November, the winter break runs fr
 | 9 | 23–29 Nov | Address the Milestone 1 feedback. Fit the simulator's calibration on LANL (authentication, processes, flows) and RBA with `soc calibrate`, and compare it with the hand-set priors. Save drift retrains to the registry as candidate versions | RFC revised; `config/calibration/fitted.yaml` and a comparison of the two calibrations; retrained versions listed by `soc models` |
 | 10 | 30 Nov–6 Dec | Rebuild the datasets on the fitted calibration, retrain M1–M3, and run the model-level and end-to-end evaluation on both calibrations. Choose the calibration for the rest of the plan and record why | Results for both calibrations in docs/evaluation |
 | 11 | 7–13 Dec | The local LLM on ten seeds (401–410), with and without the verifier, for paired tests against the scripted analyst and the baselines. In parallel, write a second campaign held out from development, with different initial access, C2 and exfiltration (for example a phished session used from a residential proxy, C2 over DNS, exfiltration to cloud storage), without changing the detectors, rules or scripted analyst | LLM results with Wilcoxon tests; the second campaign in the simulator, with ground truth and tests |
-| 12 | 14–20 Dec | Evaluate the second campaign: the three configurations on ten seeds and the LLM on three. Run Qwen3-30B-A3B on seeds 401–410 and compare it with gpt-oss:20b | Generalisation and model-comparison results |
+| 12 | 14–20 Dec | Evaluate the second campaign: the three configurations on ten seeds and the LLM on three. Run a second open model, Qwen3, on seeds 401–410 and compare it with gpt-oss:20b: Qwen3-30B-A3B, the model the RFC names, where it fits in memory, otherwise Qwen3-14B | Generalisation and model-comparison results |
 | Break | 21–27 Dec | Guardrail ablations with gpt-oss:20b: quoting removed (how often the injection succeeds), no verifier, and no scoring tools (context only) | Ablation results |
-| Break | 28 Dec–3 Jan | The RFC's stretch goal: a DeepLog-style LSTM over process sequences, compared with M3 on the same test weeks. **31 December: progress review**, with every result above merged and section 8 up to date | DeepLog results; tag `progress-2026-12-31` |
+| Break | 28 Dec–3 Jan | The RFC's stretch goal: a DeepLog-style LSTM over process sequences, compared with M3 on the same test weeks | DeepLog results |
 | 13 | 4–10 Jan | Final report (the RFC extended with the results), slides and a demo video; freeze the code | Report and slides in docs; tag `v1.0` |
 | 14 | 11–17 Jan | Rehearsal and the final presentation | The presentation |
+
+**Progress review, 31 December.** By then everything up to the guardrail ablations is merged and DeepLog is under way, section 8 records any change to this plan, and the state of the repository is tagged `progress-2026-12-31`.
 
 ```mermaid
 gantt
@@ -414,7 +416,7 @@ gantt
 | --- | --- | --- |
 | The LANL and RBA files are tens of gigabytes | Calibration slips | Stream them through DuckDB and fit on a sample of days; the hand-set priors remain the fallback |
 | One LLM run takes 12–25 minutes on a laptop, and the plan has about 60 | Weeks 11–12 and the break slip | Batches overnight; three seeds where ten are not needed for a test; the scripted analyst everywhere else |
-| Qwen3-30B-A3B does not fit in memory next to the stack | No second model | A smaller Qwen3, or runs without the live stack |
+| Qwen3-30B-A3B needs about 19 GB of memory, too much beside the pipeline on a 24 GB laptop | No result for the 30B model | Qwen3-14B (9 GB) instead, or the 30B model on a machine with more memory |
 | The second campaign turns out too easy or too hard | A weak generalisation result | Its design is fixed before any measurement, and the result is reported as it is |
 | Exams and the winter break | Lost weeks | The break holds only automated runs and the stretch goal |
 
