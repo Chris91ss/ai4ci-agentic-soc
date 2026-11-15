@@ -102,25 +102,26 @@ flowchart TB
     %% declared bottom-up so that the layout reads top-down
     subgraph response ["Response"]
         direction LR
-        router{"<b>Risk router</b>"} -- "escalated" --> agent["<b>Triage agent</b><br/>gpt-oss:20b · ReAct"]
-        router -- "low risk" --> logged["Logged"]
-        router -- "agent slow or down" --> playbooks["<b>Playbooks</b>"]
+        router{"<b>Risk router</b>"} -- "escalated" --> agent["<b>Triage agent</b><br/>gpt-oss:20b<br/>ReAct loop"]
         agent <-- "7 tools" --> mcp["<b>MCP server</b>"]
-        mcp --> gate["<b>Policy gate</b><br/>evidence verifier"]
+        mcp --> gate["<b>Policy gate</b><br/>evidence<br/>verifier"]
+        router -- "agent slow or down" --> playbooks["<b>Playbooks</b>"]
         playbooks --> gate
+        router -- "low risk" --> logged["Logged"]
     end
     subgraph pipeline ["Detection pipeline, in event time"]
         direction LR
-        ingest["<b>Ingestion</b><br/>validate · de-duplicate<br/>enrich"] --> windows["<b>Windows</b><br/>watermarks<br/>entity resolution"]
+        ingest["<b>Ingestion</b><br/>validate<br/>de-duplicate<br/>enrich"] --> windows["<b>Windows</b><br/>watermarks<br/>entity resolution"]
         windows --> detectors["<b>Detectors</b><br/>M1 · M2 · M3"] --> correlation["<b>Correlation</b><br/>risk-scored<br/>incidents"]
-        ingest --> store[("<b>Hot store · lake</b><br/>TimescaleDB · Parquet")]
+        ingest --> store[("<b>Hot store</b><br/>TimescaleDB<br/>Parquet lake")]
     end
     subgraph enterprise ["Simulated enterprise"]
         direction LR
-        sim["<b>Simulator</b><br/>200 users · 250 hosts<br/>one ATT&CK campaign"] -- "sign-ins · flows · processes" --> broker[("<b>Redpanda</b>")]
+        sim["<b>Simulator</b><br/>200 users<br/>250 hosts<br/>an intrusion"] -- "sign-ins · flows · processes" --> broker[("<b>Redpanda</b>")]
     end
     enterprise --> pipeline --> response
-    response -- "revoke · disable · isolate · block" --> enterprise
+    response --> console["<b>Console</b><br/>evidence<br/>audit log"]
+    response -- "revoke · disable<br/>isolate · block" --> enterprise
 ```
 
 Every event carries its own time, and the pipeline works in event time: windows close when their watermark passes, so late, out-of-order and duplicated deliveries land where they belong. Entity resolution links the identifiers each stream uses for the same thing: an address is a host's DHCP or VPN lease at that moment, an account is a person. The correlation engine then links alerts that share a user, host or address within a time window, and scores each incident on the strength of its evidence, how many detectors corroborate it, how far along the kill chain it is, and what is at stake.
