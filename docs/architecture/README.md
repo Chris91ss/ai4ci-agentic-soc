@@ -388,7 +388,7 @@ gantt
     section Milestones
     Milestone 2 due              :milestone, 2026-11-19, 0d
     Progress review              :milestone, 2026-12-31, 0d
-    Final presentation, week 14  :milestone, 2027-01-11, 0d
+    Final presentation           :milestone, 2027-01-11, 0d
     section Report
     Milestone 2 document         :2026-11-16, 4d
     Milestone 1 feedback         :2026-11-23, 7d
