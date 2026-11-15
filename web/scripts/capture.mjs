@@ -5,8 +5,9 @@
 //   docs/assets/trace.png       the agent's investigation of that incident, tool call by tool call
 //   docs/assets/evaluation.png  the agent against the two baselines, over ten seeds
 //   docs/assets/drift.png       scenario S1: false alerts after the move to remote work, with and without retraining
-//   docs/assets/evidence.png    the evidence behind the agent's verdict, filterable       (gallery: the console
-//   docs/assets/entity.png      a host: its baseline, incidents and timeline               without the sidebar)
+//   docs/assets/queue.png       the incident queue                                         (gallery: the console
+//   docs/assets/evidence.png    the evidence behind the agent's verdict, filterable        without the sidebar)
+//   docs/assets/entity.png      a host: its baseline, incidents and timeline
 //   docs/assets/actions.png     every containment action and what the policy gate decided
 //   docs/assets/monitor.png     the drift monitor: PSI of M1's features, alarms and retrains
 //   docs/assets/audit.png       the hash-chained audit log
@@ -132,10 +133,10 @@ async function rest() {
   await sleep(500);
 }
 
-/** Saves what is in view, without the sidebar (clips are in page coordinates, so add the scroll). */
-async function shotMain(name) {
+/** Saves a 1200 x 900 frame of what is in view, by default without the sidebar (clips are in page coordinates). */
+async function shotMain(name, x = 240) {
   const y = await page.evaluate(() => window.scrollY);
-  await page.screenshot({ path: join(assets, name), clip: { x: 240, y, width: 1200, height: 900 } });
+  await page.screenshot({ path: join(assets, name), clip: { x, y, width: 1200, height: 900 } });
   console.log(`docs/assets/${name}`);
 }
 
@@ -201,6 +202,10 @@ if (wanted("shots")) {
 
 // The rest of the console and of the evaluation, for the README's galleries.
 if (wanted("gallery")) {
+  await open("/incidents/", "Incident queue");
+  await rest();
+  await shotMain("queue.png");
+
   await open(`/incident/?id=${incidentId}`, incidentId);
   await clickText('[role="tab"]', "Evidence");
   await sleep(1200);
@@ -234,8 +239,7 @@ if (wanted("gallery")) {
   await page.waitForSelector("[cmdk-input]");
   await page.type("[cmdk-input]", "WS-0156", { delay: 40 });
   await sleep(900);
-  await page.screenshot({ path: join(assets, "palette.png") });
-  console.log("docs/assets/palette.png");
+  await shotMain("palette.png", 120); // centred on the dialog
   await page.keyboard.press("Escape");
 
   await open("/evaluation/", "Agent (scripted analyst)");
