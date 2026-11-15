@@ -95,21 +95,29 @@ The demo uses the scripted analyst; with [Ollama](https://ollama.com) and `ollam
 ## How an incident is handled
 
 ```mermaid
-flowchart LR
-    sim["Simulator<br/>200 users, 250 hosts,<br/>one ATT&CK campaign"] -- "sign-ins, flows,<br/>processes" --> broker[("Redpanda")]
-    broker --> ingest["Ingestion<br/>validate, de-duplicate,<br/>enrich"]
-    ingest --> store[("TimescaleDB<br/>Parquet")]
-    ingest --> windows["Event-time windows<br/>entity resolution"]
-    windows --> detectors["M1 · M2 · M3"]
-    detectors --> correlation["Correlation<br/>risk-scored incidents"]
-    correlation --> router{"Risk router"}
-    router -- "low risk" --> logged["Logged"]
-    router -- "escalated" --> agent["Triage agent<br/>gpt-oss:20b, ReAct"]
-    router -- "agent slow or down" --> playbooks["Playbooks"]
-    agent <-- "7 tools" --> mcp["MCP server"]
-    mcp --> gate["Policy gate<br/>evidence verifier"]
-    playbooks --> gate
-    gate -- "revoke sessions, disable account,<br/>isolate host, block address" --> sim
+flowchart TB
+    %% declared bottom-up so that the layout reads top-down
+    subgraph response ["Response"]
+        direction LR
+        router{"<b>Risk router</b>"} -- "escalated" --> agent["<b>Triage agent</b><br/>gpt-oss:20b · ReAct"]
+        router -- "low risk" --> logged["Logged"]
+        router -- "agent slow or down" --> playbooks["<b>Playbooks</b>"]
+        agent <-- "7 tools" --> mcp["<b>MCP server</b>"]
+        mcp --> gate["<b>Policy gate</b><br/>evidence verifier"]
+        playbooks --> gate
+    end
+    subgraph pipeline ["Detection pipeline, in event time"]
+        direction LR
+        ingest["<b>Ingestion</b><br/>validate · de-duplicate<br/>enrich"] --> windows["<b>Windows</b><br/>watermarks<br/>entity resolution"]
+        windows --> detectors["<b>Detectors</b><br/>M1 · M2 · M3"] --> correlation["<b>Correlation</b><br/>risk-scored<br/>incidents"]
+        ingest --> store[("<b>Hot store · lake</b><br/>TimescaleDB · Parquet")]
+    end
+    subgraph enterprise ["Simulated enterprise"]
+        direction LR
+        sim["<b>Simulator</b><br/>200 users · 250 hosts<br/>one ATT&CK campaign"] -- "sign-ins · flows · processes" --> broker[("<b>Redpanda</b>")]
+    end
+    enterprise --> pipeline --> response
+    response -- "revoke · disable · isolate · block" --> enterprise
 ```
 
 Every event carries its own time, and the pipeline works in event time: windows close when their watermark passes, so late, out-of-order and duplicated deliveries land where they belong. Entity resolution links the identifiers each stream uses for the same thing: an address is a host's DHCP or VPN lease at that moment, an account is a person. The correlation engine then links alerts that share a user, host or address within a time window, and scores each incident on the strength of its evidence, how many detectors corroborate it, how far along the kill chain it is, and what is at stake.
