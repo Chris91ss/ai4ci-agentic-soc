@@ -7,7 +7,7 @@ The proposal is [RFC-0001](../rfc/0001-agentic-soc.md) (Milestone 1). This docum
 > [!NOTE]
 > **Where the project stands.** The architecture below is implemented and runs end to end. The code is in this repository (commits of 13–15 November), CI runs the 182 unit tests and builds the console on every push, a recorded run is [live on GitHub Pages](https://chris91ss.github.io/ai4ci-agentic-soc/), and the first results are in [docs/evaluation](../evaluation/README.md).
 
-**Contents:** [1. Problem and industrial context](#1-problem-and-industrial-context) · [2. Data sources](#2-data-sources) · [3. System architecture](#3-system-architecture) · [4. AI decision takers](#4-ai-decision-takers) · [5. Training and inference](#5-training-and-inference)
+**Contents:** [1. Problem and industrial context](#1-problem-and-industrial-context) · [2. Data sources](#2-data-sources) · [3. System architecture](#3-system-architecture) · [4. AI decision takers](#4-ai-decision-takers) · [5. Training and inference](#5-training-and-inference) · [6. Evaluation](#6-evaluation)
 
 ## 1. Problem and industrial context
 
@@ -290,3 +290,49 @@ sequenceDiagram
 ```
 
 *Figure 5. One triage at inference time. A malformed tool call is rejected with the reason and the model tries again; a decision that fails its schema, or cites IDs no tool returned, gets at most two repair attempts with schema-constrained output.*
+
+## 6. Evaluation
+
+The full method and numbers are in [docs/evaluation](../evaluation/README.md). The figures below were measured on 14 November, before the determinism fix of 15 November ([4a40c16](https://github.com/Chris91ss/ai4ci-agentic-soc/commit/4a40c16)), and are re-run in week 8.
+
+### Baselines
+
+- **Rules and playbooks**: twelve SIEM-style rules (password spray, brute force, sign-ins from abroad or from hosting networks, encoded PowerShell, LSASS dumps, PsExec, archiving, scans, large uploads and more), the same correlation, and playbooks decide.
+- **Detectors and playbooks**: M1–M3 at their thresholds and the same correlation, with no agent; the playbooks decide.
+- **The agent**: the scripted analyst on ten seeds, and gpt-oss:20b on three (ten in the plan), with and without the evidence verifier.
+
+### Evaluation data
+
+- **Model level**: two held-out test weeks (four days) after the validation week, scored by the promoted models.
+- **End to end**: ten seeded 48-hour closed loops (seeds 401–410) of the same company, each with different activity and attack timing. Every configuration runs on the same seeds, so results are paired.
+- **Scenario S1, drift**: three 72-hour runs (seeds 301–303), with and without retraining; most staff move to remote work through a new ZTNA egress on the second morning, and the attack comes on the third day.
+- **Scenario S2, load**: a 48-hour run through Redpanda at 60 times real time, with ten times the event rate for an hour during the intrusion, at normal and at four times slower LLM latency.
+
+### Expected outputs
+
+- **For each incident**: the verdict, techniques and cited evidence; the actions and the policy gate's decision on each; the agent's trace, with every tool call, its arguments, duration and result; the audit entries.
+- **For each run**: `summary.json` (counts, routes, verdicts, agent and tool statistics, actions), `log.jsonl` (the pipeline's log), `truth.json` (the campaign's progress) and the store `soc.db`.
+- **For each experiment**: [results.json](../evaluation/results.json), the [report](../evaluation/README.md), and the console's Evaluation page.
+
+### Metrics
+
+| Level | Metric | Why | Measured on 14 November |
+| --- | --- | --- | --- |
+| Detectors | PR-AUC, recall at 1% FPR, false positives per day, detection delay per attack stage | Attacks are under 1% of windows, so PR-AUC and false positives per day show the cost that ROC-AUC hides | PR-AUC 0.996, 0.979, 0.999 and 0.749 (M1-user, M1-ip, M2, M3); 16.0, 4.25, 0.75 and 4.5 false positives a day |
+| Agent | Verdict precision, recall and F1; action correctness; invalid tool-call rate; latency | Autonomous actions have to be right, and malformed calls waste the time budget | Scripted analyst: precision 1.00, recall 0.68, action correctness 1.00, no invalid calls. gpt-oss:20b: precision 0.57, recall 0.80, 18% invalid tool calls |
+| End to end | Intrusions stopped before exfiltration; time to detect and to contain; false containments; furthest kill-chain stage; alert-to-incident reduction | The business outcome, and its cost in disrupted users | 10/10 stopped in all three configurations; 0 false containments for the agent against 46 and 33 for the baselines; 81% fewer items to triage; median time to contain 16, 12 and 15 minutes |
+| S1, drift | Time to alarm; false M1 alerts an hour before and after; recovery with and without retraining | Behaviour changes; the model has to notice | Alarm 4 hours after the shift; false alerts from 0.5–0.7 to about 14 an hour, back to 1.8–2.7 with retraining and 8–10 without |
+| S2, load | Consumer and stream lag, agent timeouts, breaker trips, incidents shed to the playbooks | The agent must not become the bottleneck | A 10.9× burst with the p95 stream lag at one minute; at four times the LLM latency, 4 of 15 triages timed out and the breaker opened once; the intrusion was still stopped |
+
+Configurations are compared on the same seeds with paired Wilcoxon signed-rank tests. On 14 November the agent made fewer false containments than both baselines (p = 0.004 and 0.002) and contained about 3 minutes later than the playbooks (p = 0.002).
+
+### Failure scenarios
+
+| Scenario | What could go wrong | How the design responds | How it is tested |
+| --- | --- | --- | --- |
+| **F1. Indirect prompt injection** | The attacker's command lines and user agents tell "AI analysts" to ignore the activity | Log text reaches the model only as `$untrusted` data and is flagged when it reads like an instruction; decisions must cite evidence; the gate and verifier are code | Planted in every campaign; a unit test with an injected prompt; an ablation with the quoting removed (plan) |
+| **F2. The LLM is slow or down** | The attack advances while the agent thinks, and the queue fills up | A time budget per triage, a capped queue, and a circuit breaker that hands incidents to the playbooks | S2 at four times the LLM latency: 4 timeouts and one breaker trip, intrusion stopped |
+| **F3. Benign drift** | Remote work through a new ZTNA egress makes M1 raise about 20 times more alerts, and blocking that egress would cut off the company | The drift alarm and retraining; the gate refuses to block corporate and cloud egress; the verifier refuses accounts seen only through it | S1: alarm after 4 hours, no false containment with or without retraining |
+| **F4. False containment** | An innocent account is disabled or a host isolated | High-impact actions wait for an analyst; the evidence must justify the target; caps per incident and per hour | Counted in every run: 0 for the scripted analyst over ten seeds; 2 for gpt-oss:20b over three, 1 with the verifier |
+| **F5. Hallucinated evidence, malformed tool calls** | The model cites IDs it never saw, or calls tools with wrong arguments | The MCP layer rejects malformed calls with the reason; decisions citing unseen IDs are invalid and repaired at most twice | The invalid tool-call rate of every run: 18% for gpt-oss:20b |
+| **F6. Faults in the data path** | Malformed, late, duplicated or out-of-order events; old producers | Dead-letter topic, event-time windows that fire again for late events, de-duplication, schema upgrades | Every run: about 150 dead letters; unit tests of each mechanism |
