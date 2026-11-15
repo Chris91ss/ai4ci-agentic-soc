@@ -5,9 +5,9 @@
 The proposal is [RFC-0001](../rfc/0001-agentic-soc.md) (Milestone 1). This document covers Milestone 2: the system's architecture and the reasons for it, its data and AI modules, how models are trained and used, how the system is evaluated, and the plan up to the final presentation in week 14 (11–17 January 2027).
 
 > [!NOTE]
-> **Where the project stands.** The architecture below is implemented and runs end to end. The code is in this repository (commits of 13–15 November), CI runs the 182 unit tests and builds the console on every push, a recorded run is [live on GitHub Pages](https://chris91ss.github.io/ai4ci-agentic-soc/), and the first results are in [docs/evaluation](../evaluation/README.md).
+> **Where the project stands.** The architecture below is implemented and runs end to end. The code is in this repository (commits of 13–15 November), CI runs the 182 unit tests and builds the console on every push, a recorded run is [live on GitHub Pages](https://chris91ss.github.io/ai4ci-agentic-soc/), and the first results are in [docs/evaluation](../evaluation/README.md). The plan in [section 7](#7-implementation-plan) covers what is left: re-running the evaluation, calibrating on real data, a second attack campaign, more seeds and a second model for the LLM, ablations, and the final report.
 
-**Contents:** [1. Problem and industrial context](#1-problem-and-industrial-context) · [2. Data sources](#2-data-sources) · [3. System architecture](#3-system-architecture) · [4. AI decision takers](#4-ai-decision-takers) · [5. Training and inference](#5-training-and-inference) · [6. Evaluation](#6-evaluation)
+**Contents:** [1. Problem and industrial context](#1-problem-and-industrial-context) · [2. Data sources](#2-data-sources) · [3. System architecture](#3-system-architecture) · [4. AI decision takers](#4-ai-decision-takers) · [5. Training and inference](#5-training-and-inference) · [6. Evaluation](#6-evaluation) · [7. Implementation plan](#7-implementation-plan) · [8. Changes to this plan](#8-changes-to-this-plan)
 
 ## 1. Problem and industrial context
 
@@ -336,3 +336,83 @@ Configurations are compared on the same seeds with paired Wilcoxon signed-rank t
 | **F4. False containment** | An innocent account is disabled or a host isolated | High-impact actions wait for an analyst; the evidence must justify the target; caps per incident and per hour | Counted in every run: 0 for the scripted analyst over ten seeds; 2 for gpt-oss:20b over three, 1 with the verifier |
 | **F5. Hallucinated evidence, malformed tool calls** | The model cites IDs it never saw, or calls tools with wrong arguments | The MCP layer rejects malformed calls with the reason; decisions citing unseen IDs are invalid and repaired at most twice | The invalid tool-call rate of every run: 18% for gpt-oss:20b |
 | **F6. Faults in the data path** | Malformed, late, duplicated or out-of-order events; old producers | Dead-letter topic, event-time windows that fire again for late events, de-duplication, schema upgrades | Every run: about 150 dead letters; unit tests of each mechanism |
+
+## 7. Implementation plan
+
+### Done, 13–15 November
+
+| Component | Code | Commits |
+| --- | --- | --- |
+| Project, CI, event and security schemas | [schemas](../../src/agentic_soc/schemas) | [61ff4ae](https://github.com/Chris91ss/ai4ci-agentic-soc/commit/61ff4ae), [aca06c8](https://github.com/Chris91ss/ai4ci-agentic-soc/commit/aca06c8) |
+| Simulator: company, benign activity and look-alikes, delivery, campaign, scenarios S1 and S2 | [simulator](../../src/agentic_soc/simulator) | [c78bd7e](https://github.com/Chris91ss/ai4ci-agentic-soc/commit/c78bd7e) to [9cb2483](https://github.com/Chris91ss/ai4ci-agentic-soc/commit/9cb2483) |
+| Broker, ingestion, storage, offline ETL | [broker](../../src/agentic_soc/broker), [ingestion](../../src/agentic_soc/ingestion), [storage](../../src/agentic_soc/storage), [etl](../../src/agentic_soc/etl) | [88fc346](https://github.com/Chris91ss/ai4ci-agentic-soc/commit/88fc346), [9163311](https://github.com/Chris91ss/ai4ci-agentic-soc/commit/9163311), [7a8ebd0](https://github.com/Chris91ss/ai4ci-agentic-soc/commit/7a8ebd0), [35d7e5a](https://github.com/Chris91ss/ai4ci-agentic-soc/commit/35d7e5a) |
+| Features, M1–M3, model registry, REST scoring | [features](../../src/agentic_soc/features), [detectors](../../src/agentic_soc/detectors) | [e220bcc](https://github.com/Chris91ss/ai4ci-agentic-soc/commit/e220bcc) to [ba28b5e](https://github.com/Chris91ss/ai4ci-agentic-soc/commit/ba28b5e) |
+| Correlation, routing and playbooks, policy gate | [correlation](../../src/agentic_soc/correlation), [routing](../../src/agentic_soc/routing), [actions](../../src/agentic_soc/actions) | [1d79c2a](https://github.com/Chris91ss/ai4ci-agentic-soc/commit/1d79c2a), [85f66d9](https://github.com/Chris91ss/ai4ci-agentic-soc/commit/85f66d9), [86868b5](https://github.com/Chris91ss/ai4ci-agentic-soc/commit/86868b5) |
+| MCP server, triage agent, evidence verifier | [mcp_server](../../src/agentic_soc/mcp_server), [agent](../../src/agentic_soc/agent) | [f3742c8](https://github.com/Chris91ss/ai4ci-agentic-soc/commit/f3742c8), [a218686](https://github.com/Chris91ss/ai4ci-agentic-soc/commit/a218686), [288624d](https://github.com/Chris91ss/ai4ci-agentic-soc/commit/288624d) |
+| Closed-loop pipeline, evidence and feedback, drift and retraining, rules baseline | [pipeline](../../src/agentic_soc/pipeline), [evidence](../../src/agentic_soc/evidence), [drift](../../src/agentic_soc/drift), [rules](../../src/agentic_soc/rules) | [b23f73d](https://github.com/Chris91ss/ai4ci-agentic-soc/commit/b23f73d), [4ac8652](https://github.com/Chris91ss/ai4ci-agentic-soc/commit/4ac8652), [19dc85e](https://github.com/Chris91ss/ai4ci-agentic-soc/commit/19dc85e), [e09a5f4](https://github.com/Chris91ss/ai4ci-agentic-soc/commit/e09a5f4) |
+| Console API, console, static demo on GitHub Pages | [api](../../src/agentic_soc/api), [web](../../web) | [77daf58](https://github.com/Chris91ss/ai4ci-agentic-soc/commit/77daf58), [84afbe2](https://github.com/Chris91ss/ai4ci-agentic-soc/commit/84afbe2), [7cd6abf](https://github.com/Chris91ss/ai4ci-agentic-soc/commit/7cd6abf) |
+| Evaluation harness and first results | [evaluation](../../src/agentic_soc/evaluation), [docs/evaluation](../evaluation/README.md) | [2573f10](https://github.com/Chris91ss/ai4ci-agentic-soc/commit/2573f10), [30d1a78](https://github.com/Chris91ss/ai4ci-agentic-soc/commit/30d1a78), [ecbc8e0](https://github.com/Chris91ss/ai4ci-agentic-soc/commit/ecbc8e0) |
+
+### Week by week
+
+Weeks are the semester's: week 8 starts on 16 November, the winter break runs from 21 December to 3 January, and week 14 is the final presentation. Each row ends with what will be in the repository when it is done.
+
+| Week | Dates | Work | Done when |
+| --- | --- | --- | --- |
+| 8 | 16–22 Nov | This document (due 19 November). Re-run every experiment after the determinism fix, so that each seed gives the same result in any process | [docs/evaluation](../evaluation/README.md) regenerated from one commit, with any change from 14 November noted |
+| 9 | 23–29 Nov | Address the Milestone 1 feedback. Fit the simulator's calibration on LANL (authentication, processes, flows) and RBA with `soc calibrate`, and compare it with the hand-set priors. Save drift retrains to the registry as candidate versions | RFC revised; `config/calibration/fitted.yaml` and a comparison of the two calibrations; retrained versions listed by `soc models` |
+| 10 | 30 Nov–6 Dec | Rebuild the datasets on the fitted calibration, retrain M1–M3, and run the model-level and end-to-end evaluation on both calibrations. Choose the calibration for the rest of the plan and record why | Results for both calibrations in docs/evaluation |
+| 11 | 7–13 Dec | The local LLM on ten seeds (401–410), with and without the verifier, for paired tests against the scripted analyst and the baselines. In parallel, write a second campaign held out from development, with different initial access, C2 and exfiltration (for example a phished session used from a residential proxy, C2 over DNS, exfiltration to cloud storage), without changing the detectors, rules or scripted analyst | LLM results with Wilcoxon tests; the second campaign in the simulator, with ground truth and tests |
+| 12 | 14–20 Dec | Evaluate the second campaign: the three configurations on ten seeds and the LLM on three. Run Qwen3-30B-A3B on seeds 401–410 and compare it with gpt-oss:20b | Generalisation and model-comparison results |
+| Break | 21–27 Dec | Guardrail ablations with gpt-oss:20b: quoting removed (how often the injection succeeds), no verifier, and no scoring tools (context only) | Ablation results |
+| Break | 28 Dec–3 Jan | The RFC's stretch goal: a DeepLog-style LSTM over process sequences, compared with M3 on the same test weeks. **31 December: progress review**, with every result above merged and section 8 up to date | DeepLog results; tag `progress-2026-12-31` |
+| 13 | 4–10 Jan | Final report (the RFC extended with the results), slides and a demo video; freeze the code | Report and slides in docs; tag `v1.0` |
+| 14 | 11–17 Jan | Rehearsal and the final presentation | The presentation |
+
+```mermaid
+gantt
+    title From Milestone 2 to the final presentation
+    dateFormat YYYY-MM-DD
+    axisFormat %d %b
+    tickInterval 1week
+    weekday monday
+    section Milestones
+    Milestone 2 due              :milestone, 2026-11-19, 0d
+    Progress review              :milestone, 2026-12-31, 0d
+    Final presentation, week 14  :milestone, 2027-01-11, 0d
+    section Evaluation
+    Re-run after the fix         :2026-11-16, 7d
+    Calibrate on LANL and RBA    :2026-11-23, 7d
+    Both calibrations            :2026-11-30, 7d
+    LLM on ten seeds             :2026-12-07, 7d
+    Second campaign, build       :2026-12-07, 7d
+    Second campaign, evaluate    :2026-12-14, 7d
+    Qwen3 against gpt-oss        :2026-12-14, 7d
+    Guardrail ablations          :2026-12-21, 7d
+    DeepLog against M3           :2026-12-28, 7d
+    section Report
+    Milestone 2 document         :2026-11-16, 4d
+    Milestone 1 feedback         :2026-11-23, 7d
+    Final report, slides, video  :2027-01-04, 7d
+    Presentation                 :2027-01-11, 5d
+```
+
+*Figure 6. The plan as a timeline.*
+
+### Risks
+
+| Risk | Effect | Mitigation |
+| --- | --- | --- |
+| The LANL and RBA files are tens of gigabytes | Calibration slips | Stream them through DuckDB and fit on a sample of days; the hand-set priors remain the fallback |
+| One LLM run takes 15–20 minutes of GPU time, and the plan has about 60 | Weeks 11–12 and the break slip | Batches overnight; three seeds where ten are not needed for a test; the scripted analyst everywhere else |
+| Qwen3-30B-A3B does not fit in memory next to the stack | No second model | A smaller Qwen3, or runs without the live stack |
+| The second campaign turns out too easy or too hard | A weak generalisation result | Its design is fixed before any measurement, and the result is reported as it is |
+| Exams and the winter break | Lost weeks | The break holds only automated runs and the stretch goal |
+
+## 8. Changes to this plan
+
+Significant changes are recorded here, with the reason, as they are made.
+
+| Date | Change | Why |
+| --- | --- | --- |
+| 19 Nov 2026 | First version | Milestone 2 |
