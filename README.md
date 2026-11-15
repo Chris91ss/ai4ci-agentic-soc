@@ -18,6 +18,10 @@ Agentic SOC is a Security Operations Center for a simulated company of 200 peopl
 </p>
 <p align="center"><em>The <a href="https://chris91ss.github.io/ai4ci-agentic-soc/">live demo</a> on GitHub Pages: a recorded run, an incident the agent contained, its investigation, its evidence, and the evaluation.</em></p>
 
+| 10/10 | 0 vs 46 | −81% | 4 h | 10.9× |
+| :---: | :---: | :---: | :---: | :---: |
+| intrusions stopped before exfiltration, over ten seeded runs | false containments: the agent against playbooks on the same detectors | alerts folded into incidents by correlation (182 → 30 a run) | from the move to remote work to the drift alarm (scenario S1) | event burst absorbed with the stream lag held at one minute (S2) |
+
 ## What's inside
 
 | Part | What it does | How it is checked |
@@ -56,7 +60,7 @@ The demo uses the scripted analyst; with [Ollama](https://ollama.com) and `ollam
   <img src="docs/assets/overview.png" width="857" alt="The overview of the recorded run: 545 thousand events, 251 alerts, 77 incidents and 5 containments, the stream health chart of sign-ins, flows and processes, the incident status donut, the highest-priority incidents, and the activity replay">
 </p>
 
-- **The overview** counts the run's events, alerts, incidents, containments and the agent's latency, charts the three streams as they were ingested, and replays the pipeline's activity: alerts, incidents, routing, decisions and actions, as they happened.
+- **The overview** counts the run's events, alerts, incidents, containments and the agent's latency, charts the three streams as they were ingested, and replays the pipeline's activity: alerts, incidents, routing, decisions and actions, as they happened. The card at the foot of the sidebar says what is on screen, the live pipeline or a recorded run, how far its replay has got, and which agent decided.
 - **The incident queue** ranks incidents by priority and risk, with the detectors, techniques and entities of each.
 
 <p align="center">
@@ -72,6 +76,21 @@ The demo uses the scripted analyst; with [Ollama](https://ollama.com) and `ollam
 - **The agent trace** shows each decision with its rationale, the actions it proposed and the evidence it cited, and every step of the investigation: which MCP tool it called, with which arguments, how long it took, and what came back. Here it also noticed the attacker's instruction to AI analysts, planted in a command line, and flagged it instead of obeying it.
 - **The evidence** behind a verdict lists the triggering events, the detector scores with their top features, the baselines of the entities involved and the tool calls, each with the ID the agent cited, filterable by entity, stream, detector and time window, so a suspected false positive can be checked rather than taken on trust.
 - **Response** holds the actions, with approve and reject for the high-impact ones in a live run, and the analyst's verdict, which feeds the per-detector false-positive statistics on the **Metrics** page, beside the drift monitor. The **Audit log** is hash-chained and can be verified from the console.
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/assets/evidence.png" alt="The evidence behind the verdict on INC-00055: 244 items, alerts, events, baselines and tool calls, the 17 the agent cited starred, with filters by kind, stream, detector and entity"><br><b>Evidence.</b> The 244 items behind INC-00055, the 17 the agent cited starred, filterable by kind, stream, detector and entity.</td>
+    <td width="50%"><img src="docs/assets/entity.png" alt="The foothold workstation WS-0156: its owner, zone and criticality, the two incidents that involve it, the isolation taken on it, and its flows, sign-ins and processes over 24 hours"><br><b>An entity.</b> The foothold workstation: its owner and zone, its incidents, the isolation taken on it, and its timeline across the three streams.</td>
+  </tr>
+  <tr>
+    <td><img src="docs/assets/actions.png" alt="The containment actions of the run: the workstation isolated and four attacker addresses blocked, each with its impact, who requested it, how the policy gate decided, and the rationale"><br><b>Actions.</b> Every containment the agent and the playbooks proposed, its impact, how the policy gate decided, and why.</td>
+    <td><img src="docs/assets/audit.png" alt="The audit log: decisions, proposals and executions by the agent, the policy gate and the executor, each entry linked to the hash of the previous one, with the chain verified"><br><b>The audit log.</b> Every decision, proposal, approval and execution in a hash chain, verified in the page.</td>
+  </tr>
+  <tr>
+    <td><img src="docs/assets/monitor.png" alt="The drift monitor: the largest PSI of M1's per-account and per-address features, hour by hour, crossing the 0.25 alarm line after the move to remote work, with the two alarms and two retrains marked and the most shifted features listed"><br><b>The drift monitor.</b> M1's features against its training data, hour by hour, with the alarms and retrains of scenario S1.</td>
+    <td><img src="docs/assets/palette.png" alt="The command palette searching for WS-0156: the incidents that involve it, with priority and status, and the matching entities"><br><b>The command palette</b> (<kbd>⌘</kbd> <kbd>K</kbd>): any incident, entity or page, by name.</td>
+  </tr>
+</table>
 
 ## How an incident is handled
 
@@ -115,6 +134,10 @@ Ground truth is kept for every event, the dataset plan of `soc etl build` splits
 | M3 | Parent-child n-gram rarity | Process pairs rare among the host's peers, encoded commands, living-off-the-land binaries | 0.749 | 1.000 | 4.5 |
 
 They score event-time windows per entity (fifteen minutes for sign-ins and flows, ten for processes), each at a threshold calibrated on the validation weeks, and explain each alert by its top features. `soc serve-detectors` serves them over REST; the agent reaches them through the MCP scoring tools.
+
+<p align="center">
+  <img src="docs/assets/detectors.png" width="857" alt="The detectors on the evaluation page: PR-AUC, ROC-AUC, recall and precision of M1 per account, M1 per address, M2 and M3, their ranking and operating points, and the recall of each detector at each attack stage with its median detection delay">
+</p>
 
 ## The triage agent
 
@@ -162,12 +185,20 @@ The agent's 73 containment actions all hit the attacker (action correctness 1.00
 **Local LLM: gpt-oss:20b through Ollama, three seeds.** Every intrusion was still stopped before exfiltration, contained in about 15 minutes (median), as by the scripted analyst on the same seeds. It is a noisier analyst: 18% of its tool calls were malformed and rejected by the MCP layer, its verdict precision was 0.57 (recall 0.80), and in one run it revoked the sessions of two accounts outside the attack (action correctness 0.92). With the evidence verifier the same seeds produced one false containment instead of two (action correctness 0.93), at the same time to contain.
 
 <p align="center">
+  <img src="docs/assets/llm.png" width="857" alt="The local LLM on the evaluation page: the scripted analyst, gpt-oss:20b, and gpt-oss:20b with the evidence verifier, each stopping 3 of 3 intrusions, with 0, 2 and 1 false containments, their verdict quality, invalid tool calls and latency">
+</p>
+
+<p align="center">
   <img src="docs/assets/drift.png" width="857" alt="Scenario S1 on seed 301: false M1 alerts per hour around the move to remote work; both runs jump to about 28 an hour at the shift, the drift monitor alarms 4 hours later, and after the retrains the run with retraining stays near zero while the one without climbs back above 20 the next morning">
 </p>
 
 **S1, drift: three seeds of 72 hours.** When most staff move to remote work through a new ZTNA egress, the drift monitor alarms 4 hours after the shift (M1's per-address features, PSI above 1). False M1 alerts jump from 0.5–0.7 an hour to about 14. Without retraining they stay at 8–10 an hour the next day, 7–12 times the pre-shift busy-hour rate, and never recover within the run; with retraining, 7 and 35 hours after the shift, they fall to 1.8–2.7 an hour, and M1 is back within twice its pre-shift rate by the next morning in 2 of 3 runs. The agent checks where a suspicious sign-in came from before revoking sessions, so in neither configuration did the look-alike sign-ins through the company's own ZTNA egress lead to a false containment, and every intrusion was stopped before exfiltration.
 
 **S2, high load: Redpanda at 60 times real time.** A one-hour burst raised the event rate 10.9-fold, to about 3,000 events a second. The pipeline kept up: the p95 stream lag stayed at the simulator's one-minute tick, and the consumer lag peaked at about 3,200 messages, around one second of input. With the local LLM four times slower during the burst, 4 of 15 triages timed out, the circuit breaker opened once and the playbooks decided those incidents; the intrusion was stopped before credential access in both runs.
+
+<p align="center">
+  <img src="docs/assets/load.png" width="857" alt="Scenario S2 with the local LLM four times slower during the burst: a 10.9-fold event rate, a one-minute p95 stream lag, a consumer lag of at most 3,228 messages, 4 agent timeouts and one breaker trip; the stream lag and consumer lag over six hours with the burst shaded, and the lag per phase">
+</p>
 
 **What the numbers leave open.** Everything runs on one simulated company and one campaign, whose look-alikes were written by the same team that wrote the detectors; the default calibration of benign activity is hand-set priors shaped like the LANL data, and `soc calibrate` refits it from the public datasets, which are not redistributed here. The ten-seed comparison uses the scripted analyst; the local LLM ran on three seeds, too few to test, and on a laptop GPU, so its latency, not its reasoning alone, shapes the time to contain. The detectors' test weeks come from the same simulator as their training weeks.
 
