@@ -310,21 +310,21 @@ The agent made significantly fewer false containments than both baselines (p = 0
 
 ## 7. Implementation plan
 
-**Already done (13-15 November):** the simulator, broker and ingestion, storage, features, the three detectors with the model registry, correlation, the router and playbooks, the policy gate, the MCP server and the agent, the evidence verifier, the console with the live demo, and the evaluation scripts with the first results. CI runs 182 unit tests on every push.
+**Already done (13-15 November):** the simulator, broker and ingestion, storage, features, the three detectors with the model registry, correlation, the router and playbooks, the policy gate, the MCP server and the agent, the evidence verifier, the drift monitor with M1 retraining, the rules baseline, the console with the live demo, and the evaluation scripts with the first results. CI runs 182 unit tests on every push.
 
 **Plan until the final presentation (week 14):**
 
 | Week | Dates | Work | Result |
 | --- | --- | --- | --- |
-| 8 | 16-22 Nov | Milestone 2 document. Re-run all experiments after the determinism fix from 15 November | Updated evaluation report |
-| 9 | 23-29 Nov | Milestone 1 feedback. Fit the simulator on the real LANL and RBA data. Save retrained models in the registry | Fitted calibration, compared with the current one |
-| 10 | 30 Nov-6 Dec | Rebuild the data, retrain M1-M3 and re-run the evaluation with the new calibration | Results for both calibrations |
-| 11 | 7-13 Dec | gpt-oss:20b on all 10 seeds, with and without the verifier. Start a second attack campaign (different initial access, C2 and exfiltration) | LLM results with significance tests |
-| 12 | 14-20 Dec | Test the system on the second campaign without changing the detectors. Compare Qwen3 with gpt-oss:20b | Generalisation and model comparison |
-| Break | 21-27 Dec | Ablations: no quoting, no verifier, no scoring tools | Ablation results |
-| Break | 28 Dec-3 Jan | DeepLog-style LSTM compared with M3 | DeepLog results |
-| 13 | 4-10 Jan | Final report, slides and a demo video | Report and slides |
-| 14 | 11-17 Jan | Final presentation | |
+| 8 | 16‑22 Nov | Milestone 2 document. Re-run all experiments after the determinism fix from 15 November | Updated evaluation report |
+| 9 | 23‑29 Nov | Milestone 1 feedback. Fit the simulator on the real LANL and RBA data. Save retrained models in the registry | Fitted calibration, compared with the current one |
+| 10 | 30 Nov‑6 Dec | Rebuild the data, retrain M1-M3 and re-run the evaluation with the new calibration | Results for both calibrations |
+| 11 | 7‑13 Dec | gpt-oss:20b on all 10 seeds, with and without the verifier. Start a second attack campaign (different initial access, C2 and exfiltration) | LLM results with significance tests; the second campaign in the simulator |
+| 12 | 14‑20 Dec | Test the system on the second campaign without changing the detectors. Compare Qwen3 with gpt-oss:20b | Generalisation and model comparison |
+| Break | 21‑27 Dec | Ablations: no quoting, no verifier, no scoring tools | Ablation results |
+| Break | 28 Dec‑3 Jan | DeepLog-style LSTM compared with M3 | DeepLog results |
+| 13 | 4‑10 Jan | Final report, slides and a demo video | Report and slides |
+| 14 | 11‑17 Jan | Final presentation | |
 
 By the progress review on 31 December we expect to have finished everything up to the ablations, with DeepLog still in progress.
 
