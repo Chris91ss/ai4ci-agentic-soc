@@ -79,7 +79,7 @@ export function DriftCard() {
                   formatter={(v) => Number(v).toFixed(3)}
                 />
                 <Legend wrapperStyle={{ fontSize: 11 }} iconType="circle" iconSize={8} />
-                <ReferenceLine y={PSI_ALARM} stroke="#f59e0b" strokeDasharray="4 4" label={{ value: "0.25", fill: "#f59e0b", fontSize: 10, position: "right" }} />
+                <ReferenceLine y={PSI_ALARM} stroke="#f59e0b" strokeDasharray="4 4" label={{ value: "alarm 0.25", fill: "#f59e0b", fontSize: 10, position: "insideTopLeft" }} />
                 {alarms.map((a) => (
                   <ReferenceLine key={`alarm-${a.time}`} x={Date.parse(a.time)} stroke="#f43f5e" strokeDasharray="4 4" />
                 ))}
