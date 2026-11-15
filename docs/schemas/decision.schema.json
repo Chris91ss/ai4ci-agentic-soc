@@ -102,6 +102,15 @@
     "action": {
       "$ref": "#/$defs/ProposedAction"
     },
+    "extra_actions": {
+      "description": "Further containment steps, e.g. block the C2 address and isolate the host.",
+      "items": {
+        "$ref": "#/$defs/ProposedAction"
+      },
+      "maxItems": 2,
+      "title": "Extra Actions",
+      "type": "array"
+    },
     "confidence": {
       "maximum": 1.0,
       "minimum": 0.0,
