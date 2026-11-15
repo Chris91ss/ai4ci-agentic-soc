@@ -239,17 +239,19 @@ Deterministic modules bound what the AI modules can do:
 
 ```mermaid
 flowchart TB
+    sim["<b>Simulator</b><br/>seeded<br/>calibrated"]
     subgraph offline ["Offline: soc etl build, soc train"]
         direction LR
-        plan["<b>Dataset plan</b><br/>7 seeded periods<br/>split in time"] --> lake[("<b>Parquet lake</b>")] --> tables["<b>DuckDB</b><br/>feature tables"] --> fit["<b>Fit M1-M3</b><br/>earlier weeks"] --> thresholds["<b>Thresholds</b><br/>validation week"]
+        plan["<b>Dataset plan</b><br/>history · train<br/>validation · test"] --> lake[("<b>Parquet lake</b><br/>DuckDB<br/>feature tables")] --> fit["<b>Fit M1-M3</b><br/>earlier weeks"] --> thresholds["<b>Thresholds</b><br/>validation week"]
     end
     registry[("<b>Model registry</b><br/>versions<br/>current.json")]
     subgraph online ["Online: soc run, soc pipeline, soc serve-detectors"]
         direction LR
-        load["<b>Load</b><br/>current versions"] --> score["<b>Score</b><br/>closed windows"] --> alerts["<b>Alerts</b><br/>top features"]
+        load["<b>Load</b><br/>current versions"] --> score["<b>Score</b><br/>closed windows"]
         monitor["<b>Drift monitor</b><br/>hourly PSI · KS"] -- "alarm" --> retrain["<b>Retrain M1</b><br/>last 24 h<br/>minus attacks"] -- "swap in" --> score
     end
-    offline -- "save, promote" --> registry -- "load" --> online
+    alerts["<b>Alerts</b><br/>top features<br/>to correlation"]
+    sim -- "7 seeded periods" --> offline -- "save, promote" --> registry -- "load" --> online --> alerts
     classDef ai stroke:#a371f7,stroke-width:3px
     class fit,score,retrain ai
 ```
@@ -265,6 +267,13 @@ flowchart TB
 **The LLM is not trained.** gpt-oss:20b is pulled with `ollama pull gpt-oss:20b` and served locally, with temperature 0.1, a 16 K context and low reasoning effort. Its system prompt, tool definitions and decision schema are code, in [agent/prompts.py](../../src/agentic_soc/agent/prompts.py). We do not fine-tune it, because no labelled triage transcripts exist and the evaluation is meant to measure prompting, tools and guardrails, which carry over to other open models (Qwen3 in the plan).
 
 ```mermaid
+---
+config:
+  sequence:
+    diagramMarginX: 160
+    width: 110
+    actorMargin: 30
+---
 sequenceDiagram
     autonumber
     participant A as Triage agent
@@ -286,7 +295,7 @@ sequenceDiagram
     L-->>A: decision as JSON
     Note over A: schema check,<br/>at most 2 repairs
     A->>G: actions, cited evidence
-    Note over G: verifier, policy gate,<br/>analyst approval,<br/>actions topic, audit log
+    Note over G: verifier,<br/>policy gate,<br/>analyst approval,<br/>audit log
 ```
 
 *Figure 5. One triage at inference time. A malformed tool call is rejected with the reason and the model tries again; a decision that fails its schema, or cites IDs no tool returned, gets at most two repair attempts with schema-constrained output.*
@@ -380,6 +389,11 @@ gantt
     Milestone 2 due              :milestone, 2026-11-19, 0d
     Progress review              :milestone, 2026-12-31, 0d
     Final presentation, week 14  :milestone, 2027-01-11, 0d
+    section Report
+    Milestone 2 document         :2026-11-16, 4d
+    Milestone 1 feedback         :2026-11-23, 7d
+    Final report, slides, video  :2027-01-04, 7d
+    Presentation                 :2027-01-11, 7d
     section Evaluation
     Re-run after the fix         :2026-11-16, 7d
     Calibrate on LANL and RBA    :2026-11-23, 7d
@@ -390,11 +404,6 @@ gantt
     Qwen3 against gpt-oss        :2026-12-14, 7d
     Guardrail ablations          :2026-12-21, 7d
     DeepLog against M3           :2026-12-28, 7d
-    section Report
-    Milestone 2 document         :2026-11-16, 4d
-    Milestone 1 feedback         :2026-11-23, 7d
-    Final report, slides, video  :2027-01-04, 7d
-    Presentation                 :2027-01-11, 5d
 ```
 
 *Figure 6. The plan as a timeline.*
