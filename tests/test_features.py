@@ -45,6 +45,17 @@ def test_late_event_for_a_window_that_never_opened_fires_as_late() -> None:
     assert [(x.key, x.late) for x in fired] == [("x", True)]
 
 
+def test_late_windows_refire_in_a_fixed_order() -> None:
+    # Detectors train on rows in this order, so it must not follow a set's, which varies by process.
+    w = Windower("t", size_s=600, allowed_delay_s=0, keys=lambda e: [e.key], retention_s=3600)
+    w.advance(T0 + timedelta(minutes=30))
+    for key in [f"host-{i:02d}" for i in reversed(range(20))]:
+        w.add(ev(12, key))
+        w.add(ev(1, key))
+    fired = [(x.start, x.key) for x in w.advance(T0 + timedelta(minutes=31))]
+    assert len(fired) == 40 and fired == sorted(fired)
+
+
 def test_conversation_history_detects_regular_beacons() -> None:
     history = ConversationHistory(horizon_s=3600)
     rng = np.random.default_rng(1)

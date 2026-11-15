@@ -106,7 +106,8 @@ class Windower:
                 self._closed[(key, start)] = window
                 self.stats.fired += 1
                 out.append(window)
-        for item in self._dirty:
+        # In a fixed order: a set's order changes with each process's hash seed.
+        for item in sorted(self._dirty, key=lambda k: (k[1], k[0])):
             window = self._closed[item]
             if window.fired:
                 self.stats.refired += 1

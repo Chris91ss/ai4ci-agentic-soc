@@ -314,7 +314,7 @@ cd web && npm run lint && npm run build   # the console
 
 | Workflow | Job | What it checks |
 | --- | --- | --- |
-| CI | Python | `uv sync --frozen`, ruff, and the 181 unit tests: the simulator, ingestion, storage, features, the detectors, correlation, routing, the policy gate, MCP tools and quoting, the agent with a planted prompt injection, the pipeline in a closed loop and live on a broker, drift, evidence, the API, the static export and the evaluation |
+| CI | Python | `uv sync --frozen`, ruff, and the 182 unit tests: the simulator, ingestion, storage, features, the detectors, correlation, routing, the policy gate, MCP tools and quoting, the agent with a planted prompt injection, the pipeline in a closed loop and live on a broker, drift, evidence, the API, the static export and the evaluation |
 | CI | Web | `npm ci`, ESLint and the production build of the console |
 | Pages | Build and deploy | The console exported as a static site with the recorded run, then deployed to GitHub Pages |
 
