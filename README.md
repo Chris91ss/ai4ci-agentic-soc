@@ -11,7 +11,7 @@
   <img src="https://img.shields.io/badge/agent%20tools-MCP-0a7ea4.svg" alt="Agent tools over MCP">
 </p>
 
-Agentic SOC is a Security Operations Center for a simulated company of 200 people and 250 hosts. A seeded simulator emits three asynchronous streams, sign-ins, network flows and endpoint processes, and hides a multi-stage intrusion among benign look-alikes. Three detectors score the streams online, a correlation engine links their alerts into incidents, and a triage agent running locally on gpt-oss:20b investigates the risky ones through seven MCP tools, decides a verdict and contains the attack. Its actions go back into the simulator, where blocked addresses, revoked sessions and isolated hosts stall the attacker. Over ten seeded 48-hour runs the agent's reference analyst stopped every intrusion before exfiltration without a single false containment, where playbooks on the same detectors made 46. An AI4CI course project; the design is in the [RFC](docs/rfc/0001-agentic-soc.md).
+Agentic SOC is a Security Operations Center for a simulated company of 200 people and 250 hosts. A seeded simulator emits three asynchronous streams, sign-ins, network flows and endpoint processes, and hides a multi-stage intrusion among benign look-alikes. Three detectors score the streams online, a correlation engine links their alerts into incidents, and a triage agent running locally on gpt-oss:20b investigates the risky ones through seven MCP tools, decides a verdict and contains the attack. Its actions go back into the simulator, where blocked addresses, revoked sessions and isolated hosts stall the attacker. Over ten seeded 48-hour runs the agent's reference analyst stopped every intrusion before exfiltration without a single false containment, where playbooks on the same detectors made 46. An AI4CI course project: the proposal is the [RFC](docs/rfc/0001-agentic-soc.md), and the architecture and the plan to the final presentation are in [docs/architecture](docs/architecture/README.md).
 
 <p align="center">
   <a href="https://chris91ss.github.io/ai4ci-agentic-soc/"><img src="docs/assets/demo.gif" width="857" alt="The live demo: the overview of a recorded run replaying, the incident queue, an incident the agent contained with its alert lanes, the agent's investigation over MCP tool by tool, the evidence behind the verdict, and the evaluation of the agent against the baselines"></a>
@@ -296,7 +296,9 @@ End-to-end runs are 48-hour closed loops on successive weeks. Each reports the t
 ├── config/                     # the simulator, its calibration, scenarios S1 and S2
 ├── deploy/docker-compose.yml   # Redpanda and TimescaleDB
 ├── docs/
+│   ├── architecture/           # Milestone 2: architecture, AI modules and the plan
 │   ├── rfc/                    # RFC-0001 and its architecture figure
+│   ├── schemas/                # JSON Schemas of events, alerts, actions, decisions
 │   ├── evaluation/             # results.json and the report
 │   └── assets/                 # this README's images
 └── tests/                      # unit tests, integration tests against the live stack
@@ -322,7 +324,7 @@ cd web && npm run lint && npm run build   # the console
 
 ## Authors and credits
 
-Adi, Cristi and Dragos, for the AI4CI course; the design is [RFC-0001](docs/rfc/0001-agentic-soc.md).
+Adi, Cristi and Dragos, for the AI4CI course; the design is [RFC-0001](docs/rfc/0001-agentic-soc.md), and the architecture and plan are [Milestone 2](docs/architecture/README.md).
 
 - The activity model is shaped after the [LANL Comprehensive, Multi-Source Cyber-Security Events](https://csr.lanl.gov/data/cyber1/) (Kent, 2015) and the [Login Data Set for Risk-Based Authentication](https://doi.org/10.5281/zenodo.6782156) (Wiefling et al., 2022); neither is redistributed.
 - The agent runs [gpt-oss-20b](https://huggingface.co/openai/gpt-oss-20b) (Apache 2.0) on [Ollama](https://ollama.com), with tools served by the [Model Context Protocol](https://modelcontextprotocol.io) Python SDK.
