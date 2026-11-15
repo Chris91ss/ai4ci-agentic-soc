@@ -7,7 +7,7 @@ The proposal is [RFC-0001](../rfc/0001-agentic-soc.md) (Milestone 1). This docum
 > [!NOTE]
 > **Where the project stands.** The architecture below is implemented and runs end to end. The code is in this repository (commits of 13–15 November), CI runs the 182 unit tests and builds the console on every push, a recorded run is [live on GitHub Pages](https://chris91ss.github.io/ai4ci-agentic-soc/), and the first results are in [docs/evaluation](../evaluation/README.md).
 
-**Contents:** [1. Problem and industrial context](#1-problem-and-industrial-context) · [2. Data sources](#2-data-sources) · [3. System architecture](#3-system-architecture)
+**Contents:** [1. Problem and industrial context](#1-problem-and-industrial-context) · [2. Data sources](#2-data-sources) · [3. System architecture](#3-system-architecture) · [4. AI decision takers](#4-ai-decision-takers) · [5. Training and inference](#5-training-and-inference)
 
 ## 1. Problem and industrial context
 
@@ -210,3 +210,83 @@ Everything runs on one laptop; Docker is needed only for the live stack.
 | Deterministic guardrails around the LLM | Trusting the model's output | Prompt injection and hallucinated evidence are documented failure modes of LLM agents ([RFC P5](../rfc/0001-agentic-soc.md#2-problem-definitions)); the policy gate, the verifier and the quoting are code that can be tested |
 | Playbooks behind a circuit breaker | Waiting for the agent | The attack goes on while the agent is slow; scenario S2 measures the fallback |
 | TimescaleDB hot store and a Parquet lake | One database | Operational queries (incidents, timelines, evidence) and analytics over weeks of training data have different shapes |
+
+## 4. AI decision takers
+
+Four AI modules take decisions: three detectors decide what is anomalous, and the triage agent decides what is an attack and what to contain. Deterministic code around them decides how risky an incident is, who triages it, and whether an action may run.
+
+| Module | Receives | Decides, and outputs | Why this model | Considered instead |
+| --- | --- | --- | --- | --- |
+| **M1-user**: Isolation Forest per account | A 15-minute window of one account's sign-ins as 25 features, most compared with the account's own baseline: failures, new countries, addresses, networks, devices, apps and logon types, unusual hour, MFA, legacy and NTLM authentication, distance between sign-ins, admin rights | An anomaly score. An alert above the threshold set for 0.2% false positives on the validation week, with the features furthest from the training data | Account misuse has no reliable labels, and the next attack will look different; per-account baselines cover 200 different routines; fast and robust on mixed features | An autoencoder (more data, harder to explain); a supervised classifier (would learn our one campaign) |
+| **M1-ip**: Isolation Forest per external source address | A 15-minute window of one address's sign-ins, 16 features: accounts tried, unknown usernames, failures, successes after failures, hosting, anonymiser or foreign network, user agents, apps | A score; an alert at 0.5% false positives | A password spray is invisible per account, one failure each, but obvious per source | Fixed-count rules, which are the rules baseline |
+| **M2**: LightGBM on flows | A source address's flows over 15 minutes, one row per destination and port, 47 features: volumes and ratios, ports, direction, destination category and popularity, time of day, and beacon features from the last hour of that conversation (interval regularity and variation) | The probability that the conversation is attack traffic; an alert at 0.02% false positives (and at least 0.5), with per-feature contributions (TreeSHAP) as its explanation | Labelled attack flows exist: three training weeks with the campaign. The data is tabular and very imbalanced, with 280 thousand rows a run; gradient boosting is fast and explains itself | Kitsune-style autoencoders (unsupervised, more false positives at this base rate); deep sequence models (need more data and a GPU) |
+| **M3**: parent-child n-gram rarity | A 10-minute window of one host's process launches: how rare each parent→child pair is among hosts of the same role, and 9 window features (encoded commands, living-off-the-land binaries, integrity levels, admin share) | A rarity score; an alert at 0.05% false positives, explained as, for example, "cmd.exe → whoami.exe on 0/287 peer host-days" | Attacker tooling is rare for a host's role; analysts can read the explanation; no labels needed | A DeepLog-style LSTM, the RFC's stretch goal, which the plan compares with M3 |
+| **Triage agent**: gpt-oss:20b in a ReAct loop over MCP | The incident ID with its risk and priority, then whatever its tool calls return: the incident (risk breakdown, strongest alert of each kind, entities, techniques, actions already taken), entity timelines, asset and account context, and detector scores. Log text arrives quoted as untrusted data | Which tools to call, at most 12 steps; then a decision validated against a JSON Schema: verdict (malicious, suspicious or benign), ATT&CK techniques, the evidence IDs it relied on, up to three containment actions, confidence and rationale | It reasons across the three streams and the context as an analyst does, chooses what to look at per incident, and explains itself. A mixture-of-experts model with 21 B parameters, about 3.6 B active per token, that runs on a laptop | A cloud LLM (data leaves the company); fine-tuning (no labelled triage transcripts exist); playbooks only (the detectors baseline: 46 false containments) |
+
+Deterministic modules bound what the AI modules can do:
+
+| Module | Decides | How |
+| --- | --- | --- |
+| Correlation risk | How risky an incident is | 1 − e<sup>−(evidence + corroboration + kill chain + stakes)</sup>: the strongest alert's margin over its threshold, +0.25 for each further detector, the breadth of tactics and any late-stage tactic, host criticality and admin accounts |
+| Risk router | Log, agent or playbook | Risk < 0.5 is logged; the rest queue for the agent by priority, at most 25. A triage has 3 minutes; three failures in a row open a circuit breaker for 15 minutes, and the playbooks decide meanwhile |
+| Playbooks | Containment without the agent | SOAR-style rules on the incident's techniques: beacons and uploads → block the address and isolate the host; spraying → block the sources; account takeover → revoke sessions; credential dumping or PsExec by an admin → disable the account and isolate the host |
+| Evidence verifier (`--verifier`) | Veto an agent action that its cited alerts do not justify | Block an address only if it sprayed, signed in as a compromised account or was the far end of C2 or exfiltration, and is not corporate or cloud egress; revoke or disable only an account used from attacker-like infrastructure or that ran attacker tooling; isolate only a host with late-stage activity or C2 |
+| Policy gate | Execute, wait for an analyst, or refuse | Allow-list with impact levels: revoking sessions and blocking an external address are low impact and run at once; disabling an account and isolating a host wait for an analyst. Only an analyst may isolate domain controllers, EDR, VPN, proxy, monitoring, backup, WSUS and mail servers; internal, office and major providers' addresses, and service and system accounts, are refused; at most 6 actions per incident and 12 automatic ones an hour |
+| Drift monitor | Whether M1 still fits the data | Every hour, the PSI of each M1 feature over the last 24 hours against the training reference (KS p-values are recorded with it); an alarm when at least 2 features exceed 0.25 in 2 consecutive checks |
+| Scripted analyst | The reference policy for the evaluation | A deterministic expert system that speaks the agent's chat and tool protocol and sees only tool results, never the ground truth, so that ten seeds of three configurations run in minutes |
+
+## 5. Training and inference
+
+```mermaid
+flowchart TB
+    subgraph offline ["Offline: soc etl build, soc train"]
+        direction LR
+        plan["<b>Dataset plan</b><br/>7 seeded periods<br/>split in time"] --> lake[("<b>Parquet lake</b>")] --> tables["<b>DuckDB</b><br/>feature tables"] --> fit["<b>Fit M1-M3</b><br/>earlier weeks"] --> thresholds["<b>Thresholds</b><br/>validation week"]
+    end
+    registry[("<b>Model registry</b><br/>versions<br/>current.json")]
+    subgraph online ["Online: soc run, soc pipeline, soc serve-detectors"]
+        direction LR
+        load["<b>Load</b><br/>current versions"] --> score["<b>Score</b><br/>closed windows"] --> alerts["<b>Alerts</b><br/>top features"]
+        monitor["<b>Drift monitor</b><br/>hourly PSI · KS"] -- "alarm" --> retrain["<b>Retrain M1</b><br/>last 24 h<br/>minus attacks"] -- "swap in" --> score
+    end
+    offline -- "save, promote" --> registry -- "load" --> online
+    classDef ai stroke:#a371f7,stroke-width:3px
+    class fit,score,retrain ai
+```
+
+*Figure 4. Detectors are trained offline, stored in the registry and loaded by the pipeline; M1 can be retrained online after a drift alarm.*
+
+**Where training happens.** Offline, on a laptop CPU; no GPU is needed for M1–M3. `soc etl build` simulates the [dataset plan](../../config/datasets.yaml) into the Parquet lake and builds the feature tables with DuckDB, in about 7 minutes. `soc train` fits the detectors. The plan is split in time, so that no model learns from the future: a benign history week for the account baselines and the unsupervised models, three 48-hour weeks with a campaign for M2 (with the attack's start spread over the whole day, so that M2 cannot learn the simulator's timing), one validation week for the thresholds, and two test weeks for the model-level metrics. All weeks are the same company with different activity seeds.
+
+**How models are stored and loaded.** Each training run adds a version to the model registry: `models/<detector>/<version>/` holds M1's forests (`forests.joblib`), account baselines (`profiles.json`) and drift reference, M2's LightGBM model (`model.txt`), or M3's pair counts (`pairs.json`), each with a `meta.json` of thresholds, target false-positive rate, validation results, training size and seed. `current.json` points at the promoted version; `soc models` lists the versions, and `soc models --promote M1:<version>` rolls back. At start-up the pipeline, or `soc serve-detectors`, loads the promoted version of each detector. The registry and the data are not in Git: `soc etl build` and `soc train` rebuild them deterministically from the seeds.
+
+**How the system uses them.** Every closed window becomes a feature row, is scored in a batch, and becomes an alert when it crosses its detector's threshold. The agent's scoring tools run the same models on any entity and time range it asks about, in process or through the detector service's REST API. The drift monitor checks M1's inputs every hour. With `--retrain-on-drift`, three hours after an alarm M1 is retrained on the last 24 hours of sign-ins, leaving out the events of incidents judged malicious and of alerts analysts confirmed, recalibrated, and swapped in as a new version whose parent is recorded in the run log. Today the retrained model lives in the running pipeline and its log; saving it to the registry as a candidate version is planned for week 9. Analyst feedback feeds the per-detector false-positive statistics on the Metrics page and the retraining data, and can be exported as labels.
+
+**The LLM is not trained.** gpt-oss:20b is pulled with `ollama pull gpt-oss:20b` and served locally, with temperature 0.1, a 16 K context and low reasoning effort. Its system prompt, tool definitions and decision schema are code, in [agent/prompts.py](../../src/agentic_soc/agent/prompts.py). We do not fine-tune it, because no labelled triage transcripts exist and the evaluation is meant to measure prompting, tools and guardrails, which carry over to other open models (Qwen3 in the plan).
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant A as Triage agent
+    participant L as gpt-oss:20b
+    participant M as MCP server
+    participant D as Detectors
+    participant G as Guardrails
+    Note over A: incident from the router,<br/>with risk and priority
+    loop at most 12 steps
+        A->>L: messages, tool schemas
+        L-->>A: tool call
+        A->>M: call the tool
+        opt score_signins, score_flows, score_processes
+            M->>D: POST /score
+            D-->>M: scores, top features
+        end
+        M-->>A: result, log text quoted
+    end
+    L-->>A: decision as JSON
+    Note over A: schema check,<br/>at most 2 repairs
+    A->>G: actions, cited evidence
+    Note over G: verifier, policy gate,<br/>analyst approval,<br/>actions topic, audit log
+```
+
+*Figure 5. One triage at inference time. A malformed tool call is rejected with the reason and the model tries again; a decision that fails its schema, or cites IDs no tool returned, gets at most two repair attempts with schema-constrained output.*
