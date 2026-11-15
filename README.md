@@ -44,12 +44,12 @@ Agentic SOC is a Security Operations Center for a simulated company of 200 peopl
 Or run the whole loop yourself, with the console attached to the live pipeline:
 
 ```bash
-brew install libomp                      # macOS: LightGBM needs OpenMP
+brew install libomp                    # macOS: LightGBM needs OpenMP
 uv sync
-uv run soc etl build                     # simulate the dataset plan into data/ (about 7 minutes)
-uv run soc train                         # train M1-M3 into models/
-uv run soc demo --speed 120              # simulator, pipeline and console API; the attack starts 1.5 h in
-cd web && npm install && npm run dev     # the console, on http://localhost:3000
+uv run soc etl build                   # simulate the datasets into data/, about 7 minutes
+uv run soc train                       # train M1-M3 into models/
+uv run soc demo --speed 120            # simulator, pipeline, console API; attack at 1.5 h
+cd web && npm install && npm run dev   # the console, on http://localhost:3000
 ```
 
 The demo uses the scripted analyst; with [Ollama](https://ollama.com) and `ollama pull gpt-oss:20b`, `--llm ollama:gpt-oss:20b` puts the local model in its place, in `soc demo` as in `soc run`.
@@ -79,16 +79,19 @@ The demo uses the scripted analyst; with [Ollama](https://ollama.com) and `ollam
 
 <table>
   <tr>
+    <td width="50%"><img src="docs/assets/queue.png" alt="The incident queue of the recorded run: 20 incidents at risk 0.5 or more, the two contained P1 intrusions first, each with its status, the agent's verdict, its detectors, ATT&CK techniques, kill-chain progress, risk, time span and entities, with filters by status, risk and text"><br><b>The incident queue.</b> Every routed incident by priority and risk, with its status, verdict, detectors, techniques and entities.</td>
     <td width="50%"><img src="docs/assets/evidence.png" alt="The evidence behind the verdict on INC-00055: 244 items, alerts, events, baselines and tool calls, the 17 the agent cited starred, with filters by kind, stream, detector and entity"><br><b>Evidence.</b> The 244 items behind INC-00055, the 17 the agent cited starred, filterable by kind, stream, detector and entity.</td>
-    <td width="50%"><img src="docs/assets/entity.png" alt="The foothold workstation WS-0156: its owner, zone and criticality, the two incidents that involve it, the isolation taken on it, and its flows, sign-ins and processes over 24 hours"><br><b>An entity.</b> The foothold workstation: its owner and zone, its incidents, the isolation taken on it, and its timeline across the three streams.</td>
   </tr>
   <tr>
+    <td><img src="docs/assets/entity.png" alt="The foothold workstation WS-0156: its owner, zone and criticality, the two incidents that involve it, the isolation taken on it, and its flows, sign-ins and processes over 24 hours"><br><b>An entity.</b> The foothold workstation: its owner and zone, its incidents, the isolation taken on it, and its timeline across the three streams.</td>
     <td><img src="docs/assets/actions.png" alt="The containment actions of the run: the workstation isolated and four attacker addresses blocked, each with its impact, who requested it, how the policy gate decided, and the rationale"><br><b>Actions.</b> Every containment the agent and the playbooks proposed, its impact, how the policy gate decided, and why.</td>
-    <td><img src="docs/assets/audit.png" alt="The audit log: decisions, proposals and executions by the agent, the policy gate and the executor, each entry linked to the hash of the previous one, with the chain verified"><br><b>The audit log.</b> Every decision, proposal, approval and execution in a hash chain, verified in the page.</td>
   </tr>
   <tr>
-    <td><img src="docs/assets/monitor.png" alt="The drift monitor: the largest PSI of M1's per-account and per-address features, hour by hour, crossing the 0.25 alarm line after the move to remote work, with the two alarms and two retrains marked and the most shifted features listed"><br><b>The drift monitor.</b> M1's features against its training data, hour by hour, with the alarms and retrains of scenario S1.</td>
+    <td><img src="docs/assets/audit.png" alt="The audit log: decisions, proposals and executions by the agent, the policy gate and the executor, each entry linked to the hash of the previous one, with the chain verified"><br><b>The audit log.</b> Every decision, proposal, approval and execution in a hash chain, verified in the page.</td>
     <td><img src="docs/assets/palette.png" alt="The command palette searching for WS-0156: the incidents that involve it, with priority and status, and the matching entities"><br><b>The command palette</b> (<kbd>⌘</kbd> <kbd>K</kbd>): any incident, entity or page, by name.</td>
+  </tr>
+  <tr>
+    <td colspan="2"><img src="docs/assets/monitor.png" alt="The drift monitor: the largest PSI of M1's per-account and per-address features, hour by hour, crossing the 0.25 alarm line after the move to remote work, with the two alarms and two retrains marked and the most shifted features listed"><br><b>The drift monitor</b>, on the Metrics page: M1's features against its training data, hour by hour, with the alarms and retrains of scenario S1.</td>
   </tr>
 </table>
 
@@ -215,13 +218,15 @@ The agent's 73 containment actions all hit the attacker (action correctness 1.00
 Requirements: Python 3.12 and [uv](https://docs.astral.sh/uv/), Node 20 or later for the console, and Docker for the live stack (`make up` starts Redpanda and TimescaleDB). On macOS, LightGBM needs OpenMP: `brew install libomp`.
 
 ```bash
-uv run soc etl build                              # the dataset plan into data/ (lake + feature tables)
-uv run soc train                                  # M1-M3 into the model registry (models/)
-uv run soc run                                    # closed loop in one process, with the scripted analyst
-uv run soc run --llm ollama:gpt-oss:20b           # ... with the agent on the local LLM
+uv run soc etl build                                 # simulate the datasets into data/
+uv run soc train                                     # M1-M3 into the registry, models/
+uv run soc run                                       # closed loop, the scripted analyst
+uv run soc run --llm ollama:gpt-oss:20b              # ... with the agent on the local LLM
 uv run soc run --llm ollama:gpt-oss:20b --verifier   # ... and the evidence verifier
-uv run soc run --mode detectors                   # baseline: detectors + playbooks, no agent
-uv run soc run --mode rules                       # baseline: Sigma-style rules + playbooks
+uv run soc run --mode detectors                      # baseline: detectors + playbooks
+uv run soc run --mode rules                          # baseline: rules + playbooks
+
+# scenario S1: 72 hours, M1 retrained when the drift monitor alarms
 uv run soc run --scenario config/scenarios/s1-remote-work.yaml --hours 72 --retrain-on-drift
 ```
 
@@ -230,30 +235,30 @@ uv run soc run --scenario config/scenarios/s1-remote-work.yaml --hours 72 --retr
 The console API (FastAPI) serves a recorded run read-only, or a live demo in which the simulator, the pipeline and the API share one process and an analyst approves or rejects held actions. `soc export` writes a recorded run as the static files the GitHub Pages demo replays; [web/README.md](web/README.md) has the details.
 
 ```bash
-uv run soc api --run data/soc-runs/agent-seed201      # http://127.0.0.1:8000/api, read-only
-uv run soc demo --speed 120                           # live, with approvals
+uv run soc api --run data/soc-runs/agent-seed201           # a recorded run, read-only
+uv run soc demo --speed 120                                # live, with approvals
 uv run soc export --run data/soc-runs/s1-retrain-seed301   # into web/public/data
 ```
 
-Endpoints: `/api/health`, `/api/stream-health`, `/api/incidents[/{id}[/evidence|/trace|/feedback]]`, `/api/entities/{entity}[/timeline]`, `/api/actions[/{id}/approve|/reject]`, `/api/metrics`, `/api/audit[/verify]`, `/api/evaluation`, `/api/log` and `/api/events` (server-sent events of the live pipeline).
+Both serve the API on `http://127.0.0.1:8000/api`. Endpoints: `/api/health`, `/api/stream-health`, `/api/incidents[/{id}[/evidence|/trace|/feedback]]`, `/api/entities/{entity}[/timeline]`, `/api/actions[/{id}/approve|/reject]`, `/api/metrics`, `/api/audit[/verify]`, `/api/evaluation`, `/api/log` and `/api/events` (server-sent events of the live pipeline).
 
-Live mode streams through Redpanda, with the simulator and the pipeline in separate processes:
+Live mode streams through Redpanda, with the simulator and the pipeline in separate processes. The pipeline stores into `$SOC_DB`: set it to the TimescaleDB that `make up` starts on `localhost:15432` (the Makefile's `test-integration` has the URL), or leave it unset for SQLite.
 
 ```bash
 make up
 uv run soc simulate --broker kafka://localhost:19092 --speed 60 --out data/runs/live
-uv run soc pipeline --inventory data/runs/live/inventory.json --db $SOC_DB --api-port 8000
+uv run soc pipeline --inventory data/runs/live/inventory.json --api-port 8000
 ```
 
 `soc evaluate` runs the experiments of the RFC's evaluation plan and merges each into [docs/evaluation](docs/evaluation/README.md):
 
 ```bash
-uv run soc evaluate models                        # M1-M3 on the held-out test weeks
-uv run soc evaluate e2e --seeds 401-410           # agent vs detectors + playbooks vs rules, paired over seeds
-uv run soc evaluate llm --seeds 401-403           # the agent on gpt-oss:20b, same seeds
+uv run soc evaluate models                           # M1-M3 on the held-out test weeks
+uv run soc evaluate e2e --seeds 401-410              # agent vs both baselines
+uv run soc evaluate llm --seeds 401-403              # the agent on gpt-oss:20b
 uv run soc evaluate llm --seeds 401-403 --verifier   # ... with the evidence verifier
-uv run soc evaluate s1 --seeds 301-303            # S1 drift, with and without retraining
-uv run soc evaluate s2                            # S2 burst through Redpanda (make up)
+uv run soc evaluate s1 --seeds 301-303               # S1, with and without retraining
+uv run soc evaluate s2                               # S2 burst through Redpanda (make up)
 ```
 
 End-to-end runs are 48-hour closed loops on successive weeks. Each reports the time to detect and to contain from the start of the intrusion, how far the attacker got, exfiltrated data, false containments (executed actions on anything outside the attack, or on a future victim before it), the alert-to-incident reduction and the agent's verdict quality.
@@ -266,13 +271,13 @@ End-to-end runs are 48-hour closed loops on successive weeks. Each reports the t
 │   ├── ci.yml                  # Python lint and tests, the console's lint and build
 │   └── pages.yml               # the static console, deployed to GitHub Pages
 ├── src/agentic_soc/
-│   ├── schemas/                # versioned event schemas (OCSF-inspired) and the agent's decision
-│   ├── simulator/              # the enterprise, benign activity, the campaign, delivery, containment
+│   ├── schemas/                # event schemas (OCSF-inspired) and the agent's decision
+│   ├── simulator/              # enterprise, benign activity, campaign, containment
 │   ├── broker/                 # Kafka (Redpanda) and an in-memory broker for tests
-│   ├── ingestion/              # validation, dead letters, de-duplication, enrichment, inventory
-│   ├── storage/                # TimescaleDB or SQLite hot store, Parquet lake, hash-chained audit log
+│   ├── ingestion/              # validation, dead letters, de-duplication, enrichment
+│   ├── storage/                # TimescaleDB/SQLite hot store, Parquet lake, audit log
 │   ├── etl/                    # DuckDB: lake, analytics, time-split datasets, replays
-│   ├── features/               # event-time windows, watermarks, entity resolution, profiles
+│   ├── features/               # event-time windows, watermarks, entity resolution
 │   ├── detectors/              # M1-M3, the model registry and the REST scoring service
 │   ├── drift/                  # PSI and KS references, the drift monitor, retraining M1
 │   ├── correlation/            # incidents and their risk
@@ -280,30 +285,30 @@ End-to-end runs are 48-hour closed loops on successive weeks. Each reports the t
 │   ├── rules/                  # the Sigma-style rules baseline
 │   ├── actions/                # the action manager and the policy gate
 │   ├── mcp_server/             # the SOC tools and untrusted-data quoting
-│   ├── agent/                  # the ReAct agent, Ollama client, scripted analyst, evidence verifier
+│   ├── agent/                  # ReAct agent, Ollama client, scripted analyst, verifier
 │   ├── evidence/               # evidence bundles and analyst feedback
-│   ├── pipeline/               # the SOC pipeline, in process (virtual time) and live (threads)
+│   ├── pipeline/               # the pipeline, in virtual time or live on threads
 │   ├── api/                    # the console API, server-sent events, the static export
 │   ├── evaluation/             # metrics, end to end, model level, S2 load, the report
 │   └── cli.py                  # soc
-├── web/                        # the Next.js console; scripts/capture.mjs makes this README's images
-├── config/                     # the simulator, its calibration and the scenarios S1 and S2
+├── web/                        # the Next.js console and the README's capture script
+├── config/                     # the simulator, its calibration, scenarios S1 and S2
 ├── deploy/docker-compose.yml   # Redpanda and TimescaleDB
 ├── docs/
 │   ├── rfc/                    # RFC-0001 and its architecture figure
 │   ├── evaluation/             # results.json and the report
 │   └── assets/                 # this README's images
-└── tests/                      # unit tests, and integration tests against the live stack
+└── tests/                      # unit tests, integration tests against the live stack
 ```
 
 ## Tests and CI
 
 ```bash
-make lint                       # ruff check and format
-make test                       # unit tests, about 2 minutes
-make up && make test-integration   # against Redpanda and TimescaleDB
-SOC_TEST_LLM=1 uv run pytest -m llm   # the agent on gpt-oss:20b (Ollama serving it)
-cd web && npm run lint && npm run build
+make lint                                 # ruff check and format
+make test                                 # unit tests, about 2 minutes
+make up && make test-integration          # against Redpanda and TimescaleDB
+SOC_TEST_LLM=1 uv run pytest -m llm       # the agent on gpt-oss:20b, served by Ollama
+cd web && npm run lint && npm run build   # the console
 ```
 
 | Workflow | Job | What it checks |

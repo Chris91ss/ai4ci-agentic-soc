@@ -43,7 +43,7 @@ uv run soc export --run data/soc-runs/s1-retrain-seed301
 
 cd web
 STATIC_EXPORT=1 NEXT_PUBLIC_DATA=static npm run build   # the site, in out/
-npx serve out                                          # preview it on http://localhost:3000
+npx serve out                                          # preview on http://localhost:3000
 ```
 
 The workflow builds with `NEXT_PUBLIC_BASE_PATH=/ai4ci-agentic-soc`, the path Pages serves the
@@ -59,7 +59,8 @@ point elsewhere), and ffmpeg for the GIF:
 
 ```bash
 STATIC_EXPORT=1 NEXT_PUBLIC_DATA=static npm run build
-npm run capture                       # or name some: node scripts/capture.mjs shots gallery tour social
+npm run capture                           # all of them
+node scripts/capture.mjs gallery social   # or some: shots, gallery, tour, social
 ```
 
 ## Layout
