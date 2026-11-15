@@ -5,11 +5,20 @@
 //   docs/assets/trace.png       the agent's investigation of that incident, tool call by tool call
 //   docs/assets/evaluation.png  the agent against the two baselines, over ten seeds
 //   docs/assets/drift.png       scenario S1: false alerts after the move to remote work, with and without retraining
+//   docs/assets/evidence.png    the evidence behind the agent's verdict, filterable       (gallery: the console
+//   docs/assets/entity.png      a host: its baseline, incidents and timeline               without the sidebar)
+//   docs/assets/actions.png     every containment action and what the policy gate decided
+//   docs/assets/monitor.png     the drift monitor: PSI of M1's features, alarms and retrains
+//   docs/assets/audit.png       the hash-chained audit log
+//   docs/assets/palette.png     the command palette
+//   docs/assets/detectors.png   M1-M3 on the held-out test weeks
+//   docs/assets/load.png        scenario S2: a tenfold burst through Redpanda
+//   docs/assets/llm.png         the agent on gpt-oss:20b, with and without the evidence verifier
 //   docs/assets/demo.gif        a tour of the console (needs ffmpeg)
 //   public/social.png           the link preview, from scripts/social-card.html
 //
 //   STATIC_EXPORT=1 NEXT_PUBLIC_DATA=static npm run build
-//   node scripts/capture.mjs [shots] [tour] [social]
+//   node scripts/capture.mjs [shots] [gallery] [tour] [social]
 //
 // Name some of them to capture only those. Set NEXT_PUBLIC_BASE_PATH as for the build if the site was built
 // with one, and CHROME_PATH if Chrome is not in its usual place. Rebuild afterwards, so the site serves the
@@ -123,6 +132,25 @@ async function rest() {
   await sleep(500);
 }
 
+/** Saves what is in view, without the sidebar (clips are in page coordinates, so add the scroll). */
+async function shotMain(name) {
+  const y = await page.evaluate(() => window.scrollY);
+  await page.screenshot({ path: join(assets, name), clip: { x: 240, y, width: 1200, height: 900 } });
+  console.log(`docs/assets/${name}`);
+}
+
+/** The card (a panel with a rounded border) that has a heading starting with `title`. */
+async function card(title) {
+  const handle = await page.evaluateHandle((t) => {
+    let node = [...document.querySelectorAll("h3")].find((h) => h.textContent.trim().startsWith(t));
+    while (node && !String(node.className).includes("radius-card")) node = node.parentElement;
+    return node;
+  }, title);
+  const element = handle.asElement();
+  if (!element) throw new Error(`no card titled ${title}`);
+  return element;
+}
+
 async function pauseReplay() {
   const pause = await page.$("header button:has(svg.tabler-icon-player-pause)");
   if (pause) await pause.click();
@@ -169,6 +197,63 @@ if (wanted("shots")) {
   await rest();
   await panel.asElement().screenshot({ path: join(assets, "drift.png") });
   console.log("docs/assets/drift.png");
+}
+
+// The rest of the console and of the evaluation, for the README's galleries.
+if (wanted("gallery")) {
+  await open(`/incident/?id=${incidentId}`, incidentId);
+  await clickText('[role="tab"]', "Evidence");
+  await sleep(1200);
+  await page.evaluate(() => {
+    const tabs = document.querySelector('[role="tablist"]');
+    window.scrollBy(0, tabs.getBoundingClientRect().top - 96);
+  });
+  await rest();
+  await shotMain("evidence.png");
+
+  await open("/entity/?e=host%3AWS-0156", "Timeline");
+  await rest();
+  await shotMain("entity.png");
+
+  await open("/actions/", "WS-0156");
+  await rest();
+  await shotMain("actions.png");
+
+  await open("/metrics/", "Drift monitor");
+  await sleep(800);
+  await rest();
+  await (await card("Drift monitor")).screenshot({ path: join(assets, "monitor.png") });
+  console.log("docs/assets/monitor.png");
+
+  await open("/audit/", "Hash chain");
+  await rest();
+  await shotMain("audit.png");
+
+  await open("/", "Security overview");
+  await clickText("header button", "Search incidents");
+  await page.waitForSelector("[cmdk-input]");
+  await page.type("[cmdk-input]", "WS-0156", { delay: 40 });
+  await sleep(900);
+  await page.screenshot({ path: join(assets, "palette.png") });
+  console.log("docs/assets/palette.png");
+  await page.keyboard.press("Escape");
+
+  await open("/evaluation/", "Agent (scripted analyst)");
+  await clickText('[role="tab"]', "Detectors");
+  await sleep(1800);
+  await rest();
+  await shotMain("detectors.png");
+
+  await clickText('[role="tab"]', "Load (S2)");
+  await sleep(1800);
+  await rest();
+  await (await card("LLM 4")).screenshot({ path: join(assets, "load.png") });
+  console.log("docs/assets/load.png");
+
+  await clickText('[role="tab"]', "Local LLM");
+  await sleep(1800);
+  await rest();
+  await shotMain("llm.png");
 }
 
 // The tour, recorded as a screencast and turned into a GIF.

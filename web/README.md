@@ -52,14 +52,14 @@ of triaged incidents and of containment actions with their newest events.
 
 ## The README's images
 
-`npm run capture` regenerates the repository README's screenshots (`docs/assets/`), the demo GIF
+`npm run capture` regenerates the repository README's screenshots and gallery (`docs/assets/`), the demo GIF
 and the link preview (`public/social.png`, from `scripts/social-card.html`) from the static
 build, in headless Chrome. It uses puppeteer-core with the installed Chrome (`CHROME_PATH` to
 point elsewhere), and ffmpeg for the GIF:
 
 ```bash
 STATIC_EXPORT=1 NEXT_PUBLIC_DATA=static npm run build
-npm run capture                       # or name some: node scripts/capture.mjs shots tour social
+npm run capture                       # or name some: node scripts/capture.mjs shots gallery tour social
 ```
 
 ## Layout
