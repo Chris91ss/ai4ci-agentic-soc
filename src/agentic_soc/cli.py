@@ -641,9 +641,13 @@ def export_run(
 def demo(
     seed: int = typer.Option(201, help="Activity seed."),
     org_seed: int = typer.Option(7, help="Company seed (the models use 7)."),
-    start: str = typer.Option("2026-03-09T16:00:00Z", help="Start time (UTC)."),
+    start: str = typer.Option(
+        "2026-03-09T05:00:00Z",
+        help="Start time (UTC). Starting before the working day lets the pipeline see the "
+        "morning sign-ins, which it needs to map IP addresses to hosts.",
+    ),
     hours: float = typer.Option(24.0, help="Duration in hours."),
-    attack_after: float = typer.Option(1.5, help="Hours until the campaign starts."),
+    attack_after: float = typer.Option(4.0, help="Hours until the campaign starts."),
     speed: float = typer.Option(120.0, help="Simulated seconds per wall-clock second."),
     mode: str = typer.Option("agent", help="agent or detectors (playbooks only)."),
     llm: str = typer.Option("scripted", help="scripted or ollama[:model] (use a low --speed)."),

@@ -48,7 +48,7 @@ brew install libomp                    # macOS: LightGBM needs OpenMP
 uv sync
 uv run soc etl build                   # simulate the datasets into data/, about 7 minutes
 uv run soc train                       # train M1-M3 into models/
-uv run soc demo --speed 120            # simulator, pipeline, console API; attack at 1.5 h
+uv run soc demo --speed 120            # simulator, pipeline, console API; attack after 2 min
 cd web && npm install && npm run dev   # the console, on http://localhost:3000
 ```
 
