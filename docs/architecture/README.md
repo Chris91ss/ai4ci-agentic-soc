@@ -337,4 +337,12 @@ By the progress review on 31 December we expect to have finished everything up t
 
 ## 8. Changes to this plan
 
-We will write down here any significant change to this plan, with the reason. No changes so far.
+We will write down here any significant change to this plan, with the reason.
+
+**20 November (week 8).** We re-ran all the experiments with the current code. The detectors, the ten end-to-end seeds and S1 gave the same numbers as before, which also shows that the runs are repeatable, and the S2 load test gave almost the same. The Milestone 1 feedback asked for no changes. While re-running we also did some extra work that was not in the plan:
+
+- The gpt-oss:20b runs showed why the agent was noisy. The model often wrote an account or host without its `user:` or `host:` prefix, and the timeline tool named the sign-in stream "sign-in", so every sign-in timeline it asked for came back empty. We fixed the tools and made the prompt clearer. On three seeds the failed tool calls went from 18% to 3.5%, but the agent still made false containments (4, against 2 before), so its judgement on what to contain is now the main weakness of the local model.
+- We tried blocking a clear password spray before the agent's triage (`--fast-block`). It contained 3 minutes sooner with no false containment, so we keep it as an option and will decide later if it becomes the default.
+- We tried giving M3 the nine window features its rows already have. It was not better on the validation week, so M3 stays as it is.
+
+The plan for the next weeks does not change.
