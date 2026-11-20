@@ -75,7 +75,7 @@ The demo uses the scripted analyst. With [Ollama](https://ollama.com) and `ollam
 
 - **The agent trace** shows each decision with its rationale, the actions it proposed and the evidence it cited, and every step of the investigation: which MCP tool it called, with which arguments, how long it took, and what came back. Here it also noticed the attacker's instruction to AI analysts, planted in a command line, and flagged it instead of obeying it.
 - **The evidence** behind a verdict lists the triggering events, the detector scores with their top features, the baselines of the entities involved and the tool calls, each with the ID the agent cited, filterable by entity, stream, detector and time window, so a suspected false positive can be checked rather than taken on trust.
-- **Response** holds the actions, with approve and reject for the high-impact ones in a live run, and the analyst's verdict, which feeds the per-detector false-positive statistics on the **Metrics** page, beside the drift monitor. The **Audit log** is hash-chained and can be verified from the console.
+- **Response** holds the actions, with approve and reject for the high-impact ones in a live run, and the analyst's verdict, which feeds the per-detector false-positive statistics on the **Metrics** page, beside the drift monitor. In the live demo every action that waits for an analyst also pops up as a notification with a link to its incident, and it goes away once someone approves or rejects it. The **Audit log** is hash-chained and can be verified from the console.
 
 <table>
   <tr>

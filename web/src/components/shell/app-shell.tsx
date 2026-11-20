@@ -2,6 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 
+import { ApprovalAlerts } from "./approval-alerts";
 import { CommandPalette } from "./command-palette";
 import { MobileNav, Sidebar } from "./sidebar";
 import { Topbar } from "./topbar";
@@ -19,6 +20,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <main className="mx-auto w-full max-w-[1500px] flex-1 px-4 py-6 lg:px-8">{children}</main>
       </div>
       <CommandPalette open={search} onOpenChange={setSearch} />
+      <ApprovalAlerts />
     </div>
   );
 }
