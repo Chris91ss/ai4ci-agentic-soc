@@ -33,6 +33,7 @@ class RunSpec:
     llm: str = "scripted"
     retrain_on_drift: bool = False
     verifier: bool = False
+    fast_block: bool = False
     models: str = "models"
     overrides: dict[str, Any] = field(default_factory=dict)
 
@@ -46,6 +47,7 @@ class RunSpec:
             base
             + ("+retrain" if self.retrain_on_drift else "")
             + ("+verifier" if self.verifier else "")
+            + ("+fastblock" if self.fast_block else "")
         )
 
     @property
@@ -83,6 +85,7 @@ def run_one(spec: RunSpec) -> dict[str, Any]:
             llm=spec.llm,
             retrain_on_drift=spec.retrain_on_drift,
             verifier=spec.verifier,
+            fast_block=spec.fast_block,
         )  # type: ignore[arg-type]
         runner = InProcessRun(sim, ModelRegistry(spec.models).load_set(), pipeline_config, store)
         outcome = runner.run()
@@ -319,11 +322,19 @@ def compare(rows: list[dict[str, Any]], reference: str = "agent") -> dict[str, A
 def specs_for(
     modes: list[str], seeds: list[int], hours: float = 48.0, models: str = "models", **kwargs: Any
 ) -> list[RunSpec]:
-    return [
-        RunSpec(mode=mode, seed=seed, hours=hours, start=seed_start(i), models=models, **kwargs)
-        for i, seed in enumerate(seeds)
-        for mode in modes
-    ]
+    """``modes``: agent, detectors or rules, optionally with options such as agent+fastblock."""
+    options = {"fastblock": "fast_block", "verifier": "verifier"}
+    specs = []
+    for i, seed in enumerate(seeds):
+        for config in modes:
+            mode, *extra = config.split("+")
+            unknown = [o for o in extra if o not in options]
+            if unknown:
+                raise ValueError(f"unknown option {unknown[0]!r} in {config!r}")
+            flags = {options[o]: True for o in extra}
+            specs.append(RunSpec(mode=mode, seed=seed, hours=hours, start=seed_start(i),
+                                 models=models, **(kwargs | flags)))  # fmt: skip
+    return specs
 
 
 def as_dict(spec: RunSpec) -> dict[str, Any]:

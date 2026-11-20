@@ -108,6 +108,54 @@ def test_staged_agent_proposals_wait_for_the_decision(mini_soc) -> None:
     assert staged.take() == [] and staged.gate is mini_soc.actions.gate
 
 
+def test_fast_block_stops_a_spray_while_the_agent_is_queued(mini_soc) -> None:
+    from datetime import timedelta
+
+    from agentic_soc.broker import InMemoryBroker
+    from agentic_soc.detectors.base import Score
+    from agentic_soc.features import FEATURES, FeatureRow
+    from agentic_soc.pipeline import SocPipeline
+    from agentic_soc.routing import RouterConfig
+    from agentic_soc.schemas import Decision, ProposedAction
+
+    config = PipelineConfig(mode="agent", fast_block=True, router=RouterConfig(log_below=0.0))
+    soc = SocPipeline(mini_soc.inventory, mini_soc.client(), mini_soc.profiles, Store.memory(),
+                      InMemoryBroker(), config)  # fmt: skip
+    soc.clock = mini_soc.clock
+
+    def sign_in(
+        user: str, ip: str, techniques: tuple[str, ...] = ("T1110",), kind: str = "M1-user"
+    ):
+        start = soc.clock - timedelta(minutes=15)
+        key = f"user:{user}" if kind == "M1-user" else f"ip:{ip}"
+        row = FeatureRow(kind, key, start, soc.clock, [user], [], [ip], [f"e-{key}-{start}"],
+                         dict.fromkeys(FEATURES[kind], 0.0))  # fmt: skip
+        return row, Score("M1", kind, 0.999, 0.99, [], list(techniques), f"{user} from {ip}")
+
+    soc.correlate([sign_in("ana", "45.32.7.7"), sign_in("ion", "45.32.7.7")])
+    assert not soc.actions.actions  # two accounts can be a typo: the agent decides
+    # maria fails too; dan signed in from the same server (an M1-ip alert lists the successes)
+    soc.correlate([sign_in("maria", "45.32.7.7"), sign_in("dan", "45.32.7.7", kind="M1-ip")])
+    (action,) = soc.actions.actions.values()
+    assert (action.type, action.target) == ("block_ip", "45.32.7.7")
+    assert action.status == "executed" and action.requested_by == "playbook"
+    incident = soc.correlation.get(action.incident_id)
+    assert incident.status == "queued" and soc.router.queued() == [incident.incident_id]
+
+    # The agent decides. The attacker moves to another server, where dan signs in again.
+    assert soc.router.next() == incident.incident_id
+    decision = Decision(incident_id=incident.incident_id, verdict="malicious",
+                        action=ProposedAction(type="none"), confidence=0.9)  # fmt: skip
+    soc.apply_decision(incident, decision, "agent", latency_s=60.0, model="test")
+    soc.clock += timedelta(minutes=15)
+    second = "193.106.191.5"
+    soc.correlate([sign_in(u, second) for u in ("xena", "yuri", "zoe")]
+                  + [sign_in("dan", second, ("T1078",))])  # fmt: skip
+    assert ("block_ip", second) in soc.actions.taken()
+    # The block must not mark the incident contained: the agent still has to look at dan.
+    assert incident.status == "queued" and soc.router.queued() == [incident.incident_id]
+
+
 def test_soc_run_cli_writes_a_run_directory(mini_soc, tmp_path) -> None:
     import json
 

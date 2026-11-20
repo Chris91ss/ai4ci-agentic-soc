@@ -6,6 +6,10 @@ alerts point at: beacons and uploads to external addresses -> block the address 
 the source host; password spraying -> block the spraying addresses; account takeover signs ->
 revoke the account's sessions; credential dumping or PsExec by a privileged account ->
 disable that account and isolate the host. Playbooks never dismiss an incident.
+
+A password spray from rented infrastructure, one hosting or anonymiser address failing against
+several accounts, is also clear enough to block before the agent has looked at the incident
+(``spray_sources``, used by the pipeline's optional fast block).
 """
 
 from __future__ import annotations
@@ -22,6 +26,8 @@ TAKEOVER = {"T1078", "T1133"}
 HOST_COMPROMISE = {"T1003.001", "T1569.002", "T1218.011", "T1059.001", "T1560.001"}
 IMPACT_ORDER = {"isolate_host": 0, "disable_account": 1, "block_ip": 2, "revoke_sessions": 3}
 LATE = {"credential-access", "lateral-movement", "command-and-control", "exfiltration"}
+SPRAY_ACCOUNTS = 3  # one user mistyping a password from a hotel or a VPN is not a spray
+RENTED = {"hosting", "anonymizer"}  # rented servers and Tor exits, not shared egress such as ZTNA
 
 
 INFRASTRUCTURE_ROLES = {"dc", "edr", "monitoring", "vpn", "proxy", "wsus", "mail"}
@@ -80,6 +86,46 @@ def playbook_actions(incident: IncidentState, inv: Inventory) -> list[tuple[Prop
                 if inv.account_kind(user) == "admin":
                     candidates.append((ProposedAction(type="disable_account", target=user), alert))
     return candidates
+
+
+def spray_sources(
+    incident: IncidentState, inv: Inventory, min_accounts: int = SPRAY_ACCOUNTS
+) -> list[tuple[ProposedAction, Alert]]:
+    """Block the addresses on rented infrastructure whose sign-ins failed for at least
+    ``min_accounts`` accounts in this incident, with the strongest alert behind each.
+
+    Failures come from M1-ip windows tagged as a spray (T1110.003: that many accounts failed from
+    the address in one window) and from M1-user windows with failures and no use of the account
+    (T1110 without T1078). The accounts an M1-ip alert lists signed in successfully, so they do
+    not count."""
+    failed: dict[str, set[str]] = {}
+    sprayed: set[str] = set()
+    strongest: dict[str, Alert] = {}
+    for alert in sorted(incident.alerts.values(), key=lambda a: -a.score):
+        if alert.stream != "signin":
+            continue
+        techniques = set(alert.techniques)
+        if alert.model_version == "M1-ip":
+            sources = alert.entities.ips if "T1110.003" in techniques else []
+            sprayed.update(sources)
+        elif techniques & SPRAY and "T1078" not in techniques:
+            sources = alert.entities.ips
+            for ip in sources:
+                failed.setdefault(ip, set()).update(alert.entities.users)
+        else:
+            continue
+        for ip in sources:
+            strongest.setdefault(ip, alert)
+    return [
+        (ProposedAction(type="block_ip", target=ip), alert)
+        for ip, alert in strongest.items()
+        if (ip in sprayed or len(failed.get(ip, ())) >= min_accounts) and _rented(inv, ip)
+    ]
+
+
+def _rented(inv: Inventory, ip: str) -> bool:
+    geo = inv.geoip(ip)
+    return _external(inv, ip) and geo is not None and geo.category in RENTED
 
 
 def playbook_decision(

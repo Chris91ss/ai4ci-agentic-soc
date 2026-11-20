@@ -8,7 +8,13 @@ from agentic_soc.correlation import CorrelationEngine
 from agentic_soc.detectors.base import Score
 from agentic_soc.features import FEATURES, FeatureRow
 from agentic_soc.ingestion import Inventory
-from agentic_soc.routing import CircuitBreaker, RiskRouter, RouterConfig, playbook_decision
+from agentic_soc.routing import (
+    CircuitBreaker,
+    RiskRouter,
+    RouterConfig,
+    playbook_decision,
+    spray_sources,
+)
 from agentic_soc.simulator import Simulator, load_config
 
 T0 = datetime(2026, 3, 2, 20, tzinfo=UTC)
@@ -129,3 +135,40 @@ def test_playbooks_contain_without_touching_infrastructure(inventory) -> None:
     assert spray == {
         ("block_ip", "45.32.7.7")
     }  # a failed sprayed sign-in is not an account takeover
+
+
+def test_spray_sources_count_failed_accounts_on_rented_networks(inventory) -> None:
+    engine = CorrelationEngine(inventory)
+
+    def incident(rows):
+        return engine.ingest(rows, T0)[-1].incident
+
+    def failed(users, ip, techniques=("T1110",)):
+        return [
+            scored("M1-user", f"user:{u}", users=[u], ips=[ip], techniques=techniques)
+            for u in users
+        ]
+
+    def blocked(state):
+        return [action.target for action, _ in spray_sources(state, inventory)]
+
+    assert blocked(incident(failed(["ana", "ion", "maria"], "45.32.7.7"))) == ["45.32.7.7"]  # Vultr
+    assert (
+        blocked(incident(failed(["dan", "eva"], "45.32.8.8"))) == []
+    )  # two accounts: maybe a typo
+    # An M1-ip alert lists the accounts that signed in, so a busy address is not a spray ...
+    busy = scored(
+        "M1-ip",
+        "ip:193.106.191.5",
+        users=["a", "b", "c"],
+        ips=["193.106.191.5"],
+        techniques=["T1110"],
+    )
+    assert blocked(incident([busy])) == []
+    # ... unless the detector saw three accounts fail from it in one window.
+    spray = scored("M1-ip", "ip:51.75.1.1", ips=["51.75.1.1"], techniques=["T1110.003"])
+    assert blocked(incident([spray])) == ["51.75.1.1"]
+    # Accounts that also signed in, shared ZTNA egress (S1) and home ISPs are left to the agent.
+    assert blocked(incident(failed(["f", "g", "h"], "45.32.9.9", ("T1110", "T1078")))) == []
+    assert blocked(incident(failed(["i", "j", "k"], "165.225.1.10"))) == []  # Zscaler
+    assert blocked(incident(failed(["l", "m", "n"], "73.0.153.70"))) == []  # Comcast

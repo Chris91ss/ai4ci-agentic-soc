@@ -457,6 +457,9 @@ def run(
     verifier: bool = typer.Option(
         False, "--verifier", help="Veto agent actions the cited evidence does not justify."
     ),
+    fast_block: bool = typer.Option(
+        False, "--fast-block", help="Block a clear password spray before the agent's triage."
+    ),
 ) -> None:
     """Closed-loop run: simulator and SOC in one process, containment flowing back to the attack."""
     import time
@@ -480,7 +483,8 @@ def run(
     store.init_schema()
     sim = Simulator(cfg)
     pipeline_cfg = PipelineConfig(mode=mode, llm=llm, approval_delay_s=approval_delay,  # type: ignore[arg-type]
-                                  retrain_on_drift=retrain_on_drift, verifier=verifier)  # fmt: skip
+                                  retrain_on_drift=retrain_on_drift, verifier=verifier,
+                                  fast_block=fast_block)  # fmt: skip
     runner = InProcessRun(sim, ModelRegistry(models).load_set(), pipeline_cfg, store)
     console.print(f"closed-loop run: {mode} ({llm if mode == 'agent' else 'playbooks'}), "
                   f"seed {cfg.seed}, org {org_seed}, {cfg.duration_h:g}h from {cfg.start:%Y-%m-%d %H:%M} -> {out}")  # fmt: skip
@@ -758,7 +762,10 @@ def evaluate_models_cmd(
 @eval_app.command("e2e")
 def evaluate_e2e(
     seeds: str = typer.Option("401-410", help="Seeds, e.g. 401-410 or 401,402."),
-    modes: str = typer.Option("agent,detectors,rules", help="Configurations to run."),
+    modes: str = typer.Option(
+        "agent,detectors,rules",
+        help="Configurations to run; options join with +, e.g. agent+fastblock or agent+verifier.",
+    ),
     hours: float = typer.Option(48.0),
     workers: int = typer.Option(4, help="Parallel worker processes."),
     models: Path = typer.Option(Path("models")),

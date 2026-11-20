@@ -29,7 +29,7 @@ Agentic SOC is a Security Operations Center for a simulated company of 200 peopl
 | **[Simulated enterprise](#the-simulated-enterprise)** | 200 users and 250 hosts with roles, offices, schedules and network zones; three streams with their own rates, delivery delays, duplicates and malformed events; one ATT&CK campaign among benign look-alikes; containment applied back to the simulation | Unit tests of volumes, seasonality, determinism under a seed, and of how each containment changes what the simulator emits |
 | **[Streaming and storage](#how-an-incident-is-handled)** | Redpanda topics, schema validation with a dead-letter topic, de-duplication, normalisation and enrichment; TimescaleDB as the hot store, a Parquet lake and DuckDB for the offline ETL | Unit tests, and integration tests against Redpanda and TimescaleDB |
 | **[Detectors](#detectors)** | M1, Isolation Forests on sign-ins per account and per source address; M2, LightGBM on flows with beacon-periodicity features; M3, rarity of parent-child process pairs; event-time windows with watermarks; served over REST | Scored on held-out test weeks: PR-AUC, recall at 1% FPR, false positives per day, detection delay |
-| **[Correlation and routing](#how-an-incident-is-handled)** | Alerts linked by user, host and address into risk-scored incidents; low-risk ones are logged, the rest go to the agent by priority, and to deterministic playbooks when it times out or its queue saturates | Unit tests, and the S2 load run |
+| **[Correlation and routing](#how-an-incident-is-handled)** | Alerts linked by user, host and address into risk-scored incidents; low-risk ones are logged, the rest go to the agent by priority, and to deterministic playbooks when it times out or its queue saturates; optionally a clear password spray is blocked before the agent's triage | Unit tests, and the S2 load run |
 | **[Triage agent](#the-triage-agent)** | gpt-oss:20b on Ollama in a ReAct loop over seven MCP tools, returning a JSON-schema decision; log fields reach it only as quoted data, dismissals must cite evidence, actions pass a policy gate, and an optional verifier vetoes actions its evidence does not justify | Tests with a planted prompt injection and malformed tool calls; three seeds on the local LLM |
 | **[Evidence and feedback](#the-console)** | Every verdict stored with the events, detector scores, entity baselines and tool calls it cites, filterable by entity, stream, detector and time; analyst feedback feeds per-detector false-positive statistics | Tests that every cited item exists and that feedback reaches the statistics |
 | **[Console](#the-console)** | Next.js 16 with Tabler icons, framer-motion and Recharts: overview, incident queue, timelines, agent trace, evidence, approvals, metrics with the drift monitor, the evaluation and the audit log; live over server-sent events, or a recorded run replayed as a static site | Lint and build in CI; this README's images are regenerated from the static build in headless Chrome |
@@ -126,7 +126,7 @@ flowchart TB
 
 Every event carries its own time, and the pipeline works in event time: windows close when their watermark passes, so late, out-of-order and duplicated deliveries land where they belong. Entity resolution links the identifiers each stream uses for the same thing: an address is a host's DHCP or VPN lease at that moment, an account is a person. The correlation engine then links alerts that share a user, host or address within a time window, and scores each incident on the strength of its evidence, how many detectors corroborate it, how far along the kill chain it is, and what is at stake.
 
-The agent's latency is charged in simulated time: while it investigates, the attack goes on. When its queue saturates or it stops answering, a circuit breaker hands incidents to the playbooks, which act on the same detectors without investigating. Executed actions are published on an `actions` topic, and the simulator applies them: a blocked address stops reaching the company, a revoked session has to sign in again, a disabled account cannot, and an isolated host stops emitting flows, so the campaign stalls or pivots.
+The agent's latency is charged in simulated time: while it investigates, the attack goes on. When its queue saturates or it stops answering, a circuit breaker hands incidents to the playbooks, which act on the same detectors without investigating. With `--fast-block`, a clear password spray (one address on a hosting or anonymiser network failing against at least three accounts) is blocked as soon as the incident reaches the agent, without waiting for its decision. Executed actions are published on an `actions` topic, and the simulator applies them: a blocked address stops reaching the company, a revoked session has to sign in again, a disabled account cannot, and an isolated host stops emitting flows, so the campaign stalls or pivots.
 
 ## The simulated enterprise
 
@@ -224,6 +224,7 @@ uv run soc train                                     # M1-M3 into the registry, 
 uv run soc run                                       # closed loop, the scripted analyst
 uv run soc run --llm ollama:gpt-oss:20b              # ... with the agent on the local LLM
 uv run soc run --llm ollama:gpt-oss:20b --verifier   # ... and the evidence verifier
+uv run soc run --fast-block                          # ... blocking a clear password spray before triage
 uv run soc run --mode detectors                      # baseline: detectors + playbooks
 uv run soc run --mode rules                          # baseline: rules + playbooks
 
@@ -256,6 +257,7 @@ uv run soc pipeline --inventory data/runs/live/inventory.json --api-port 8000
 ```bash
 uv run soc evaluate models                           # M1-M3 on the held-out test weeks
 uv run soc evaluate e2e --seeds 401-410              # agent vs both baselines
+uv run soc evaluate e2e --modes agent+fastblock      # ... and with the spray blocked before triage
 uv run soc evaluate llm --seeds 401-403              # the agent on gpt-oss:20b
 uv run soc evaluate llm --seeds 401-403 --verifier   # ... with the evidence verifier
 uv run soc evaluate s1 --seeds 301-303               # S1, with and without retraining

@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 
 import { STAGE_COLOR, STAGE_LABEL, STAGES, axis, configMeta, fmtMinutes, fmtNum, fmtP, tooltipStyle } from "./shared";
 
-const ORDER = ["agent", "detectors", "rules"];
+const ORDER = ["agent", "detectors", "rules", "agent+fastblock"];
 const TEST_LABEL: Record<string, string> = {
   false_containments: "False containments",
   furthest_stage_index: "Furthest attack stage",
@@ -220,14 +220,14 @@ function Tests({ tests }: { tests: NonNullable<Evaluation["e2e"]>["tests"] }) {
     <Card>
       <CardHeader
         icon={<IconScale size={16} />}
-        title="Agent against the baselines"
-        subtitle="Paired Wilcoxon signed-rank tests over the seeds (median difference: agent minus baseline)"
+        title="The agent against the other configurations"
+        subtitle="Paired Wilcoxon signed-rank tests over the seeds (median difference: the agent minus the other configuration)"
       />
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs">
           <thead className="text-faint">
             <tr className="border-b border-line">
-              {["Baseline", "Metric", "Pairs", "Median difference", "p-value", ""].map((h) => (
+              {["Against", "Metric", "Pairs", "Median difference", "p-value", ""].map((h) => (
                 <th key={h} className="px-4 py-2 font-medium">
                   {h}
                 </th>
@@ -265,7 +265,7 @@ export function EndToEnd({ e2e }: { e2e: NonNullable<Evaluation["e2e"]> }) {
         Each seed is one 48-hour closed loop: the simulator, the detectors, correlation and the response configuration react to each other,
         so containment changes what the attacker can do next.
       </p>
-      <div className="grid gap-4 xl:grid-cols-3">
+      <div className={cn("grid gap-4", configs.length >= 4 ? "md:grid-cols-2 xl:grid-cols-4" : "xl:grid-cols-3")}>
         {configs.map((c, i) => (
           <ConfigCard key={c} config={c} s={e2e.summary[c]} index={i} />
         ))}

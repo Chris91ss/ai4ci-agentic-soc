@@ -27,6 +27,8 @@ def _name(config: str) -> str:
         name += ", M1 retrained on drift"
     if "verifier" in flags:
         name += ", evidence verifier"
+    if "fastblock" in flags:
+        name += ", spray blocked before triage"
     return name
 
 

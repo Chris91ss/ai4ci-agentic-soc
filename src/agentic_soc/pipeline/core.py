@@ -27,7 +27,13 @@ from agentic_soc.ingestion import IngestionService, IngestionStage, IngestResult
 from agentic_soc.mcp_server import SocContext, SocTools, build_server
 from agentic_soc.pipeline.staging import StagedActions
 from agentic_soc.pipeline.worker import ThreadedAgentWorker, TriageJob, VirtualTimeAgentWorker
-from agentic_soc.routing import RiskRouter, RouteDecision, RouterConfig, playbook_decision
+from agentic_soc.routing import (
+    RiskRouter,
+    RouteDecision,
+    RouterConfig,
+    playbook_decision,
+    spray_sources,
+)
 from agentic_soc.rules import RuleEngine
 from agentic_soc.schemas import Action, Decision
 from agentic_soc.storage import StorageSink, Store
@@ -48,6 +54,9 @@ class PipelineConfig:
     agent_max_steps: int = 12
     # A deterministic verifier vetoes agent actions the cited evidence does not justify.
     verifier: bool = False
+    # Block a clear password spray (playbooks.spray_sources) as soon as it is seen, instead of
+    # waiting for the agent's triage; the agent still decides everything else.
+    fast_block: bool = False
     # Unattended runs approve high-impact actions automatically: at once through the policy gate
     # (approval_delay_s = 0), or after a simulated analyst's response time.
     auto_approve: bool = True
@@ -233,6 +242,9 @@ class SocPipeline:
         for update in self.correlation.ingest(scored, self.now()):
             self._persist_update(update)
             self._dispatch(self.router.route(update, self.now()), update.incident)
+            fast = self.cfg.fast_block and self.cfg.mode == "agent"
+            if fast and update.incident.route in {"agent", "analyst"}:
+                self._fast_block(update.incident)
 
     def _dispatch(self, decision: RouteDecision, state: IncidentState) -> None:
         if decision.route != "none":
@@ -279,6 +291,16 @@ class SocPipeline:
     def decide_by_playbook(self, state: IncidentState, reason: str = "") -> None:
         decision = playbook_decision(state, self.inv, done=self.actions.taken())
         self.apply_decision(state, decision, "playbook", latency_s=0.0, model=None, note=reason)
+
+    def _fast_block(self, state: IncidentState) -> None:
+        taken = self.actions.taken()
+        for action, alert in spray_sources(state, self.inv):
+            target = action.target or ""
+            if ("block_ip", target) in taken:
+                continue
+            note = (f"Fast block before triage: sign-ins from {target} failed for several "
+                    f"accounts ({alert.detector}: {alert.summary})")  # fmt: skip
+            self._propose(state.incident_id, "block_ip", target, "playbook", note, [alert.alert_id])
 
     def finish_triage(self, job: TriageJob, now: datetime) -> None:
         """Apply an agent decision once its (simulated) latency has elapsed."""
@@ -450,7 +472,10 @@ class SocPipeline:
             )
         if action.incident_id and action.status in {"executed", "rejected", "failed"}:
             state = self.correlation.get(action.incident_id)
-            if state is not None and state.verdict is not None:
+            # An incident waiting for its (re-)triage keeps its status until the agent decides:
+            # the worker skips incidents marked contained.
+            waiting = state is not None and state.status in {"queued", "triaging"}
+            if state is not None and state.verdict is not None and not waiting:
                 self._refresh_status(state)
                 self.persist_incident(state)
 

@@ -1,4 +1,4 @@
-import { IconBrain, IconCpu2, IconListCheck, IconRadar2, IconRefresh, IconShieldCheck } from "@tabler/icons-react";
+import { IconBolt, IconBrain, IconCpu2, IconListCheck, IconRadar2, IconRefresh, IconShieldCheck } from "@tabler/icons-react";
 import type { ReactNode } from "react";
 
 import type { Tone } from "@/components/ui/badge";
@@ -11,6 +11,7 @@ export const CONFIG_META: Record<string, { label: string; short: string; color: 
   detectors: { label: "Detectors + playbooks", short: "Detectors", color: "#818cf8", tone: "info", icon: <IconRadar2 size={15} /> },
   rules: { label: "Sigma-style rules", short: "Rules", color: "#f59e0b", tone: "warn", icon: <IconListCheck size={15} /> },
   "agent+retrain": { label: "Agent + retraining on drift", short: "Retrain", color: "#10b981", tone: "ok", icon: <IconRefresh size={15} /> },
+  "agent+fastblock": { label: "Agent + fast spray block", short: "Fast block", color: "#f472b6", tone: "brand", icon: <IconBolt size={15} /> },
 };
 
 export function configMeta(config: string) {
