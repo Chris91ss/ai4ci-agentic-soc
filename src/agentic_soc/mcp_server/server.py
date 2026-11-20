@@ -26,7 +26,9 @@ def build_server(tools: SocTools, name: str = "agentic-soc") -> MCPServer:
     server = MCPServer(name, instructions=INSTRUCTIONS, version="1.0", log_level="WARNING")
     ctx = tools.ctx
 
-    def traced(tool_name: str, fn: Any, arguments: dict[str, Any]) -> dict[str, Any]:
+    def traced(
+        tool_name: str, fn: Any, arguments: dict[str, Any], locked: bool = True
+    ) -> dict[str, Any]:
         started = time.perf_counter()
         record: dict[str, Any] = {
             "tool": tool_name,
@@ -34,7 +36,8 @@ def build_server(tools: SocTools, name: str = "agentic-soc") -> MCPServer:
             "at": datetime.now(UTC).isoformat(),
         }
         try:
-            with ctx.lock if ctx.lock is not None else nullcontext():
+            # The scoring tools take the lock themselves, only while they read shared state.
+            with ctx.lock if locked and ctx.lock is not None else nullcontext():
                 result = fn(**arguments)
             record |= {"ok": True}
             return result
@@ -69,7 +72,10 @@ def build_server(tools: SocTools, name: str = "agentic-soc") -> MCPServer:
         entity: str, start: str | None = None, end: str | None = None
     ) -> dict[str, Any]:
         return traced(
-            "score_signins", tools.score_signins, {"entity": entity, "start": start, "end": end}
+            "score_signins",
+            tools.score_signins,
+            {"entity": entity, "start": start, "end": end},
+            locked=False,
         )
 
     @server.tool(description=TOOL_DESCRIPTIONS["score_flows"])
@@ -77,7 +83,10 @@ def build_server(tools: SocTools, name: str = "agentic-soc") -> MCPServer:
         entity: str, start: str | None = None, end: str | None = None
     ) -> dict[str, Any]:
         return traced(
-            "score_flows", tools.score_flows, {"entity": entity, "start": start, "end": end}
+            "score_flows",
+            tools.score_flows,
+            {"entity": entity, "start": start, "end": end},
+            locked=False,
         )
 
     @server.tool(description=TOOL_DESCRIPTIONS["score_processes"])
@@ -85,7 +94,10 @@ def build_server(tools: SocTools, name: str = "agentic-soc") -> MCPServer:
         entity: str, start: str | None = None, end: str | None = None
     ) -> dict[str, Any]:
         return traced(
-            "score_processes", tools.score_processes, {"entity": entity, "start": start, "end": end}
+            "score_processes",
+            tools.score_processes,
+            {"entity": entity, "start": start, "end": end},
+            locked=False,
         )
 
     @server.tool(description=TOOL_DESCRIPTIONS["propose_action"])

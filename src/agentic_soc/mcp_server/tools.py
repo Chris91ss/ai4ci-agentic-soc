@@ -7,6 +7,7 @@ Every tool returns JSON-serialisable data. Attacker-controllable strings are quo
 from __future__ import annotations
 
 from collections.abc import Callable
+from contextlib import nullcontext
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from typing import Any
@@ -306,10 +307,16 @@ class SocTools:
         return out
 
     # ------------------------------------------------------------------ scoring tools (M1-M3)
+    def _locked(self) -> Any:
+        """The live pipeline's lock, held while a tool reads state the pipeline updates."""
+        return self.ctx.lock if self.ctx.lock is not None else nullcontext()
+
     def _score(self, name: str, detectors: set[str], rows: list[dict[str, Any]], keep: Callable[[Any], bool],
-               start: datetime, end: datetime) -> dict[str, Any]:  # fmt: skip
+               start: datetime, end: datetime, profiles: Profiles) -> dict[str, Any]:  # fmt: skip
+        # Runs without the pipeline's lock: rebuilding features from thousands of events takes
+        # seconds, and holding the lock for that long stops ingestion in live mode.
         pipeline = FeaturePipeline(
-            self.ctx.inventory, self.ctx.profiles, self.ctx.feature_config, detectors=detectors
+            self.ctx.inventory, profiles, self.ctx.feature_config, detectors=detectors
         )
         events = sorted((from_row(r) for r in rows), key=lambda e: (e.ingest_time, e.event_id))
         pipeline.add(events)
@@ -359,26 +366,31 @@ class SocTools:
         kind, value = parse_entity(entity)
         if kind == "host":
             raise ToolError("score_signins takes a user:<account> or ip:<address>")
-        t_start, t_end = self._range(start, end)
-        rows = self.ctx.store.timeline(
-            kind, value, t_start - timedelta(minutes=15), t_end, streams=["signin"], limit=5000
-        )
+        with self._locked():
+            t_start, t_end = self._range(start, end)
+            rows = self.ctx.store.timeline(
+                kind, value, t_start - timedelta(minutes=15), t_end, streams=["signin"], limit=5000
+            )
+            profiles = self.ctx.profiles
         key = f"user:{value}" if kind == "user" else f"ip:{value}"
-        return self._score("M1", {"M1-user", "M1-ip"}, rows, lambda r: r.key == key, t_start, t_end)
+        return self._score("M1", {"M1-user", "M1-ip"}, rows, lambda r: r.key == key, t_start, t_end,
+                           profiles)  # fmt: skip
 
     def score_flows(
         self, entity: str, start: str | None = None, end: str | None = None
     ) -> dict[str, Any]:
         kind, value = parse_entity(entity)
-        t_start, t_end = self._range(start, end)
-        ips = [value] if kind == "ip" else self._ips_for(kind, value, t_start, t_end)
-        if not ips:
-            raise ToolError(f"no addresses known for {entity} in that window")
-        rows: list[dict[str, Any]] = []
-        history = t_start - timedelta(hours=1)
-        for ip in ips[:5]:
-            rows += [r for r in self.ctx.store.timeline("ip", ip, history, t_end, streams=["flow"], limit=20000)
-                     if r["src_ip"] == ip or kind == "ip"]  # fmt: skip
+        with self._locked():
+            t_start, t_end = self._range(start, end)
+            ips = [value] if kind == "ip" else self._ips_for(kind, value, t_start, t_end)
+            if not ips:
+                raise ToolError(f"no addresses known for {entity} in that window")
+            rows: list[dict[str, Any]] = []
+            history = t_start - timedelta(hours=1)
+            for ip in ips[:5]:
+                rows += [r for r in self.ctx.store.timeline("ip", ip, history, t_end, streams=["flow"], limit=20000)
+                         if r["src_ip"] == ip or kind == "ip"]  # fmt: skip
+            profiles = self.ctx.profiles
         sources = set(ips)
         return self._score(
             "M2",
@@ -387,6 +399,7 @@ class SocTools:
             lambda r: r.key.split("|")[0] in sources or kind == "ip",
             t_start,
             t_end,
+            profiles,
         )
 
     def score_processes(
@@ -395,11 +408,14 @@ class SocTools:
         kind, value = parse_entity(entity)
         if kind != "host":
             raise ToolError("score_processes takes a host:<host id>")
-        t_start, t_end = self._range(start, end)
-        rows = self.ctx.store.timeline(
-            "host", value, t_start, t_end, streams=["process"], limit=20000
-        )
-        return self._score("M3", {"M3"}, rows, lambda r: r.key == f"host:{value}", t_start, t_end)
+        with self._locked():
+            t_start, t_end = self._range(start, end)
+            rows = self.ctx.store.timeline(
+                "host", value, t_start, t_end, streams=["process"], limit=20000
+            )
+            profiles = self.ctx.profiles
+        return self._score("M3", {"M3"}, rows, lambda r: r.key == f"host:{value}", t_start, t_end,
+                           profiles)  # fmt: skip
 
     # ------------------------------------------------------------------ containment
     def propose_action(

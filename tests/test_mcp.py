@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import threading
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
@@ -115,6 +116,52 @@ def test_scoring_tools_call_the_detectors(soc) -> None:
     assert flows["detector"] == "M2" and flows["alerting_windows"] > 0
     procs = call(server, "score_processes", {"entity": f"host:{campaign.ws.host_id}"} | window)
     assert procs["detector"] == "M3" and procs["windows_scored"] > 0
+
+
+def test_scoring_tools_score_without_holding_the_pipeline_lock(mini_soc) -> None:
+    # In live mode the pipeline keeps ingesting while the agent investigates. Scoring rebuilds
+    # features from thousands of events, so the lock must only be held while the tool reads.
+    lock = threading.RLock()
+    lock_free: list[bool] = []
+
+    def free_in_another_thread() -> bool:
+        result: list[bool] = []
+
+        def attempt() -> None:
+            acquired = lock.acquire(timeout=1)
+            if acquired:
+                lock.release()
+            result.append(acquired)
+
+        thread = threading.Thread(target=attempt)
+        thread.start()
+        thread.join()
+        return result[0]
+
+    class Probe:
+        def __init__(self, inner: Any) -> None:
+            self.inner = inner
+
+        def score(self, name: str, rows: list[Any]) -> list[Any]:
+            lock_free.append(free_in_another_thread())
+            return self.inner.score(name, rows)
+
+        def versions(self) -> dict[str, str]:
+            return self.inner.versions()
+
+    ctx = SocContext(store=mini_soc.store, inventory=mini_soc.inventory, profiles=mini_soc.profiles,
+                     detectors=Probe(mini_soc.client()), actions=mini_soc.actions, clock=lambda: mini_soc.clock,
+                     correlation=mini_soc.correlation, resolver=mini_soc.pipeline.resolver, lock=lock)  # fmt: skip
+    server = build_server(SocTools(ctx))
+    campaign = mini_soc.sim.campaign
+    window = {
+        "start": campaign.start.isoformat(),
+        "end": (campaign.start + timedelta(hours=6)).isoformat(),
+    }
+    call(server, "score_signins", {"entity": f"ip:{campaign.spray_ips[0]}"} | window)
+    call(server, "score_flows", {"entity": f"ip:{campaign.c2_ips[0]}"} | window)
+    call(server, "score_processes", {"entity": f"host:{campaign.ws.host_id}"} | window)
+    assert lock_free == [True, True, True]
 
 
 def test_propose_action_goes_through_the_policy_gate(soc) -> None:
