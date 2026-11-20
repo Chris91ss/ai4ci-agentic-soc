@@ -130,6 +130,16 @@ def test_llm_outage_is_caught_not_raised(setup) -> None:
     assert not result.ok and "500" in result.error and result.steps[-1].kind == "error"
 
 
+def test_extra_actions_without_a_primary_action_are_promoted() -> None:
+    reply = {"verdict": "malicious", "evidence": [{"id": "AL-1", "kind": "alert"}], "action": {"type": "none"},
+             "extra_actions": [{"type": "block_ip", "target": "45.32.7.7"}], "confidence": 0.9}  # fmt: skip
+    decision, error = TriageAgent(DownLLM(), None)._validate(
+        json.dumps(reply), "INC-1", "AL-1 45.32.7.7"
+    )
+    assert error is None and decision is not None
+    assert decision.action.target == "45.32.7.7" and decision.extra_actions == []
+
+
 def test_dismissal_guardrail_escalates_high_risk() -> None:
     from agentic_soc.schemas import Decision
 

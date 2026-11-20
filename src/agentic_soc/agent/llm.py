@@ -78,6 +78,12 @@ class OllamaLLM:
             return False
         return any(m.get("name", "").startswith(self.model) for m in tags.get("models", []))
 
+    def reseed(self) -> None:
+        """Sample with another seed from now on: with a fixed seed, a retry repeats the reply that
+        failed (for example a tool call Ollama could not parse)."""
+        if "seed" in self.options:
+            self.options["seed"] += 1
+
     def chat(
         self,
         messages: list[dict[str, Any]],
@@ -100,6 +106,9 @@ class OllamaLLM:
         try:
             response = self.http.post(f"{self.host}/api/chat", json=payload)
             response.raise_for_status()
+        except httpx.HTTPStatusError as exc:
+            detail = exc.response.text[:300].strip()
+            raise LLMError(f"Ollama request failed: {exc.response.status_code} {detail}") from exc
         except httpx.HTTPError as exc:
             raise LLMError(f"Ollama request failed: {exc}") from exc
         data = response.json()

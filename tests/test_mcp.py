@@ -103,6 +103,31 @@ def test_asset_context(soc) -> None:
     )
 
 
+def test_tools_accept_bare_identifiers_and_skip_unreadable_times(soc) -> None:
+    # gpt-oss often leaves out the user:/host:/ip: prefix and sometimes garbles a time bound.
+    mini, _, server = soc
+    victim, c2 = mini.sim.campaign.victim.user_id, mini.sim.campaign.c2_ips[0]
+    host = mini.sim.campaign.ws.host_id
+    resolved = [
+        call(server, "get_asset_context", {"entity": e})["entity"]
+        for e in (victim, host.lower(), c2)
+    ]
+    assert resolved == [f"user:{victim}", f"host:{host}", f"ip:{c2}"]
+    timeline = call(server, "get_entity_timeline", {"entity": victim, "end": "2026-03-18?"})
+    assert "error" not in timeline and timeline["notes"][0].startswith("could not read end")
+    # The model writes "sign-in"; a filter that silently matched nothing hid every sign-in.
+    whole_run = {
+        "start": (mini.clock - timedelta(hours=15)).isoformat(),
+        "end": mini.clock.isoformat(),
+    }
+    signins = call(
+        server, "get_entity_timeline", {"entity": victim, "streams": ["sign-in"]} | whole_run
+    )
+    assert signins["returned"] > 0 and set(signins["counts"]) == {"signin"}
+    unknown = call(server, "get_entity_timeline", {"entity": victim, "streams": ["dns"]})
+    assert unknown["error"].startswith("unknown stream")
+
+
 def test_scoring_tools_call_the_detectors(soc) -> None:
     mini, _, server = soc
     campaign = mini.sim.campaign

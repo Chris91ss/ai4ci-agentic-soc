@@ -6,6 +6,8 @@ Every tool returns JSON-serialisable data. Attacker-controllable strings are quo
 
 from __future__ import annotations
 
+import ipaddress
+import re
 from collections.abc import Callable
 from contextlib import nullcontext
 from dataclasses import dataclass, field
@@ -99,6 +101,51 @@ class SocTools:
         self.ctx = ctx
 
     # ------------------------------------------------------------------ helpers
+    def _entity(self, entity: str) -> tuple[str, str]:
+        """``user:``, ``host:`` or ``ip:`` and an identifier. Models often drop the prefix, so a bare
+        address, host id or account is accepted too when the inventory knows it."""
+        value = entity.strip()
+        kind, _, rest = value.partition(":")
+        if kind in {"user", "host", "ip"} and rest:
+            return kind, rest.strip()
+        inv = self.ctx.inventory
+        try:
+            return "ip", str(ipaddress.ip_address(value))
+        except ValueError:
+            pass
+        if value.upper() in inv.hosts:
+            return "host", value.upper()
+        if inv.account_kind(value) != "unknown":
+            return "user", value
+        return parse_entity(entity)  # raises with the expected format
+
+    @staticmethod
+    def _streams(names: list[str] | None) -> list[str] | None:
+        """The stream filter, in the usual spellings (sign-in, flows, processes). An unknown name is
+        an error rather than a filter that silently matches nothing."""
+        if not names:
+            return None
+        out = []
+        for name in names:
+            key = re.sub(r"[^a-z]", "", str(name).lower())
+            stream = next((s for s in ("signin", "flow", "process") if key.startswith(s)), None)
+            if stream is None and key.startswith(("login", "logon")):
+                stream = "signin"
+            if stream is None:
+                raise ToolError(f"unknown stream {name!r}; use signin, flow or process")
+            out.append(stream)
+        return out
+
+    @staticmethod
+    def _time(value: str | None, default: datetime, name: str, notes: list[str]) -> datetime:
+        """An optional time bound; one that cannot be read falls back to the default, with a note
+        in the result instead of failing the whole call."""
+        try:
+            return parse_time(value, default)
+        except ToolError:
+            notes.append(f"could not read {name} {value!r}; used {iso(default)}")
+            return default
+
     def _alert_view(self, alert: dict[str, Any]) -> dict[str, Any]:
         return {
             "alert_id": alert["alert_id"],
@@ -202,10 +249,12 @@ class SocTools:
         streams: list[str] | None = None,
         limit: int = 40,
     ) -> dict[str, Any]:
-        kind, value = parse_entity(entity)
+        kind, value = self._entity(entity)
+        streams = self._streams(streams)
         now = self.ctx.clock()
-        t_end = parse_time(end, now)
-        t_start = parse_time(start, t_end - timedelta(hours=6))
+        notes: list[str] = []
+        t_end = self._time(end, now, "end", notes)
+        t_start = self._time(start, t_end - timedelta(hours=6), "start", notes)
         if t_start >= t_end:
             raise ToolError("start must be before end")
         limit = max(1, min(int(limit), 200))
@@ -216,8 +265,8 @@ class SocTools:
         counts: dict[str, int] = {}
         for row in rows:
             counts[row["stream"]] = counts.get(row["stream"], 0) + 1
-        return {
-            "entity": entity,
+        out = {
+            "entity": f"{kind}:{value}",
             "window": [iso(t_start), iso(t_end)],
             "addresses_used": ips,
             "returned": len(rows),
@@ -225,11 +274,12 @@ class SocTools:
             "truncated": len(rows) >= limit,
             "events": [self._event_view(r) for r in rows],
         }
+        return out | ({"notes": notes} if notes else {})
 
     def get_asset_context(self, entity: str) -> dict[str, Any]:
-        kind, value = parse_entity(entity)
+        kind, value = self._entity(entity)
         inv, now = self.ctx.inventory, self.ctx.clock()
-        out: dict[str, Any] = {"entity": entity}
+        out: dict[str, Any] = {"entity": f"{kind}:{value}"}
         if kind == "user":
             account_kind = inv.account_kind(value)
             out["account_kind"] = account_kind
@@ -352,10 +402,12 @@ class SocTools:
             ],
         }
 
-    def _range(self, start: str | None, end: str | None) -> tuple[datetime, datetime]:
+    def _range(
+        self, start: str | None, end: str | None, notes: list[str]
+    ) -> tuple[datetime, datetime]:
         now = self.ctx.clock()
-        t_end = parse_time(end, now)
-        t_start = parse_time(start, t_end - timedelta(hours=2))
+        t_end = self._time(end, now, "end", notes)
+        t_start = self._time(start, t_end - timedelta(hours=2), "start", notes)
         if t_start >= t_end or t_end - t_start > timedelta(days=2):
             raise ToolError("use a time range of at most 48 hours with start before end")
         return t_start, t_end
@@ -363,25 +415,28 @@ class SocTools:
     def score_signins(
         self, entity: str, start: str | None = None, end: str | None = None
     ) -> dict[str, Any]:
-        kind, value = parse_entity(entity)
+        kind, value = self._entity(entity)
         if kind == "host":
             raise ToolError("score_signins takes a user:<account> or ip:<address>")
+        notes: list[str] = []
         with self._locked():
-            t_start, t_end = self._range(start, end)
+            t_start, t_end = self._range(start, end, notes)
             rows = self.ctx.store.timeline(
                 kind, value, t_start - timedelta(minutes=15), t_end, streams=["signin"], limit=5000
             )
             profiles = self.ctx.profiles
         key = f"user:{value}" if kind == "user" else f"ip:{value}"
-        return self._score("M1", {"M1-user", "M1-ip"}, rows, lambda r: r.key == key, t_start, t_end,
-                           profiles)  # fmt: skip
+        result = self._score("M1", {"M1-user", "M1-ip"}, rows, lambda r: r.key == key, t_start, t_end,
+                             profiles)  # fmt: skip
+        return result | ({"notes": notes} if notes else {})
 
     def score_flows(
         self, entity: str, start: str | None = None, end: str | None = None
     ) -> dict[str, Any]:
-        kind, value = parse_entity(entity)
+        kind, value = self._entity(entity)
+        notes: list[str] = []
         with self._locked():
-            t_start, t_end = self._range(start, end)
+            t_start, t_end = self._range(start, end, notes)
             ips = [value] if kind == "ip" else self._ips_for(kind, value, t_start, t_end)
             if not ips:
                 raise ToolError(f"no addresses known for {entity} in that window")
@@ -392,7 +447,7 @@ class SocTools:
                          if r["src_ip"] == ip or kind == "ip"]  # fmt: skip
             profiles = self.ctx.profiles
         sources = set(ips)
-        return self._score(
+        result = self._score(
             "M2",
             {"M2"},
             rows,
@@ -401,21 +456,24 @@ class SocTools:
             t_end,
             profiles,
         )
+        return result | ({"notes": notes} if notes else {})
 
     def score_processes(
         self, entity: str, start: str | None = None, end: str | None = None
     ) -> dict[str, Any]:
-        kind, value = parse_entity(entity)
+        kind, value = self._entity(entity)
         if kind != "host":
             raise ToolError("score_processes takes a host:<host id>")
+        notes: list[str] = []
         with self._locked():
-            t_start, t_end = self._range(start, end)
+            t_start, t_end = self._range(start, end, notes)
             rows = self.ctx.store.timeline(
                 "host", value, t_start, t_end, streams=["process"], limit=20000
             )
             profiles = self.ctx.profiles
-        return self._score("M3", {"M3"}, rows, lambda r: r.key == f"host:{value}", t_start, t_end,
-                           profiles)  # fmt: skip
+        result = self._score("M3", {"M3"}, rows, lambda r: r.key == f"host:{value}", t_start, t_end,
+                             profiles)  # fmt: skip
+        return result | ({"notes": notes} if notes else {})
 
     # ------------------------------------------------------------------ containment
     def propose_action(
@@ -455,7 +513,8 @@ TOOL_DESCRIPTIONS = {
     "get_incident": "Incident summary: status, risk and its breakdown, detectors, ATT&CK techniques, entities, the "
     "strongest alerts of each detector and technique (scores, explanations, summaries) and actions already taken.",
     "get_entity_timeline": "Events of an entity (user:<account>, host:<host id> or ip:<address>) between start and "
-    "end (ISO 8601, default the 6 hours before now), newest first, across sign-in, flow and process streams.",
+    "end (ISO 8601, default the 6 hours before now), newest first, across the signin, flow and process streams "
+    "(streams filters them).",
     "get_asset_context": "Inventory and baseline context of an entity: role, criticality, owner, usual countries, "
     "hours and devices of an account, GeoIP and recent contacts of an address, actions already taken on it.",
     "score_signins": "Score sign-in windows of user:<account> or ip:<address> with M1 (Isolation Forest sign-in "

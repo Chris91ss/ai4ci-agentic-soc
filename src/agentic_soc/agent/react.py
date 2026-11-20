@@ -160,6 +160,9 @@ class TriageAgent:
             response = self.llm.chat(messages, **kwargs)
         except LLMError:
             result.llm_calls += 1
+            reseed = getattr(self.llm, "reseed", None)
+            if reseed is not None:
+                reseed()  # sampling the same way again would repeat a malformed reply
             response = self.llm.chat(messages, **kwargs)  # one retry; a second failure propagates
         result.llm_calls += 1
         result.prompt_tokens += response.prompt_tokens
@@ -176,6 +179,10 @@ class TriageAgent:
             return None, f"not valid JSON ({exc})"
         if isinstance(data, dict):
             data["incident_id"] = incident_id
+            action, extra = data.get("action"), data.get("extra_actions")
+            no_primary = not isinstance(action, dict) or action.get("type") in {None, "none"}
+            if no_primary and isinstance(extra, list) and extra:
+                data["action"], data["extra_actions"] = extra[0], extra[1:]
         try:
             decision = Decision.model_validate(data)
         except ValidationError as exc:
