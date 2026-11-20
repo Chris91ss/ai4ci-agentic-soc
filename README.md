@@ -147,6 +147,8 @@ Ground truth is kept for every event, the dataset plan of `soc etl build` splits
 
 They score event-time windows per entity (fifteen minutes for sign-ins and flows, ten for processes), each at a threshold calibrated on the validation weeks, and explain each alert by its top features. `soc serve-detectors` serves them over REST; the agent reaches them through the MCP scoring tools.
 
+M3 is the weakest. Its rows also carry nine window features that its score does not use, such as encoded commands and LOLBins, so we tried three ways of adding them (`soc evaluate m3-variants`), each tuned on the validation week. None was clearly better. The best one on the validation week raised PR-AUC from 0.776 to 0.801, a small gain on only 9 attack windows, and on the test weeks it raised the false positives from 4.5 to 6.5 a day. M3 stays as it is.
+
 <p align="center">
   <img src="docs/assets/detectors.png" width="857" alt="The detectors on the evaluation page: PR-AUC, ROC-AUC, recall and precision of M1 per account, M1 per address, M2 and M3, their ranking and operating points, and the recall of each detector at each attack stage with its median detection delay">
 </p>
@@ -184,20 +186,22 @@ The report with every table and the raw numbers is in [docs/evaluation](docs/eva
 
 **End to end: ten seeds of 48 hours, the same attacks for every configuration.** Every configuration stopped every intrusion before exfiltration, at very different costs:
 
-| | Agent (scripted analyst) | Detectors + playbooks | Rules + playbooks |
-| --- | --- | --- | --- |
-| Stopped before exfiltration | 10/10 | 10/10 | 10/10 |
-| False containments, all runs | **0** | 46 | 33 |
-| Runs without a false containment | **10/10** | 1/10 | 0/10 |
-| Time to contain, median | 16 min | 12 min | 15 min |
-| Incidents per run (alerts → incidents) | 30 (−81%) | 31 (−83%) | 113 (−67%) |
+| | Agent (scripted analyst) | Detectors + playbooks | Rules + playbooks | Agent + fast block |
+| --- | --- | --- | --- | --- |
+| Stopped before exfiltration | 10/10 | 10/10 | 10/10 | 10/10 |
+| False containments, all runs | **0** | 46 | 33 | **0** |
+| Runs without a false containment | **10/10** | 1/10 | 0/10 | **10/10** |
+| Time to contain, median | 16 min | 12 min | 15 min | 13 min |
+| Incidents per run (alerts → incidents) | 30 (−81%) | 31 (−83%) | 113 (−67%) | 30 (−79%) |
 
 The agent's 73 containment actions all hit the attacker (action correctness 1.00; verdict precision 1.00, recall 0.68, F1 0.81; the attack incidents it did not call malicious it left "suspicious" for an analyst; no invalid tool calls). Compared on the same seeds with Wilcoxon signed-rank tests, it makes fewer false containments than the detectors' playbooks (median −3.5 per run, p = 0.004) and the rules (−3.0, p = 0.002) and raises 83 fewer incidents per run than the rules (p = 0.002), but contains about 3 minutes later than the playbooks (p = 0.002): it investigates before acting, and its latency, about 2 minutes per triage, is charged in simulated time while the attack goes on. In exchange the attacker usually got one kill-chain stage further (median +1 against both baselines, not significant), typically to its C2 beacon, but was stopped before credential access in 9 of 10 runs and before collection in all.
 
-**Local LLM: gpt-oss:20b through Ollama, three seeds.** Every intrusion was still stopped before exfiltration, contained in about 15 minutes (median), as by the scripted analyst on the same seeds. It is a noisier analyst: 18% of its tool calls were malformed and rejected by the MCP layer, its verdict precision was 0.57 (recall 0.80), and in one run it revoked the sessions of two accounts outside the attack (action correctness 0.92). With the evidence verifier the same seeds produced one false containment instead of two (action correctness 0.93), at the same time to contain.
+**Blocking the spray first.** With `--fast-block`, an address on a hosting or anonymiser network whose sign-ins failed for at least three accounts is blocked as soon as the incident reaches the agent, and the agent still decides everything else. On the same ten seeds this cut the median time to contain from 16 to 13 minutes (p = 0.002), close to the playbooks, and it made no false containment. Only accounts that failed count, so a user who mistyped a password once is never blocked, and neither is a shared egress: on seed 301 of scenario S1 the five addresses it blocked were all the attacker's, and the company's ZTNA egress was left alone. It is an option for now, because it changes how the agent and the playbooks share the work.
+
+**Local LLM: gpt-oss:20b through Ollama, three seeds.** Every intrusion was still stopped before exfiltration, contained in about 14 minutes (median), as by the scripted analyst on the same seeds. The first runs, on 14 November, showed tool problems: 18% of the model's tool calls failed, mostly because it wrote an account or host without its prefix, and the timeline tool named the sign-in stream "sign-in", which matched nothing. With the tools fixed only 3.5% failed and its verdict precision rose from 0.57 to 0.67, but its containment did not get better: over the three seeds it made 4 false containments (2 before), two revoked sessions and two blocked addresses, against none by the scripted analyst. In the runs we recorded, the case behind them was an IT admin signing in abroad through a commercial VPN, which the model took for a stolen account. With the evidence verifier it made 2 (action correctness 0.92), at about the same time to contain. On three seeds these differences are within the noise; the plan runs all ten seeds in week 11.
 
 <p align="center">
-  <img src="docs/assets/llm.png" width="857" alt="The local LLM on the evaluation page: the scripted analyst, gpt-oss:20b, and gpt-oss:20b with the evidence verifier, each stopping 3 of 3 intrusions, with 0, 2 and 1 false containments, their verdict quality, invalid tool calls and latency">
+  <img src="docs/assets/llm.png" width="857" alt="The local LLM on the evaluation page: the scripted analyst, gpt-oss:20b, and gpt-oss:20b with the evidence verifier, each stopping 3 of 3 intrusions, with 0, 4 and 2 false containments, their verdict quality, invalid tool calls and latency">
 </p>
 
 <p align="center">
@@ -206,7 +210,7 @@ The agent's 73 containment actions all hit the attacker (action correctness 1.00
 
 **S1, drift: three seeds of 72 hours.** When most staff move to remote work through a new ZTNA egress, the drift monitor alarms 4 hours after the shift (M1's per-address features, PSI above 1). False M1 alerts jump from 0.5–0.7 an hour to about 14. Without retraining they stay at 8–10 an hour the next day, 7–12 times the pre-shift busy-hour rate, and never recover within the run; with retraining, 7 and 35 hours after the shift, they fall to 1.8–2.7 an hour, and M1 is back within twice its pre-shift rate by the next morning in 2 of 3 runs. The agent checks where a suspicious sign-in came from before revoking sessions, so in neither configuration did the look-alike sign-ins through the company's own ZTNA egress lead to a false containment, and every intrusion was stopped before exfiltration.
 
-**S2, high load: Redpanda at 60 times real time.** A one-hour burst raised the event rate 10.9-fold, to about 3,000 events a second. The pipeline kept up: the p95 stream lag stayed at the simulator's one-minute tick, and the consumer lag peaked at about 3,200 messages, around one second of input. With the local LLM four times slower during the burst, 4 of 15 triages timed out, the circuit breaker opened once and the playbooks decided those incidents; the intrusion was stopped before credential access in both runs.
+**S2, high load: Redpanda at 60 times real time.** A one-hour burst raised the event rate 10.9-fold, to about 3,000 events a second. The pipeline kept up: the p95 stream lag stayed at the simulator's one-minute tick, and the consumer lag peaked at about 3,200 messages, around one second of input. With the local LLM four times slower during the burst, 4 of 16 triages timed out, the circuit breaker opened once and the playbooks decided those incidents; the intrusion was stopped before credential access in both runs.
 
 <p align="center">
   <img src="docs/assets/load.png" width="857" alt="Scenario S2 with the local LLM four times slower during the burst: a 10.9-fold event rate, a one-minute p95 stream lag, a consumer lag of at most 3,228 messages, 4 agent timeouts and one breaker trip; the stream lag and consumer lag over six hours with the burst shaded, and the lag per phase">

@@ -153,7 +153,7 @@
    }
   }
  },
- "generated": "2026-11-14 18:14 UTC",
+ "generated": "2026-11-20 16:43 UTC",
  "e2e": {
   "runs": [
    {
@@ -217,7 +217,7 @@
     "name": "agent-seed401",
     "config": "agent",
     "start": "2026-03-16T00:00:00+00:00",
-    "wall_s": 159.8
+    "wall_s": 196.6
    },
    {
     "mode": "agent",
@@ -271,7 +271,7 @@
      "tool_calls": 59,
      "invalid_tool_calls": 0,
      "latency_mean_s": 113.4,
-     "latency_p95_s": 150.18,
+     "latency_p95_s": 150.1,
      "timeouts": 0,
      "failures": 0,
      "escalated_dismissals": 0
@@ -280,7 +280,7 @@
     "name": "agent-seed402",
     "config": "agent",
     "start": "2026-03-23T00:00:00+00:00",
-    "wall_s": 160.4
+    "wall_s": 191.3
    },
    {
     "mode": "agent",
@@ -334,7 +334,7 @@
      "tool_calls": 81,
      "invalid_tool_calls": 0,
      "latency_mean_s": 116.3,
-     "latency_p95_s": 150.06,
+     "latency_p95_s": 150.03,
      "timeouts": 0,
      "failures": 0,
      "escalated_dismissals": 0
@@ -343,7 +343,7 @@
     "name": "agent-seed403",
     "config": "agent",
     "start": "2026-03-30T00:00:00+00:00",
-    "wall_s": 164.6
+    "wall_s": 226.3
    },
    {
     "mode": "agent",
@@ -397,7 +397,7 @@
      "tool_calls": 61,
      "invalid_tool_calls": 0,
      "latency_mean_s": 116.7,
-     "latency_p95_s": 165.04,
+     "latency_p95_s": 165.05,
      "timeouts": 0,
      "failures": 0,
      "escalated_dismissals": 0
@@ -406,7 +406,7 @@
     "name": "agent-seed404",
     "config": "agent",
     "start": "2026-04-06T00:00:00+00:00",
-    "wall_s": 159.8
+    "wall_s": 226.0
    },
    {
     "mode": "agent",
@@ -469,7 +469,7 @@
     "name": "agent-seed405",
     "config": "agent",
     "start": "2026-04-13T00:00:00+00:00",
-    "wall_s": 163.7
+    "wall_s": 235.3
    },
    {
     "mode": "agent",
@@ -531,7 +531,7 @@
     "name": "agent-seed406",
     "config": "agent",
     "start": "2026-04-20T00:00:00+00:00",
-    "wall_s": 165.4
+    "wall_s": 240.7
    },
    {
     "mode": "agent",
@@ -585,7 +585,7 @@
      "tool_calls": 72,
      "invalid_tool_calls": 0,
      "latency_mean_s": 123.0,
-     "latency_p95_s": 150.04,
+     "latency_p95_s": 150.05,
      "timeouts": 0,
      "failures": 0,
      "escalated_dismissals": 0
@@ -594,7 +594,7 @@
     "name": "agent-seed407",
     "config": "agent",
     "start": "2026-04-27T00:00:00+00:00",
-    "wall_s": 165.1
+    "wall_s": 248.9
    },
    {
     "mode": "agent",
@@ -648,7 +648,7 @@
      "tool_calls": 67,
      "invalid_tool_calls": 0,
      "latency_mean_s": 115.5,
-     "latency_p95_s": 150.04,
+     "latency_p95_s": 150.05,
      "timeouts": 0,
      "failures": 0,
      "escalated_dismissals": 0
@@ -657,7 +657,7 @@
     "name": "agent-seed408",
     "config": "agent",
     "start": "2026-05-04T00:00:00+00:00",
-    "wall_s": 161.6
+    "wall_s": 261.4
    },
    {
     "mode": "agent",
@@ -711,7 +711,7 @@
      "tool_calls": 87,
      "invalid_tool_calls": 0,
      "latency_mean_s": 123.8,
-     "latency_p95_s": 150.03,
+     "latency_p95_s": 150.05,
      "timeouts": 0,
      "failures": 0,
      "escalated_dismissals": 0
@@ -720,7 +720,7 @@
     "name": "agent-seed409",
     "config": "agent",
     "start": "2026-05-11T00:00:00+00:00",
-    "wall_s": 86.6
+    "wall_s": 239.4
    },
    {
     "mode": "agent",
@@ -774,7 +774,7 @@
      "tool_calls": 57,
      "invalid_tool_calls": 0,
      "latency_mean_s": 110.0,
-     "latency_p95_s": 150.02,
+     "latency_p95_s": 150.04,
      "timeouts": 0,
      "failures": 0,
      "escalated_dismissals": 0
@@ -783,7 +783,634 @@
     "name": "agent-seed410",
     "config": "agent",
     "start": "2026-05-18T00:00:00+00:00",
-    "wall_s": 86.6
+    "wall_s": 234.5
+   },
+   {
+    "mode": "agent",
+    "seed": 401,
+    "campaign_start": "2026-03-16T17:00:22.885Z",
+    "campaign_status": "stalled",
+    "stall_reason": "foothold WS-0085 isolated before collection",
+    "furthest_stage": "lateral_movement",
+    "furthest_stage_index": 7,
+    "detected": true,
+    "mttd_min": 15.6,
+    "detectors_on_attack": [
+     "M1-ip",
+     "M1-user",
+     "M2",
+     "M3"
+    ],
+    "contained": true,
+    "mttc_min": 15.6,
+    "stopped_before_exfiltration": true,
+    "exfil_gb": 0.0,
+    "actions_executed": 8,
+    "actions_on_attack": 8,
+    "false_containments": 0,
+    "false_containments_by_type": {},
+    "alerts": 142,
+    "incidents": 25,
+    "attack_incidents": 2,
+    "alert_to_incident_ratio": 5.68,
+    "alert_reduction": 0.8239,
+    "events": 416294,
+    "drift_alarms": 0,
+    "retrains": 0,
+    "agent": {
+     "decisions": 15,
+     "incidents_decided": 9,
+     "verdict": {
+      "precision": 1.0,
+      "recall": 0.5,
+      "f1": 0.6666666666666666,
+      "tp": 1,
+      "fp": 0,
+      "fn": 1
+     },
+     "attack_incidents_flagged": 2,
+     "attack_incidents_decided": 2,
+     "attack_dismissals_escalated": 0,
+     "action_correctness": 1.0,
+     "invalid_tool_call_rate": 0.0,
+     "llm_calls": 119,
+     "tool_calls": 104,
+     "invalid_tool_calls": 0,
+     "latency_mean_s": 119.0,
+     "latency_p95_s": 150.04,
+     "timeouts": 0,
+     "failures": 0,
+     "escalated_dismissals": 0
+    },
+    "drift": null,
+    "name": "agent+fastblock-seed401",
+    "config": "agent+fastblock",
+    "start": "2026-03-16T00:00:00+00:00",
+    "wall_s": 190.1
+   },
+   {
+    "mode": "agent",
+    "seed": 402,
+    "campaign_start": "2026-03-23T21:33:37.167Z",
+    "campaign_status": "stalled",
+    "stall_reason": "no usable compromised account before discovery",
+    "furthest_stage": "spray",
+    "furthest_stage_index": 1,
+    "detected": true,
+    "mttd_min": 12.4,
+    "detectors_on_attack": [
+     "M1-ip",
+     "M1-user",
+     "M2"
+    ],
+    "contained": true,
+    "mttc_min": 12.4,
+    "stopped_before_exfiltration": true,
+    "exfil_gb": 0.0,
+    "actions_executed": 6,
+    "actions_on_attack": 6,
+    "false_containments": 0,
+    "false_containments_by_type": {},
+    "alerts": 119,
+    "incidents": 32,
+    "attack_incidents": 2,
+    "alert_to_incident_ratio": 3.72,
+    "alert_reduction": 0.7311,
+    "events": 413466,
+    "drift_alarms": 0,
+    "retrains": 0,
+    "agent": {
+     "decisions": 6,
+     "incidents_decided": 4,
+     "verdict": {
+      "precision": 1.0,
+      "recall": 0.5,
+      "f1": 0.6666666666666666,
+      "tp": 1,
+      "fp": 0,
+      "fn": 1
+     },
+     "attack_incidents_flagged": 2,
+     "attack_incidents_decided": 2,
+     "attack_dismissals_escalated": 0,
+     "action_correctness": 1.0,
+     "invalid_tool_call_rate": 0.0,
+     "llm_calls": 47,
+     "tool_calls": 41,
+     "invalid_tool_calls": 0,
+     "latency_mean_s": 117.5,
+     "latency_p95_s": 135.03,
+     "timeouts": 0,
+     "failures": 0,
+     "escalated_dismissals": 0
+    },
+    "drift": null,
+    "name": "agent+fastblock-seed402",
+    "config": "agent+fastblock",
+    "start": "2026-03-23T00:00:00+00:00",
+    "wall_s": 190.5
+   },
+   {
+    "mode": "agent",
+    "seed": 403,
+    "campaign_start": "2026-03-30T20:35:26.134Z",
+    "campaign_status": "stalled",
+    "stall_reason": "foothold WS-0156 isolated before credential_access",
+    "furthest_stage": "command_and_control",
+    "furthest_stage_index": 5,
+    "detected": true,
+    "mttd_min": 10.6,
+    "detectors_on_attack": [
+     "M1-ip",
+     "M1-user",
+     "M2",
+     "M3"
+    ],
+    "contained": true,
+    "mttc_min": 10.6,
+    "stopped_before_exfiltration": true,
+    "exfil_gb": 0.0,
+    "actions_executed": 6,
+    "actions_on_attack": 6,
+    "false_containments": 0,
+    "false_containments_by_type": {},
+    "alerts": 140,
+    "incidents": 33,
+    "attack_incidents": 5,
+    "alert_to_incident_ratio": 4.24,
+    "alert_reduction": 0.7643,
+    "events": 426195,
+    "drift_alarms": 0,
+    "retrains": 0,
+    "agent": {
+     "decisions": 13,
+     "incidents_decided": 8,
+     "verdict": {
+      "precision": 1.0,
+      "recall": 0.8,
+      "f1": 0.888888888888889,
+      "tp": 4,
+      "fp": 0,
+      "fn": 1
+     },
+     "attack_incidents_flagged": 5,
+     "attack_incidents_decided": 5,
+     "attack_dismissals_escalated": 0,
+     "action_correctness": 1.0,
+     "invalid_tool_call_rate": 0.0,
+     "llm_calls": 101,
+     "tool_calls": 88,
+     "invalid_tool_calls": 0,
+     "latency_mean_s": 116.6,
+     "latency_p95_s": 135.03,
+     "timeouts": 0,
+     "failures": 0,
+     "escalated_dismissals": 0
+    },
+    "drift": null,
+    "name": "agent+fastblock-seed403",
+    "config": "agent+fastblock",
+    "start": "2026-03-30T00:00:00+00:00",
+    "wall_s": 233.2
+   },
+   {
+    "mode": "agent",
+    "seed": 404,
+    "campaign_start": "2026-04-06T20:31:55.022Z",
+    "campaign_status": "stalled",
+    "stall_reason": "staging host isolated before collection",
+    "furthest_stage": "lateral_movement",
+    "furthest_stage_index": 7,
+    "detected": true,
+    "mttd_min": 14.1,
+    "detectors_on_attack": [
+     "M1-ip",
+     "M1-user",
+     "M2",
+     "M3"
+    ],
+    "contained": true,
+    "mttc_min": 14.1,
+    "stopped_before_exfiltration": true,
+    "exfil_gb": 0.0,
+    "actions_executed": 9,
+    "actions_on_attack": 9,
+    "false_containments": 0,
+    "false_containments_by_type": {},
+    "alerts": 236,
+    "incidents": 29,
+    "attack_incidents": 4,
+    "alert_to_incident_ratio": 8.14,
+    "alert_reduction": 0.8771,
+    "events": 417436,
+    "drift_alarms": 0,
+    "retrains": 0,
+    "agent": {
+     "decisions": 10,
+     "incidents_decided": 6,
+     "verdict": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "tp": 4,
+      "fp": 0,
+      "fn": 0
+     },
+     "attack_incidents_flagged": 4,
+     "attack_incidents_decided": 4,
+     "attack_dismissals_escalated": 0,
+     "action_correctness": 1.0,
+     "invalid_tool_call_rate": 0.0,
+     "llm_calls": 86,
+     "tool_calls": 76,
+     "invalid_tool_calls": 0,
+     "latency_mean_s": 129.0,
+     "latency_p95_s": 165.03,
+     "timeouts": 0,
+     "failures": 0,
+     "escalated_dismissals": 0
+    },
+    "drift": null,
+    "name": "agent+fastblock-seed404",
+    "config": "agent+fastblock",
+    "start": "2026-04-06T00:00:00+00:00",
+    "wall_s": 229.5
+   },
+   {
+    "mode": "agent",
+    "seed": 405,
+    "campaign_start": "2026-04-13T18:27:00.907Z",
+    "campaign_status": "stalled",
+    "stall_reason": "no usable compromised account before discovery",
+    "furthest_stage": "spray",
+    "furthest_stage_index": 1,
+    "detected": true,
+    "mttd_min": 4.0,
+    "detectors_on_attack": [
+     "M1-ip",
+     "M1-user",
+     "M2"
+    ],
+    "contained": true,
+    "mttc_min": 4.0,
+    "stopped_before_exfiltration": true,
+    "exfil_gb": 0.0,
+    "actions_executed": 5,
+    "actions_on_attack": 5,
+    "false_containments": 0,
+    "false_containments_by_type": {},
+    "alerts": 99,
+    "incidents": 30,
+    "attack_incidents": 4,
+    "alert_to_incident_ratio": 3.3,
+    "alert_reduction": 0.697,
+    "events": 416123,
+    "drift_alarms": 0,
+    "retrains": 0,
+    "agent": {
+     "decisions": 9,
+     "incidents_decided": 7,
+     "verdict": {
+      "precision": 1.0,
+      "recall": 0.6666666666666666,
+      "f1": 0.8,
+      "tp": 2,
+      "fp": 0,
+      "fn": 1
+     },
+     "attack_incidents_flagged": 3,
+     "attack_incidents_decided": 3,
+     "attack_dismissals_escalated": 0,
+     "action_correctness": 1.0,
+     "invalid_tool_call_rate": 0.0,
+     "llm_calls": 64,
+     "tool_calls": 55,
+     "invalid_tool_calls": 0,
+     "latency_mean_s": 106.7,
+     "latency_p95_s": 135.05,
+     "timeouts": 0,
+     "failures": 0,
+     "escalated_dismissals": 0
+    },
+    "drift": null,
+    "name": "agent+fastblock-seed405",
+    "config": "agent+fastblock",
+    "start": "2026-04-13T00:00:00+00:00",
+    "wall_s": 234.4
+   },
+   {
+    "mode": "agent",
+    "seed": 406,
+    "campaign_start": "2026-04-20T21:35:42.184Z",
+    "campaign_status": "stalled",
+    "stall_reason": "foothold WS-0064 isolated before credential_access",
+    "furthest_stage": "command_and_control",
+    "furthest_stage_index": 5,
+    "detected": true,
+    "mttd_min": 10.3,
+    "detectors_on_attack": [
+     "M1-ip",
+     "M1-user",
+     "M2",
+     "M3"
+    ],
+    "contained": true,
+    "mttc_min": 10.3,
+    "stopped_before_exfiltration": true,
+    "exfil_gb": 0.0,
+    "actions_executed": 7,
+    "actions_on_attack": 7,
+    "false_containments": 0,
+    "false_containments_by_type": {},
+    "alerts": 123,
+    "incidents": 26,
+    "attack_incidents": 2,
+    "alert_to_incident_ratio": 4.73,
+    "alert_reduction": 0.7886,
+    "events": 425771,
+    "drift_alarms": 0,
+    "retrains": 0,
+    "agent": {
+     "decisions": 13,
+     "incidents_decided": 8,
+     "verdict": {
+      "precision": 1.0,
+      "recall": 0.5,
+      "f1": 0.6666666666666666,
+      "tp": 1,
+      "fp": 0,
+      "fn": 1
+     },
+     "attack_incidents_flagged": 2,
+     "attack_incidents_decided": 2,
+     "attack_dismissals_escalated": 0,
+     "action_correctness": 1.0,
+     "invalid_tool_call_rate": 0.0,
+     "llm_calls": 96,
+     "tool_calls": 83,
+     "invalid_tool_calls": 0,
+     "latency_mean_s": 110.8,
+     "latency_p95_s": 165.04,
+     "timeouts": 0,
+     "failures": 0,
+     "escalated_dismissals": 0
+    },
+    "drift": null,
+    "name": "agent+fastblock-seed406",
+    "config": "agent+fastblock",
+    "start": "2026-04-20T00:00:00+00:00",
+    "wall_s": 243.1
+   },
+   {
+    "mode": "agent",
+    "seed": 407,
+    "campaign_start": "2026-04-27T20:45:57.654Z",
+    "campaign_status": "stalled",
+    "stall_reason": "no usable compromised account before execution",
+    "furthest_stage": "discovery",
+    "furthest_stage_index": 3,
+    "detected": true,
+    "mttd_min": 15.0,
+    "detectors_on_attack": [
+     "M1-ip",
+     "M1-user",
+     "M2",
+     "M3"
+    ],
+    "contained": true,
+    "mttc_min": 15.0,
+    "stopped_before_exfiltration": true,
+    "exfil_gb": 0.0,
+    "actions_executed": 5,
+    "actions_on_attack": 5,
+    "false_containments": 0,
+    "false_containments_by_type": {},
+    "alerts": 141,
+    "incidents": 24,
+    "attack_incidents": 2,
+    "alert_to_incident_ratio": 5.88,
+    "alert_reduction": 0.8298,
+    "events": 425637,
+    "drift_alarms": 0,
+    "retrains": 0,
+    "agent": {
+     "decisions": 7,
+     "incidents_decided": 5,
+     "verdict": {
+      "precision": 1.0,
+      "recall": 0.5,
+      "f1": 0.6666666666666666,
+      "tp": 1,
+      "fp": 0,
+      "fn": 1
+     },
+     "attack_incidents_flagged": 2,
+     "attack_incidents_decided": 2,
+     "attack_dismissals_escalated": 0,
+     "action_correctness": 1.0,
+     "invalid_tool_call_rate": 0.0,
+     "llm_calls": 52,
+     "tool_calls": 45,
+     "invalid_tool_calls": 0,
+     "latency_mean_s": 111.5,
+     "latency_p95_s": 165.05,
+     "timeouts": 0,
+     "failures": 0,
+     "escalated_dismissals": 0
+    },
+    "drift": null,
+    "name": "agent+fastblock-seed407",
+    "config": "agent+fastblock",
+    "start": "2026-04-27T00:00:00+00:00",
+    "wall_s": 267.2
+   },
+   {
+    "mode": "agent",
+    "seed": 408,
+    "campaign_start": "2026-05-04T17:29:54.276Z",
+    "campaign_status": "stalled",
+    "stall_reason": "staging host isolated before collection",
+    "furthest_stage": "lateral_movement",
+    "furthest_stage_index": 7,
+    "detected": true,
+    "mttd_min": 1.1,
+    "detectors_on_attack": [
+     "M1-ip",
+     "M1-user",
+     "M2",
+     "M3"
+    ],
+    "contained": true,
+    "mttc_min": 16.1,
+    "stopped_before_exfiltration": true,
+    "exfil_gb": 0.0,
+    "actions_executed": 9,
+    "actions_on_attack": 9,
+    "false_containments": 0,
+    "false_containments_by_type": {},
+    "alerts": 247,
+    "incidents": 28,
+    "attack_incidents": 3,
+    "alert_to_incident_ratio": 8.82,
+    "alert_reduction": 0.8866,
+    "events": 420835,
+    "drift_alarms": 0,
+    "retrains": 0,
+    "agent": {
+     "decisions": 12,
+     "incidents_decided": 5,
+     "verdict": {
+      "precision": 1.0,
+      "recall": 0.6666666666666666,
+      "f1": 0.8,
+      "tp": 2,
+      "fp": 0,
+      "fn": 1
+     },
+     "attack_incidents_flagged": 3,
+     "attack_incidents_decided": 3,
+     "attack_dismissals_escalated": 0,
+     "action_correctness": 1.0,
+     "invalid_tool_call_rate": 0.0,
+     "llm_calls": 90,
+     "tool_calls": 78,
+     "invalid_tool_calls": 0,
+     "latency_mean_s": 112.5,
+     "latency_p95_s": 150.03,
+     "timeouts": 0,
+     "failures": 0,
+     "escalated_dismissals": 0
+    },
+    "drift": null,
+    "name": "agent+fastblock-seed408",
+    "config": "agent+fastblock",
+    "start": "2026-05-04T00:00:00+00:00",
+    "wall_s": 254.4
+   },
+   {
+    "mode": "agent",
+    "seed": 409,
+    "campaign_start": "2026-05-11T21:31:12.840Z",
+    "campaign_status": "stalled",
+    "stall_reason": "no usable compromised account before discovery",
+    "furthest_stage": "spray",
+    "furthest_stage_index": 1,
+    "detected": true,
+    "mttd_min": 14.8,
+    "detectors_on_attack": [
+     "M1-ip",
+     "M1-user",
+     "M2"
+    ],
+    "contained": true,
+    "mttc_min": 14.8,
+    "stopped_before_exfiltration": true,
+    "exfil_gb": 0.0,
+    "actions_executed": 8,
+    "actions_on_attack": 8,
+    "false_containments": 0,
+    "false_containments_by_type": {},
+    "alerts": 126,
+    "incidents": 42,
+    "attack_incidents": 3,
+    "alert_to_incident_ratio": 3.0,
+    "alert_reduction": 0.6667,
+    "events": 416378,
+    "drift_alarms": 0,
+    "retrains": 0,
+    "agent": {
+     "decisions": 7,
+     "incidents_decided": 5,
+     "verdict": {
+      "precision": 1.0,
+      "recall": 0.6666666666666666,
+      "f1": 0.8,
+      "tp": 2,
+      "fp": 0,
+      "fn": 1
+     },
+     "attack_incidents_flagged": 3,
+     "attack_incidents_decided": 3,
+     "attack_dismissals_escalated": 0,
+     "action_correctness": 1.0,
+     "invalid_tool_call_rate": 0.0,
+     "llm_calls": 56,
+     "tool_calls": 49,
+     "invalid_tool_calls": 0,
+     "latency_mean_s": 120.1,
+     "latency_p95_s": 135.05,
+     "timeouts": 0,
+     "failures": 0,
+     "escalated_dismissals": 0
+    },
+    "drift": null,
+    "name": "agent+fastblock-seed409",
+    "config": "agent+fastblock",
+    "start": "2026-05-11T00:00:00+00:00",
+    "wall_s": 235.4
+   },
+   {
+    "mode": "agent",
+    "seed": 410,
+    "campaign_start": "2026-05-18T18:06:32.325Z",
+    "campaign_status": "stalled",
+    "stall_reason": "staging host isolated before collection",
+    "furthest_stage": "lateral_movement",
+    "furthest_stage_index": 7,
+    "detected": true,
+    "mttd_min": 9.5,
+    "detectors_on_attack": [
+     "M1-ip",
+     "M1-user",
+     "M2",
+     "M3"
+    ],
+    "contained": true,
+    "mttc_min": 9.5,
+    "stopped_before_exfiltration": true,
+    "exfil_gb": 0.0,
+    "actions_executed": 10,
+    "actions_on_attack": 10,
+    "false_containments": 0,
+    "false_containments_by_type": {},
+    "alerts": 172,
+    "incidents": 30,
+    "attack_incidents": 4,
+    "alert_to_incident_ratio": 5.73,
+    "alert_reduction": 0.8256,
+    "events": 422363,
+    "drift_alarms": 0,
+    "retrains": 0,
+    "agent": {
+     "decisions": 10,
+     "incidents_decided": 2,
+     "verdict": {
+      "precision": 1.0,
+      "recall": 0.5,
+      "f1": 0.6666666666666666,
+      "tp": 1,
+      "fp": 0,
+      "fn": 1
+     },
+     "attack_incidents_flagged": 2,
+     "attack_incidents_decided": 2,
+     "attack_dismissals_escalated": 0,
+     "action_correctness": 1.0,
+     "invalid_tool_call_rate": 0.0,
+     "llm_calls": 82,
+     "tool_calls": 72,
+     "invalid_tool_calls": 0,
+     "latency_mean_s": 123.0,
+     "latency_p95_s": 150.1,
+     "timeouts": 0,
+     "failures": 0,
+     "escalated_dismissals": 0
+    },
+    "drift": null,
+    "name": "agent+fastblock-seed410",
+    "config": "agent+fastblock",
+    "start": "2026-05-18T00:00:00+00:00",
+    "wall_s": 194.4
    },
    {
     "mode": "detectors",
@@ -824,7 +1451,7 @@
     "name": "detectors-seed401",
     "config": "detectors",
     "start": "2026-03-16T00:00:00+00:00",
-    "wall_s": 586.8
+    "wall_s": 191.0
    },
    {
     "mode": "detectors",
@@ -865,7 +1492,7 @@
     "name": "detectors-seed402",
     "config": "detectors",
     "start": "2026-03-23T00:00:00+00:00",
-    "wall_s": 243.9
+    "wall_s": 190.7
    },
    {
     "mode": "detectors",
@@ -907,7 +1534,7 @@
     "name": "detectors-seed403",
     "config": "detectors",
     "start": "2026-03-30T00:00:00+00:00",
-    "wall_s": 196.6
+    "wall_s": 225.8
    },
    {
     "mode": "detectors",
@@ -948,7 +1575,7 @@
     "name": "detectors-seed404",
     "config": "detectors",
     "start": "2026-04-06T00:00:00+00:00",
-    "wall_s": 173.6
+    "wall_s": 226.3
    },
    {
     "mode": "detectors",
@@ -988,7 +1615,7 @@
     "name": "detectors-seed405",
     "config": "detectors",
     "start": "2026-04-13T00:00:00+00:00",
-    "wall_s": 189.2
+    "wall_s": 234.2
    },
    {
     "mode": "detectors",
@@ -1030,7 +1657,7 @@
     "name": "detectors-seed406",
     "config": "detectors",
     "start": "2026-04-20T00:00:00+00:00",
-    "wall_s": 182.7
+    "wall_s": 242.1
    },
    {
     "mode": "detectors",
@@ -1072,7 +1699,7 @@
     "name": "detectors-seed407",
     "config": "detectors",
     "start": "2026-04-27T00:00:00+00:00",
-    "wall_s": 173.3
+    "wall_s": 258.2
    },
    {
     "mode": "detectors",
@@ -1112,7 +1739,7 @@
     "name": "detectors-seed408",
     "config": "detectors",
     "start": "2026-05-04T00:00:00+00:00",
-    "wall_s": 169.8
+    "wall_s": 246.7
    },
    {
     "mode": "detectors",
@@ -1153,7 +1780,7 @@
     "name": "detectors-seed409",
     "config": "detectors",
     "start": "2026-05-11T00:00:00+00:00",
-    "wall_s": 165.8
+    "wall_s": 237.7
    },
    {
     "mode": "detectors",
@@ -1191,7 +1818,7 @@
     "name": "detectors-seed410",
     "config": "detectors",
     "start": "2026-05-18T00:00:00+00:00",
-    "wall_s": 145.6
+    "wall_s": 233.2
    },
    {
     "mode": "rules",
@@ -1230,7 +1857,7 @@
     "name": "rules-seed401",
     "config": "rules",
     "start": "2026-03-16T00:00:00+00:00",
-    "wall_s": 485.3
+    "wall_s": 141.8
    },
    {
     "mode": "rules",
@@ -1269,7 +1896,7 @@
     "name": "rules-seed402",
     "config": "rules",
     "start": "2026-03-23T00:00:00+00:00",
-    "wall_s": 147.7
+    "wall_s": 143.0
    },
    {
     "mode": "rules",
@@ -1312,7 +1939,7 @@
     "name": "rules-seed403",
     "config": "rules",
     "start": "2026-03-30T00:00:00+00:00",
-    "wall_s": 134.9
+    "wall_s": 179.1
    },
    {
     "mode": "rules",
@@ -1354,7 +1981,7 @@
     "name": "rules-seed404",
     "config": "rules",
     "start": "2026-04-06T00:00:00+00:00",
-    "wall_s": 134.5
+    "wall_s": 178.7
    },
    {
     "mode": "rules",
@@ -1395,7 +2022,7 @@
     "name": "rules-seed405",
     "config": "rules",
     "start": "2026-04-13T00:00:00+00:00",
-    "wall_s": 139.6
+    "wall_s": 183.4
    },
    {
     "mode": "rules",
@@ -1436,7 +2063,7 @@
     "name": "rules-seed406",
     "config": "rules",
     "start": "2026-04-20T00:00:00+00:00",
-    "wall_s": 136.9
+    "wall_s": 188.0
    },
    {
     "mode": "rules",
@@ -1479,7 +2106,7 @@
     "name": "rules-seed407",
     "config": "rules",
     "start": "2026-04-27T00:00:00+00:00",
-    "wall_s": 130.5
+    "wall_s": 198.3
    },
    {
     "mode": "rules",
@@ -1521,7 +2148,7 @@
     "name": "rules-seed408",
     "config": "rules",
     "start": "2026-05-04T00:00:00+00:00",
-    "wall_s": 133.2
+    "wall_s": 205.2
    },
    {
     "mode": "rules",
@@ -1562,7 +2189,7 @@
     "name": "rules-seed409",
     "config": "rules",
     "start": "2026-05-11T00:00:00+00:00",
-    "wall_s": 126.7
+    "wall_s": 192.7
    },
    {
     "mode": "rules",
@@ -1602,7 +2229,7 @@
     "name": "rules-seed410",
     "config": "rules",
     "start": "2026-05-18T00:00:00+00:00",
-    "wall_s": 92.9
+    "wall_s": 184.7
    }
   ],
   "summary": {
@@ -1630,7 +2257,7 @@
     "alerts_mean": 181.8,
     "incidents_mean": 30.1,
     "alert_reduction_mean": 0.81,
-    "wall_s_mean": 147.36,
+    "wall_s_mean": 230.04,
     "agent": {
      "decisions": 111,
      "verdict": {
@@ -1646,7 +2273,52 @@
      "action_correctness_mean": 1.0,
      "invalid_tool_call_rate": 0.0,
      "latency_mean_s": 117.49,
-     "latency_p95_s": 165.04,
+     "latency_p95_s": 165.05,
+     "timeouts": 0,
+     "escalated_dismissals": 0
+    }
+   },
+   "agent+fastblock": {
+    "runs": 10,
+    "detected": 1.0,
+    "mttd_min_median": 11.5,
+    "mttd_min_mean": 10.74,
+    "contained": 1.0,
+    "mttc_min_median": 13.25,
+    "mttc_min_mean": 12.24,
+    "stopped_before_exfiltration": 1.0,
+    "exfil_gb_mean": 0.0,
+    "furthest_stage_mean": 4.4,
+    "furthest_stage": {
+     "lateral_movement": 4,
+     "spray": 3,
+     "command_and_control": 2,
+     "discovery": 1
+    },
+    "false_containments_mean": 0.0,
+    "false_containments_total": 0,
+    "runs_without_false_containment": 1.0,
+    "actions_executed_mean": 7.3,
+    "alerts_mean": 154.5,
+    "incidents_mean": 29.9,
+    "alert_reduction_mean": 0.79,
+    "wall_s_mean": 227.22,
+    "agent": {
+     "decisions": 102,
+     "verdict": {
+      "precision": 1.0,
+      "recall": 0.6785714285714286,
+      "f1": 0.8085106382978724,
+      "tp": 19,
+      "fp": 0,
+      "fn": 9
+     },
+     "attack_incidents_flagged": 28,
+     "attack_incidents_decided": 28,
+     "action_correctness_mean": 1.0,
+     "invalid_tool_call_rate": 0.0,
+     "latency_mean_s": 116.67,
+     "latency_p95_s": 165.05,
      "timeouts": 0,
      "escalated_dismissals": 0
     }
@@ -1674,7 +2346,7 @@
     "alerts_mean": 210.8,
     "incidents_mean": 31.3,
     "alert_reduction_mean": 0.83,
-    "wall_s_mean": 222.73
+    "wall_s_mean": 228.59
    },
    "rules": {
     "runs": 10,
@@ -1699,10 +2371,37 @@
     "alerts_mean": 357.5,
     "incidents_mean": 113.2,
     "alert_reduction_mean": 0.67,
-    "wall_s_mean": 166.22
+    "wall_s_mean": 179.49
    }
   },
   "tests": {
+   "agent_vs_agent+fastblock": {
+    "false_containments": {
+     "n": 10,
+     "median_difference": 0.0,
+     "p_value": null
+    },
+    "furthest_stage_index": {
+     "n": 10,
+     "median_difference": -1.0,
+     "p_value": 1.0
+    },
+    "exfil_gb": {
+     "n": 10,
+     "median_difference": 0.0,
+     "p_value": null
+    },
+    "mttc_min": {
+     "n": 10,
+     "median_difference": 3.0,
+     "p_value": 0.002
+    },
+    "incidents": {
+     "n": 10,
+     "median_difference": 0.0,
+     "p_value": 0.875
+    }
+   },
    "agent_vs_detectors": {
     "false_containments": {
      "n": 10,
@@ -1813,7 +2512,7 @@
      "tool_calls": 331,
      "invalid_tool_calls": 0,
      "latency_mean_s": 107.0,
-     "latency_p95_s": 135.03,
+     "latency_p95_s": 135.04,
      "timeouts": 0,
      "failures": 0,
      "escalated_dismissals": 0
@@ -2124,7 +2823,7 @@
     "name": "agent-seed301",
     "config": "agent",
     "start": "2026-03-09T00:00:00+00:00",
-    "wall_s": 187.9
+    "wall_s": 292.9
    },
    {
     "mode": "agent",
@@ -2489,7 +3188,7 @@
     "name": "agent-seed302",
     "config": "agent",
     "start": "2026-03-09T00:00:00+00:00",
-    "wall_s": 189.5
+    "wall_s": 292.1
    },
    {
     "mode": "agent",
@@ -2543,7 +3242,7 @@
      "tool_calls": 396,
      "invalid_tool_calls": 0,
      "latency_mean_s": 110.8,
-     "latency_p95_s": 150.04,
+     "latency_p95_s": 150.06,
      "timeouts": 0,
      "failures": 0,
      "escalated_dismissals": 0
@@ -2854,7 +3553,7 @@
     "name": "agent-seed303",
     "config": "agent",
     "start": "2026-03-09T00:00:00+00:00",
-    "wall_s": 135.5
+    "wall_s": 292.9
    },
    {
     "mode": "agent",
@@ -2908,7 +3607,7 @@
      "tool_calls": 176,
      "invalid_tool_calls": 0,
      "latency_mean_s": 116.6,
-     "latency_p95_s": 150.12,
+     "latency_p95_s": 150.16,
      "timeouts": 0,
      "failures": 0,
      "escalated_dismissals": 0
@@ -3222,7 +3921,7 @@
     "name": "agent+retrain-seed301",
     "config": "agent+retrain",
     "start": "2026-03-09T00:00:00+00:00",
-    "wall_s": 182.9
+    "wall_s": 290.9
    },
    {
     "mode": "agent",
@@ -3276,7 +3975,7 @@
      "tool_calls": 279,
      "invalid_tool_calls": 0,
      "latency_mean_s": 112.4,
-     "latency_p95_s": 150.06,
+     "latency_p95_s": 150.04,
      "timeouts": 0,
      "failures": 0,
      "escalated_dismissals": 0
@@ -3590,7 +4289,7 @@
     "name": "agent+retrain-seed302",
     "config": "agent+retrain",
     "start": "2026-03-09T00:00:00+00:00",
-    "wall_s": 187.7
+    "wall_s": 291.0
    },
    {
     "mode": "agent",
@@ -3643,8 +4342,8 @@
      "llm_calls": 263,
      "tool_calls": 228,
      "invalid_tool_calls": 0,
-     "latency_mean_s": 112.7,
-     "latency_p95_s": 150.04,
+     "latency_mean_s": 112.8,
+     "latency_p95_s": 150.05,
      "timeouts": 0,
      "failures": 0,
      "escalated_dismissals": 0
@@ -3958,7 +4657,7 @@
     "name": "agent+retrain-seed303",
     "config": "agent+retrain",
     "start": "2026-03-09T00:00:00+00:00",
-    "wall_s": 131.6
+    "wall_s": 289.7
    }
   ],
   "summary": {
@@ -3984,7 +4683,7 @@
     "alerts_mean": 410.0,
     "incidents_mean": 108.0,
     "alert_reduction_mean": 0.73,
-    "wall_s_mean": 170.97,
+    "wall_s_mean": 292.63,
     "agent": {
      "decisions": 169,
      "verdict": {
@@ -4026,7 +4725,7 @@
     "alerts_mean": 286.0,
     "incidents_mean": 84.67,
     "alert_reduction_mean": 0.7,
-    "wall_s_mean": 167.4,
+    "wall_s_mean": 290.53,
     "agent": {
      "decisions": 104,
      "verdict": {
@@ -4041,8 +4740,8 @@
      "attack_incidents_decided": 9,
      "action_correctness_mean": 1.0,
      "invalid_tool_call_rate": 0.0,
-     "latency_mean_s": 113.9,
-     "latency_p95_s": 150.12,
+     "latency_mean_s": 113.93,
+     "latency_p95_s": 150.16,
      "timeouts": 0,
      "escalated_dismissals": 0
     }
@@ -4053,42 +4752,42 @@
   {
    "phases": {
     "before": {
-     "samples": 339,
-     "stream_lag_s_p50": 0.2,
+     "samples": 341,
+     "stream_lag_s_p50": 0.3,
      "stream_lag_s_p95": 60.3,
-     "stream_lag_s_max": 62.1,
+     "stream_lag_s_max": 61.4,
      "stream_lag_wall_s_p95": 1.0,
-     "consumer_lag_max": 18683,
-     "consumer_lag_p95": 307,
-     "events_per_wall_s": 228.9,
+     "consumer_lag_max": 51630,
+     "consumer_lag_p95": 309,
+     "events_per_wall_s": 228.7,
      "agent_queue_max": 1
     },
     "burst": {
-     "samples": 112,
+     "samples": 113,
      "stream_lag_s_p50": 0.0,
      "stream_lag_s_p95": 60.0,
-     "stream_lag_s_max": 60.1,
+     "stream_lag_s_max": 60.0,
      "stream_lag_wall_s_p95": 1.0,
      "consumer_lag_max": 3229,
-     "consumer_lag_p95": 3131,
-     "events_per_wall_s": 3003.7,
+     "consumer_lag_p95": 3128,
+     "events_per_wall_s": 3005.7,
      "agent_queue_max": 1
     },
     "after": {
-     "samples": 233,
+     "samples": 234,
      "stream_lag_s_p50": 0.1,
-     "stream_lag_s_p95": 60.2,
-     "stream_lag_s_max": 61.0,
+     "stream_lag_s_p95": 60.1,
+     "stream_lag_s_max": 60.5,
      "stream_lag_wall_s_p95": 1.0,
      "consumer_lag_max": 970,
-     "consumer_lag_p95": 336,
-     "events_per_wall_s": 299.7,
+     "consumer_lag_p95": 325,
+     "events_per_wall_s": 299.6,
      "agent_queue_max": 1
     }
    },
    "routes": {
     "log": 26,
-    "agent": 15
+    "agent": 16
    },
    "routes_during_burst": {
     "agent": 6,
@@ -4100,7 +4799,7 @@
    "agent_timeouts": 0,
    "breaker_trips": 0,
    "decisions": {
-    "agent": 15
+    "agent": 16
    },
    "events": 260956,
    "campaign": {
@@ -4122,57 +4821,57 @@
   {
    "phases": {
     "before": {
-     "samples": 339,
+     "samples": 340,
      "stream_lag_s_p50": 0.2,
-     "stream_lag_s_p95": 60.3,
-     "stream_lag_s_max": 61.6,
+     "stream_lag_s_p95": 60.2,
+     "stream_lag_s_max": 61.0,
      "stream_lag_wall_s_p95": 1.0,
-     "consumer_lag_max": 42059,
+     "consumer_lag_max": 69840,
      "consumer_lag_p95": 305,
-     "events_per_wall_s": 228.3,
+     "events_per_wall_s": 228.8,
      "agent_queue_max": 1
     },
     "burst": {
-     "samples": 111,
+     "samples": 112,
      "stream_lag_s_p50": 0.0,
      "stream_lag_s_p95": 60.0,
      "stream_lag_s_max": 60.0,
      "stream_lag_wall_s_p95": 1.0,
      "consumer_lag_max": 3228,
-     "consumer_lag_p95": 3133,
-     "events_per_wall_s": 3041.9,
+     "consumer_lag_p95": 3146,
+     "events_per_wall_s": 3035.2,
      "agent_queue_max": 1
     },
     "after": {
-     "samples": 232,
+     "samples": 234,
      "stream_lag_s_p50": 0.1,
-     "stream_lag_s_p95": 60.2,
-     "stream_lag_s_max": 61.4,
+     "stream_lag_s_p95": 60.1,
+     "stream_lag_s_max": 60.8,
      "stream_lag_wall_s_p95": 1.0,
-     "consumer_lag_max": 3017,
+     "consumer_lag_max": 3018,
      "consumer_lag_p95": 323,
-     "events_per_wall_s": 323.2,
+     "events_per_wall_s": 322.5,
      "agent_queue_max": 1
     }
    },
    "routes": {
     "log": 26,
-    "agent": 15
+    "agent": 16
    },
    "routes_during_burst": {
     "agent": 6,
     "log": 18
    },
-   "event_rate_multiplier": 10.91,
+   "event_rate_multiplier": 10.9,
    "shed_to_playbooks": 0,
    "shed_during_burst": 0,
    "agent_timeouts": 4,
    "breaker_trips": 1,
    "decisions": {
-    "agent": 11,
+    "agent": 12,
     "playbook": 4
    },
-   "events": 261077,
+   "events": 261018,
    "campaign": {
     "status": "stalled",
     "stall_reason": "foothold WS-0158 isolated before credential_access",
@@ -4197,7 +4896,7 @@
     "seed": 401,
     "campaign_start": "2026-03-16T17:00:22.885Z",
     "campaign_status": "stalled",
-    "stall_reason": "foothold WS-0039 isolated before credential_access",
+    "stall_reason": "foothold WS-0145 isolated before credential_access",
     "furthest_stage": "command_and_control",
     "furthest_stage_index": 5,
     "detected": true,
@@ -4212,57 +4911,58 @@
     "mttc_min": 18.6,
     "stopped_before_exfiltration": true,
     "exfil_gb": 0.0,
-    "actions_executed": 13,
-    "actions_on_attack": 11,
+    "actions_executed": 10,
+    "actions_on_attack": 8,
     "false_containments": 2,
     "false_containments_by_type": {
-     "revoke_sessions": 2
+     "block_ip": 1,
+     "revoke_sessions": 1
     },
-    "alerts": 144,
-    "incidents": 27,
-    "attack_incidents": 3,
-    "alert_to_incident_ratio": 5.33,
-    "alert_reduction": 0.8125,
-    "events": 416218,
+    "alerts": 222,
+    "incidents": 26,
+    "attack_incidents": 2,
+    "alert_to_incident_ratio": 8.54,
+    "alert_reduction": 0.8829,
+    "events": 416693,
     "drift_alarms": 0,
     "retrains": 0,
     "agent": {
-     "decisions": 14,
-     "incidents_decided": 10,
+     "decisions": 12,
+     "incidents_decided": 8,
      "verdict": {
-      "precision": 0.4,
+      "precision": 0.6666666666666666,
       "recall": 1.0,
-      "f1": 0.5714285714285715,
+      "f1": 0.8,
       "tp": 2,
-      "fp": 3,
+      "fp": 1,
       "fn": 0
      },
      "attack_incidents_flagged": 2,
      "attack_incidents_decided": 2,
      "attack_dismissals_escalated": 0,
-     "action_correctness": 0.75,
-     "invalid_tool_call_rate": 0.1927,
-     "llm_calls": 106,
-     "tool_calls": 88,
-     "invalid_tool_calls": 21,
-     "latency_mean_s": 68.0,
-     "latency_p95_s": 88.16,
-     "timeouts": 0,
-     "failures": 2,
+     "action_correctness": 0.6,
+     "invalid_tool_call_rate": 0.0392,
+     "llm_calls": 67,
+     "tool_calls": 49,
+     "invalid_tool_calls": 2,
+     "latency_mean_s": 55.3,
+     "latency_p95_s": 95.16,
+     "timeouts": 2,
+     "failures": 0,
      "escalated_dismissals": 0
     },
     "drift": null,
     "name": "agent:gpt-oss:20b-seed401",
     "config": "agent:gpt-oss:20b",
     "start": "2026-03-16T00:00:00+00:00",
-    "wall_s": 1156.3
+    "wall_s": 1108.4
    },
    {
     "mode": "agent",
     "seed": 402,
     "campaign_start": "2026-03-23T21:33:37.167Z",
     "campaign_status": "stalled",
-    "stall_reason": "foothold WS-0158 isolated before execution",
+    "stall_reason": "foothold WS-0187 isolated before execution",
     "furthest_stage": "discovery",
     "furthest_stage_index": 3,
     "detected": true,
@@ -4278,56 +4978,59 @@
     "stopped_before_exfiltration": true,
     "exfil_gb": 0.0,
     "actions_executed": 6,
-    "actions_on_attack": 6,
-    "false_containments": 0,
-    "false_containments_by_type": {},
-    "alerts": 274,
-    "incidents": 31,
-    "attack_incidents": 1,
-    "alert_to_incident_ratio": 8.84,
-    "alert_reduction": 0.8869,
-    "events": 413495,
+    "actions_on_attack": 4,
+    "false_containments": 2,
+    "false_containments_by_type": {
+     "block_ip": 1,
+     "revoke_sessions": 1
+    },
+    "alerts": 264,
+    "incidents": 32,
+    "attack_incidents": 2,
+    "alert_to_incident_ratio": 8.25,
+    "alert_reduction": 0.8788,
+    "events": 413725,
     "drift_alarms": 0,
     "retrains": 0,
     "agent": {
-     "decisions": 5,
-     "incidents_decided": 3,
+     "decisions": 8,
+     "incidents_decided": 4,
      "verdict": {
-      "precision": 1.0,
-      "recall": 1.0,
-      "f1": 1.0,
+      "precision": 0.5,
+      "recall": 0.5,
+      "f1": 0.5,
       "tp": 1,
-      "fp": 0,
-      "fn": 0
+      "fp": 1,
+      "fn": 1
      },
-     "attack_incidents_flagged": 1,
-     "attack_incidents_decided": 1,
-     "attack_dismissals_escalated": 0,
-     "action_correctness": 1.0,
-     "invalid_tool_call_rate": 0.1875,
-     "llm_calls": 46,
-     "tool_calls": 39,
-     "invalid_tool_calls": 9,
-     "latency_mean_s": 68.5,
-     "latency_p95_s": 114.59,
-     "timeouts": 1,
+     "attack_incidents_flagged": 2,
+     "attack_incidents_decided": 2,
+     "attack_dismissals_escalated": 1,
+     "action_correctness": 0.6667,
+     "invalid_tool_call_rate": 0.0323,
+     "llm_calls": 39,
+     "tool_calls": 30,
+     "invalid_tool_calls": 1,
+     "latency_mean_s": 61.2,
+     "latency_p95_s": 121.28,
+     "timeouts": 0,
      "failures": 0,
-     "escalated_dismissals": 0
+     "escalated_dismissals": 1
     },
     "drift": null,
     "name": "agent:gpt-oss:20b-seed402",
     "config": "agent:gpt-oss:20b",
     "start": "2026-03-23T00:00:00+00:00",
-    "wall_s": 693.0
+    "wall_s": 554.6
    },
    {
     "mode": "agent",
     "seed": 403,
     "campaign_start": "2026-03-30T20:35:26.134Z",
     "campaign_status": "stalled",
-    "stall_reason": "foothold WS-0145 isolated before collection",
-    "furthest_stage": "lateral_movement",
-    "furthest_stage_index": 7,
+    "stall_reason": "foothold WS-0156 isolated before execution",
+    "furthest_stage": "discovery",
+    "furthest_stage_index": 3,
     "detected": true,
     "mttd_min": 10.6,
     "detectors_on_attack": [
@@ -4337,23 +5040,23 @@
      "M3"
     ],
     "contained": true,
-    "mttc_min": 14.6,
+    "mttc_min": 11.6,
     "stopped_before_exfiltration": true,
     "exfil_gb": 0.0,
-    "actions_executed": 8,
-    "actions_on_attack": 8,
+    "actions_executed": 4,
+    "actions_on_attack": 4,
     "false_containments": 0,
     "false_containments_by_type": {},
-    "alerts": 266,
-    "incidents": 31,
-    "attack_incidents": 3,
-    "alert_to_incident_ratio": 8.58,
-    "alert_reduction": 0.8835,
-    "events": 425858,
+    "alerts": 250,
+    "incidents": 30,
+    "attack_incidents": 2,
+    "alert_to_incident_ratio": 8.33,
+    "alert_reduction": 0.88,
+    "events": 426413,
     "drift_alarms": 0,
     "retrains": 0,
     "agent": {
-     "decisions": 13,
+     "decisions": 10,
      "incidents_decided": 5,
      "verdict": {
       "precision": 1.0,
@@ -4363,17 +5066,17 @@
       "fp": 0,
       "fn": 1
      },
-     "attack_incidents_flagged": 2,
+     "attack_incidents_flagged": 1,
      "attack_incidents_decided": 2,
-     "attack_dismissals_escalated": 0,
+     "attack_dismissals_escalated": 1,
      "action_correctness": 1.0,
-     "invalid_tool_call_rate": 0.1688,
-     "llm_calls": 80,
-     "tool_calls": 64,
-     "invalid_tool_calls": 13,
-     "latency_mean_s": 67.4,
-     "latency_p95_s": 98.44,
-     "timeouts": 1,
+     "invalid_tool_call_rate": 0.0312,
+     "llm_calls": 44,
+     "tool_calls": 31,
+     "invalid_tool_calls": 1,
+     "latency_mean_s": 58.0,
+     "latency_p95_s": 114.19,
+     "timeouts": 0,
      "failures": 0,
      "escalated_dismissals": 0
     },
@@ -4381,16 +5084,16 @@
     "name": "agent:gpt-oss:20b-seed403",
     "config": "agent:gpt-oss:20b",
     "start": "2026-03-30T00:00:00+00:00",
-    "wall_s": 1160.2
+    "wall_s": 649.6
    },
    {
     "mode": "agent",
     "seed": 401,
     "campaign_start": "2026-03-16T17:00:22.885Z",
     "campaign_status": "stalled",
-    "stall_reason": "foothold WS-0039 isolated before execution",
-    "furthest_stage": "discovery",
-    "furthest_stage_index": 3,
+    "stall_reason": "foothold WS-0145 isolated before collection",
+    "furthest_stage": "lateral_movement",
+    "furthest_stage_index": 7,
     "detected": true,
     "mttd_min": 15.6,
     "detectors_on_attack": [
@@ -4400,45 +5103,43 @@
      "M3"
     ],
     "contained": true,
-    "mttc_min": 18.6,
+    "mttc_min": 19.6,
     "stopped_before_exfiltration": true,
     "exfil_gb": 0.0,
-    "actions_executed": 11,
-    "actions_on_attack": 10,
-    "false_containments": 1,
-    "false_containments_by_type": {
-     "revoke_sessions": 1
-    },
-    "alerts": 181,
-    "incidents": 27,
-    "attack_incidents": 3,
-    "alert_to_incident_ratio": 6.7,
-    "alert_reduction": 0.8508,
-    "events": 416209,
+    "actions_executed": 6,
+    "actions_on_attack": 6,
+    "false_containments": 0,
+    "false_containments_by_type": {},
+    "alerts": 237,
+    "incidents": 25,
+    "attack_incidents": 2,
+    "alert_to_incident_ratio": 9.48,
+    "alert_reduction": 0.8945,
+    "events": 416750,
     "drift_alarms": 0,
     "retrains": 0,
     "agent": {
-     "decisions": 13,
-     "incidents_decided": 11,
+     "decisions": 15,
+     "incidents_decided": 8,
      "verdict": {
-      "precision": 0.5,
+      "precision": 0.6666666666666666,
       "recall": 1.0,
-      "f1": 0.6666666666666666,
-      "tp": 3,
-      "fp": 3,
+      "f1": 0.8,
+      "tp": 2,
+      "fp": 1,
       "fn": 0
      },
-     "attack_incidents_flagged": 3,
-     "attack_incidents_decided": 3,
+     "attack_incidents_flagged": 2,
+     "attack_incidents_decided": 2,
      "attack_dismissals_escalated": 0,
-     "action_correctness": 0.8,
-     "invalid_tool_call_rate": 0.1842,
-     "llm_calls": 112,
-     "tool_calls": 93,
-     "invalid_tool_calls": 21,
-     "latency_mean_s": 63.3,
-     "latency_p95_s": 90.7,
-     "timeouts": 2,
+     "action_correctness": 1.0,
+     "invalid_tool_call_rate": 0.0204,
+     "llm_calls": 67,
+     "tool_calls": 48,
+     "invalid_tool_calls": 1,
+     "latency_mean_s": 67.1,
+     "latency_p95_s": 108.7,
+     "timeouts": 0,
      "failures": 0,
      "escalated_dismissals": 0
     },
@@ -4446,7 +5147,7 @@
     "name": "agent:gpt-oss:20b+verifier-seed401",
     "config": "agent:gpt-oss:20b+verifier",
     "start": "2026-03-16T00:00:00+00:00",
-    "wall_s": 1467.9
+    "wall_s": 1076.6
    },
    {
     "mode": "agent",
@@ -4465,43 +5166,46 @@
      "M3"
     ],
     "contained": true,
-    "mttc_min": 15.4,
+    "mttc_min": 16.4,
     "stopped_before_exfiltration": true,
     "exfil_gb": 0.0,
-    "actions_executed": 6,
+    "actions_executed": 8,
     "actions_on_attack": 6,
-    "false_containments": 0,
-    "false_containments_by_type": {},
-    "alerts": 281,
-    "incidents": 31,
-    "attack_incidents": 1,
-    "alert_to_incident_ratio": 9.06,
-    "alert_reduction": 0.8897,
+    "false_containments": 2,
+    "false_containments_by_type": {
+     "block_ip": 1,
+     "revoke_sessions": 1
+    },
+    "alerts": 283,
+    "incidents": 32,
+    "attack_incidents": 2,
+    "alert_to_incident_ratio": 8.84,
+    "alert_reduction": 0.8869,
     "events": 413509,
     "drift_alarms": 0,
     "retrains": 0,
     "agent": {
-     "decisions": 8,
-     "incidents_decided": 3,
+     "decisions": 10,
+     "incidents_decided": 4,
      "verdict": {
-      "precision": 1.0,
+      "precision": 0.6666666666666666,
       "recall": 1.0,
-      "f1": 1.0,
-      "tp": 1,
-      "fp": 0,
+      "f1": 0.8,
+      "tp": 2,
+      "fp": 1,
       "fn": 0
      },
-     "attack_incidents_flagged": 1,
-     "attack_incidents_decided": 1,
+     "attack_incidents_flagged": 2,
+     "attack_incidents_decided": 2,
      "attack_dismissals_escalated": 0,
-     "action_correctness": 1.0,
-     "invalid_tool_call_rate": 0.1791,
-     "llm_calls": 65,
-     "tool_calls": 55,
-     "invalid_tool_calls": 12,
-     "latency_mean_s": 76.7,
-     "latency_p95_s": 131.81,
-     "timeouts": 1,
+     "action_correctness": 0.75,
+     "invalid_tool_call_rate": 0.0,
+     "llm_calls": 54,
+     "tool_calls": 41,
+     "invalid_tool_calls": 0,
+     "latency_mean_s": 91.9,
+     "latency_p95_s": 150.41,
+     "timeouts": 0,
      "failures": 0,
      "escalated_dismissals": 0
     },
@@ -4509,16 +5213,16 @@
     "name": "agent:gpt-oss:20b+verifier-seed402",
     "config": "agent:gpt-oss:20b+verifier",
     "start": "2026-03-23T00:00:00+00:00",
-    "wall_s": 887.6
+    "wall_s": 997.2
    },
    {
     "mode": "agent",
     "seed": 403,
     "campaign_start": "2026-03-30T20:35:26.134Z",
     "campaign_status": "stalled",
-    "stall_reason": "staging host isolated before collection",
-    "furthest_stage": "lateral_movement",
-    "furthest_stage_index": 7,
+    "stall_reason": "foothold WS-0156 isolated before credential_access",
+    "furthest_stage": "command_and_control",
+    "furthest_stage_index": 5,
     "detected": true,
     "mttd_min": 10.6,
     "detectors_on_attack": [
@@ -4528,23 +5232,23 @@
      "M3"
     ],
     "contained": true,
-    "mttc_min": 14.6,
+    "mttc_min": 11.6,
     "stopped_before_exfiltration": true,
     "exfil_gb": 0.0,
-    "actions_executed": 6,
-    "actions_on_attack": 6,
+    "actions_executed": 7,
+    "actions_on_attack": 7,
     "false_containments": 0,
     "false_containments_by_type": {},
-    "alerts": 286,
-    "incidents": 29,
+    "alerts": 263,
+    "incidents": 30,
     "attack_incidents": 2,
-    "alert_to_incident_ratio": 9.86,
-    "alert_reduction": 0.8986,
-    "events": 426462,
+    "alert_to_incident_ratio": 8.77,
+    "alert_reduction": 0.8859,
+    "events": 426438,
     "drift_alarms": 0,
     "retrains": 0,
     "agent": {
-     "decisions": 16,
+     "decisions": 10,
      "incidents_decided": 5,
      "verdict": {
       "precision": 1.0,
@@ -4554,17 +5258,17 @@
       "fp": 0,
       "fn": 1
      },
-     "attack_incidents_flagged": 2,
+     "attack_incidents_flagged": 1,
      "attack_incidents_decided": 2,
-     "attack_dismissals_escalated": 0,
+     "attack_dismissals_escalated": 1,
      "action_correctness": 1.0,
-     "invalid_tool_call_rate": 0.163,
-     "llm_calls": 95,
-     "tool_calls": 77,
-     "invalid_tool_calls": 15,
-     "latency_mean_s": 85.9,
-     "latency_p95_s": 149.93,
-     "timeouts": 0,
+     "invalid_tool_call_rate": 0.0303,
+     "llm_calls": 45,
+     "tool_calls": 32,
+     "invalid_tool_calls": 1,
+     "latency_mean_s": 62.5,
+     "latency_p95_s": 114.25,
+     "timeouts": 1,
      "failures": 0,
      "escalated_dismissals": 0
     },
@@ -4572,7 +5276,7 @@
     "name": "agent:gpt-oss:20b+verifier-seed403",
     "config": "agent:gpt-oss:20b+verifier",
     "start": "2026-03-30T00:00:00+00:00",
-    "wall_s": 1473.6
+    "wall_s": 1064.7
    }
   ],
   "summary": {
@@ -4597,7 +5301,7 @@
     "alerts_mean": 197.67,
     "incidents_mean": 29.67,
     "alert_reduction_mean": 0.84,
-    "wall_s_mean": 161.6,
+    "wall_s_mean": 216.97,
     "agent": {
      "decisions": 35,
      "verdict": {
@@ -4613,7 +5317,7 @@
      "action_correctness_mean": 1.0,
      "invalid_tool_call_rate": 0.0,
      "latency_mean_s": 118.73,
-     "latency_p95_s": 165.04,
+     "latency_p95_s": 165.06,
      "timeouts": 0,
      "escalated_dismissals": 0
     }
@@ -4624,42 +5328,41 @@
     "mttd_min_median": 12.4,
     "mttd_min_mean": 12.87,
     "contained": 1.0,
-    "mttc_min_median": 14.6,
-    "mttc_min_mean": 15.87,
+    "mttc_min_median": 14.4,
+    "mttc_min_mean": 14.87,
     "stopped_before_exfiltration": 1.0,
     "exfil_gb_mean": 0.0,
-    "furthest_stage_mean": 5.0,
+    "furthest_stage_mean": 3.67,
     "furthest_stage": {
      "command_and_control": 1,
-     "discovery": 1,
-     "lateral_movement": 1
+     "discovery": 2
     },
-    "false_containments_mean": 0.67,
-    "false_containments_total": 2,
-    "runs_without_false_containment": 0.6666666666666666,
-    "actions_executed_mean": 9.0,
-    "alerts_mean": 228.0,
-    "incidents_mean": 29.67,
-    "alert_reduction_mean": 0.86,
-    "wall_s_mean": 1003.17,
+    "false_containments_mean": 1.33,
+    "false_containments_total": 4,
+    "runs_without_false_containment": 0.3333333333333333,
+    "actions_executed_mean": 6.67,
+    "alerts_mean": 245.33,
+    "incidents_mean": 29.33,
+    "alert_reduction_mean": 0.88,
+    "wall_s_mean": 770.87,
     "agent": {
-     "decisions": 32,
+     "decisions": 30,
      "verdict": {
-      "precision": 0.5714285714285714,
-      "recall": 0.8,
+      "precision": 0.6666666666666666,
+      "recall": 0.6666666666666666,
       "f1": 0.6666666666666666,
       "tp": 4,
-      "fp": 3,
-      "fn": 1
+      "fp": 2,
+      "fn": 2
      },
      "attack_incidents_flagged": 5,
-     "attack_incidents_decided": 5,
-     "action_correctness_mean": 0.92,
-     "invalid_tool_call_rate": 0.1838,
-     "latency_mean_s": 67.97,
-     "latency_p95_s": 114.59,
+     "attack_incidents_decided": 6,
+     "action_correctness_mean": 0.76,
+     "invalid_tool_call_rate": 0.0351,
+     "latency_mean_s": 58.17,
+     "latency_p95_s": 121.28,
      "timeouts": 2,
-     "escalated_dismissals": 0
+     "escalated_dismissals": 1
     }
    },
    "agent:gpt-oss:20b+verifier": {
@@ -4668,44 +5371,106 @@
     "mttd_min_median": 12.4,
     "mttd_min_mean": 12.87,
     "contained": 1.0,
-    "mttc_min_median": 15.4,
-    "mttc_min_mean": 16.2,
+    "mttc_min_median": 16.4,
+    "mttc_min_mean": 15.87,
     "stopped_before_exfiltration": 1.0,
     "exfil_gb_mean": 0.0,
-    "furthest_stage_mean": 5.0,
+    "furthest_stage_mean": 5.67,
     "furthest_stage": {
-     "discovery": 1,
-     "command_and_control": 1,
-     "lateral_movement": 1
+     "lateral_movement": 1,
+     "command_and_control": 2
     },
-    "false_containments_mean": 0.33,
-    "false_containments_total": 1,
+    "false_containments_mean": 0.67,
+    "false_containments_total": 2,
     "runs_without_false_containment": 0.6666666666666666,
-    "actions_executed_mean": 7.67,
-    "alerts_mean": 249.33,
+    "actions_executed_mean": 7.0,
+    "alerts_mean": 261.0,
     "incidents_mean": 29.0,
-    "alert_reduction_mean": 0.88,
-    "wall_s_mean": 1276.37,
+    "alert_reduction_mean": 0.89,
+    "wall_s_mean": 1046.17,
     "agent": {
-     "decisions": 37,
+     "decisions": 35,
      "verdict": {
-      "precision": 0.625,
+      "precision": 0.7142857142857143,
       "recall": 0.8333333333333334,
-      "f1": 0.7142857142857143,
+      "f1": 0.7692307692307692,
       "tp": 5,
-      "fp": 3,
+      "fp": 2,
       "fn": 1
      },
-     "attack_incidents_flagged": 6,
+     "attack_incidents_flagged": 5,
      "attack_incidents_decided": 6,
-     "action_correctness_mean": 0.93,
-     "invalid_tool_call_rate": 0.1758,
-     "latency_mean_s": 75.3,
-     "latency_p95_s": 149.93,
-     "timeouts": 3,
+     "action_correctness_mean": 0.92,
+     "invalid_tool_call_rate": 0.0163,
+     "latency_mean_s": 73.83,
+     "latency_p95_s": 150.41,
+     "timeouts": 1,
      "escalated_dismissals": 0
     }
    }
   }
+ },
+ "m3_variants": {
+  "validation_runs": [
+   "val-1"
+  ],
+  "test_runs": [
+   "test-1",
+   "test-2"
+  ],
+  "positives": {
+   "validation": 9,
+   "test": 18
+  },
+  "variants": [
+   {
+    "name": "Launch rarity (promoted M3)",
+    "parameter": "",
+    "validation_pr_auc": 0.776,
+    "validation_false_positives": 18,
+    "test": {
+     "pr_auc": 0.7488,
+     "recall_at_threshold": 0.8889,
+     "false_positives_per_day": 4.5,
+     "precision_at_threshold": 0.4706
+    }
+   },
+   {
+    "name": "+ encoded commands and LOLBins, in bits",
+    "parameter": "weight 0.5",
+    "validation_pr_auc": 0.8007,
+    "validation_false_positives": 18,
+    "test": {
+     "pr_auc": 0.763,
+     "recall_at_threshold": 0.8889,
+     "false_positives_per_day": 6.5,
+     "precision_at_threshold": 0.381
+    }
+   },
+   {
+    "name": "+ isolation forest on the 9 window features",
+    "parameter": "weight 0.25",
+    "validation_pr_auc": 0.7796,
+    "validation_false_positives": 16,
+    "test": {
+     "pr_auc": 0.7573,
+     "recall_at_threshold": 0.8889,
+     "false_positives_per_day": 4.25,
+     "precision_at_threshold": 0.4848
+    }
+   },
+   {
+    "name": "Rarity on the host itself, peer group as prior",
+    "parameter": "prior strength 16",
+    "validation_pr_auc": 0.7802,
+    "validation_false_positives": 16,
+    "test": {
+     "pr_auc": 0.7545,
+     "recall_at_threshold": 0.8889,
+     "false_positives_per_day": 5.25,
+     "precision_at_threshold": 0.4324
+    }
+   }
+  ]
  }
 }

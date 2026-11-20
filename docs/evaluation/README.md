@@ -1,6 +1,6 @@
 # Evaluation
 
-Generated 2026-11-14 18:14 UTC. Raw numbers: [results.json](results.json).
+Generated 2026-11-20 16:43 UTC. Raw numbers: [results.json](results.json).
 
 ## Model level (M1-M3)
 
@@ -34,6 +34,17 @@ Detection delay: minutes from the start of an attack stage (ground truth) to the
 | M3 | initial_access | 9.4, 11.4 |
 | M3 | lateral_movement | 1.1, 0.8 |
 
+### M3 with its window features
+
+M3 scores a host window only by how rare its process launches are. Its rows also carry nine window features that the score does not use, such as command-line length, encoded commands and LOLBins. Each variant adds them in one way. Its parameter is chosen on the validation week (9 attack windows) and its threshold is set at M3's false positive rate on the benign validation windows. The test weeks (18 attack windows) only report the result.
+
+| Variant | Parameter | Validation PR-AUC | Validation FP | Test PR-AUC | Test recall @threshold | Test FP / day | Test precision |
+|---|---|---|---|---|---|---|---|
+| Launch rarity (promoted M3) | – | 0.776 | 18 | 0.749 | 0.889 | 4.5 | 0.471 |
+| + encoded commands and LOLBins, in bits | weight 0.5 | 0.801 | 18 | 0.763 | 0.889 | 6.5 | 0.381 |
+| + isolation forest on the 9 window features | weight 0.25 | 0.780 | 16 | 0.757 | 0.889 | 4.2 | 0.485 |
+| Rarity on the host itself, peer group as prior | prior strength 16 | 0.780 | 16 | 0.754 | 0.889 | 5.2 | 0.432 |
+
 ## End to end
 
 10 seeded 48-hour closed-loop runs per configuration on the same company (org_seed 7), one attack per run, on weeks after the dataset's test weeks. Times are measured from the start of the attack; MTTD counts window and delivery delays, MTTC is the first executed action on an entity the attacker used, after the attack started. False containments are executed actions on anything else, or on a future victim before the attack.
@@ -43,11 +54,17 @@ Detection delay: minutes from the start of an attack stage (ground truth) to the
 | Agent (scripted analyst) + M1-M3 | 10 | 100% | 11.5 | 100% | 16.2 | 100% | 0.00 | 4.4 | 0.0 | 100% | 182 | 30 | 0.810 |
 | Detectors M1-M3 + playbooks | 10 | 100% | 11.5 | 100% | 11.5 | 100% | 0.00 | 3.4 | 4.6 | 10% | 211 | 31 | 0.830 |
 | Rules + playbooks | 10 | 100% | 13.2 | 100% | 15.2 | 100% | 0.00 | 2.8 | 3.3 | 0% | 358 | 113 | 0.670 |
+| Agent (scripted analyst) + M1-M3, spray blocked before triage | 10 | 100% | 11.5 | 100% | 13.2 | 100% | 0.00 | 4.4 | 0.0 | 100% | 154 | 30 | 0.790 |
 
 Paired comparisons over the same seeds (Wilcoxon signed-rank):
 
 | Comparison | Metric | Paired runs | Median difference | Wilcoxon p |
 |---|---|---|---|---|
+| agent vs agent+fastblock | false_containments | 10 | 0.00 | – |
+| agent vs agent+fastblock | furthest_stage_index | 10 | -1.00 | 1.0000 |
+| agent vs agent+fastblock | exfil_gb | 10 | 0.00 | – |
+| agent vs agent+fastblock | mttc_min | 10 | 3.00 | 0.0020 |
+| agent vs agent+fastblock | incidents | 10 | 0.00 | 0.8750 |
 | agent vs detectors | false_containments | 10 | -3.50 | 0.0039 |
 | agent vs detectors | furthest_stage_index | 10 | 1.00 | 0.3438 |
 | agent vs detectors | exfil_gb | 10 | 0.00 | – |
@@ -63,21 +80,22 @@ Paired comparisons over the same seeds (Wilcoxon signed-rank):
 
 | Configuration | Decisions | Verdict precision | Verdict recall | Verdict F1 | Attack incidents flagged | Action correctness | Invalid tool calls | Latency mean (s) | Latency p95 (s) | Timeouts | Escalated dismissals |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| Agent (scripted analyst) + M1-M3 | 111 | 1.000 | 0.680 | 0.810 | 25/25 | 1.000 | 0.0000 | 117.5 | 165.0 | 0 | 0 |
+| Agent (scripted analyst) + M1-M3 | 111 | 1.000 | 0.680 | 0.810 | 25/25 | 1.000 | 0.0000 | 117.5 | 165.1 | 0 | 0 |
+| Agent (scripted analyst) + M1-M3, spray blocked before triage | 102 | 1.000 | 0.679 | 0.809 | 28/28 | 1.000 | 0.0000 | 116.7 | 165.1 | 0 | 0 |
 
 ### Local LLM (gpt-oss:20b via Ollama)
 
 | Configuration | Runs | Detected | MTTD (min, median) | Contained | MTTC (min, median) | Stopped before exfiltration | Exfiltrated (GB, mean) | Furthest stage (mean of 9) | False containments (mean) | Runs without false containment | Alerts (mean) | Incidents (mean) | Alert reduction |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | Agent (scripted analyst) + M1-M3 | 3 | 100% | 12.4 | 100% | 15.4 | 100% | 0.00 | 5.0 | 0.0 | 100% | 198 | 30 | 0.840 |
-| Agent (gpt-oss:20b) + M1-M3 | 3 | 100% | 12.4 | 100% | 14.6 | 100% | 0.00 | 5.0 | 0.7 | 67% | 228 | 30 | 0.860 |
-| Agent (gpt-oss:20b) + M1-M3, evidence verifier | 3 | 100% | 12.4 | 100% | 15.4 | 100% | 0.00 | 5.0 | 0.3 | 67% | 249 | 29 | 0.880 |
+| Agent (gpt-oss:20b) + M1-M3 | 3 | 100% | 12.4 | 100% | 14.4 | 100% | 0.00 | 3.7 | 1.3 | 33% | 245 | 29 | 0.880 |
+| Agent (gpt-oss:20b) + M1-M3, evidence verifier | 3 | 100% | 12.4 | 100% | 16.4 | 100% | 0.00 | 5.7 | 0.7 | 67% | 261 | 29 | 0.890 |
 
 | Configuration | Decisions | Verdict precision | Verdict recall | Verdict F1 | Attack incidents flagged | Action correctness | Invalid tool calls | Latency mean (s) | Latency p95 (s) | Timeouts | Escalated dismissals |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| Agent (scripted analyst) + M1-M3 | 35 | 1.000 | 0.714 | 0.833 | 7/7 | 1.000 | 0.0000 | 118.7 | 165.0 | 0 | 0 |
-| Agent (gpt-oss:20b) + M1-M3 | 32 | 0.571 | 0.800 | 0.667 | 5/5 | 0.920 | 0.1838 | 68.0 | 114.6 | 2 | 0 |
-| Agent (gpt-oss:20b) + M1-M3, evidence verifier | 37 | 0.625 | 0.833 | 0.714 | 6/6 | 0.930 | 0.1758 | 75.3 | 149.9 | 3 | 0 |
+| Agent (scripted analyst) + M1-M3 | 35 | 1.000 | 0.714 | 0.833 | 7/7 | 1.000 | 0.0000 | 118.7 | 165.1 | 0 | 0 |
+| Agent (gpt-oss:20b) + M1-M3 | 30 | 0.667 | 0.667 | 0.667 | 5/6 | 0.760 | 0.0351 | 58.2 | 121.3 | 2 | 1 |
+| Agent (gpt-oss:20b) + M1-M3, evidence verifier | 35 | 0.714 | 0.833 | 0.769 | 5/6 | 0.920 | 0.0163 | 73.8 | 150.4 | 1 | 0 |
 
 ## S1: drift (move to remote work over ZTNA)
 
@@ -96,14 +114,14 @@ False M1 alerts are sign-in alerts without attack events. Busy hours have at lea
 
 | Variant | Phase | Events consumed / wall s | Stream lag p50 (sim s) | Stream lag p95 (sim s) | Stream lag p95 (wall s) | Consumer lag max (msgs) | Agent queue max |
 |---|---|---|---|---|---|---|---|
-| LLM ×1 in burst | before | 229 | 0 | 60 | 1.00 | 18683 | 1 |
-| LLM ×1 in burst | burst | 3004 | 0 | 60 | 1.00 | 3229 | 1 |
+| LLM ×1 in burst | before | 229 | 0 | 60 | 1.00 | 51630 | 1 |
+| LLM ×1 in burst | burst | 3006 | 0 | 60 | 1.00 | 3229 | 1 |
 | LLM ×1 in burst | after | 300 | 0 | 60 | 1.00 | 970 | 1 |
-| LLM ×4 in burst | before | 228 | 0 | 60 | 1.00 | 42059 | 1 |
-| LLM ×4 in burst | burst | 3042 | 0 | 60 | 1.00 | 3228 | 1 |
-| LLM ×4 in burst | after | 323 | 0 | 60 | 1.00 | 3017 | 1 |
+| LLM ×4 in burst | before | 229 | 0 | 60 | 1.00 | 69840 | 1 |
+| LLM ×4 in burst | burst | 3035 | 0 | 60 | 1.00 | 3228 | 1 |
+| LLM ×4 in burst | after | 322 | 0 | 60 | 1.00 | 3018 | 1 |
 
 | Variant | Event rate in burst | Routes (agent / playbook) | Shed to playbooks | Agent timeouts | Breaker trips | Decisions (agent / playbook) | Campaign |
 |---|---|---|---|---|---|---|---|
-| LLM ×1 in burst | ×10.9 | 15 / 0 | 0 | 0 | 0 | 15 / 0 | stalled (foothold WS-0158 isolated before credential_access) |
-| LLM ×4 in burst | ×10.9 | 15 / 0 | 0 | 4 | 1 | 11 / 4 | stalled (foothold WS-0158 isolated before credential_access) |
+| LLM ×1 in burst | ×10.9 | 16 / 0 | 0 | 0 | 0 | 16 / 0 | stalled (foothold WS-0158 isolated before credential_access) |
+| LLM ×4 in burst | ×10.9 | 16 / 0 | 0 | 4 | 1 | 12 / 4 | stalled (foothold WS-0158 isolated before credential_access) |

@@ -100,7 +100,7 @@ export function ConfigCard({ config, s, index }: { config: string; s: ConfigSumm
           <Badge>action correctness {fmtPercent(s.agent.action_correctness_mean)}</Badge>
           <Badge>invalid tool calls {fmtPercent(s.agent.invalid_tool_call_rate, 1)}</Badge>
           <Badge>latency {fmtDuration(s.agent.latency_mean_s)} (p95 {fmtDuration(s.agent.latency_p95_s)})</Badge>
-          {s.agent.timeouts ? <Badge tone="warn">{s.agent.timeouts} timeouts</Badge> : null}
+          {s.agent.timeouts ? <Badge tone="warn">{s.agent.timeouts === 1 ? "1 timeout" : `${s.agent.timeouts} timeouts`}</Badge> : null}
         </div>
       ) : null}
     </motion.div>
