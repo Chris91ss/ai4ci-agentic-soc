@@ -759,6 +759,29 @@ def evaluate_models_cmd(
     console.print(f"report: {_update_results('models', result, out)}")
 
 
+@eval_app.command("m3-variants")
+def evaluate_m3_variants_cmd(
+    data: Path = typer.Option(Path("data"), help="Data root built by `soc etl build`."),
+    models: Path = typer.Option(Path("models"), help="Model registry."),
+    out: Path = typer.Option(EVAL_DIR, help="Results directory."),
+) -> None:
+    """Ablation: M3's launch rarity with and without its window features."""
+    from agentic_soc.evaluation import evaluate_m3_variants
+
+    path = out / "results.json"
+    days = (
+        json.loads(path.read_text()).get("models", {}).get("test_days") if path.exists() else None
+    )
+    if days is None:
+        raise typer.BadParameter("run `soc evaluate models` first (it measures the test weeks)")
+    result = evaluate_m3_variants(data / "features", models, data / "lake", days)
+    for v in result["variants"]:
+        t = v["test"]
+        console.print(f"{v['name']} {v['parameter']}: validation PR-AUC {v['validation_pr_auc']}, "
+                      f"test PR-AUC {t['pr_auc']}, FP/day {t['false_positives_per_day']}")  # fmt: skip
+    console.print(f"report: {_update_results('m3_variants', result, out)}")
+
+
 @eval_app.command("e2e")
 def evaluate_e2e(
     seeds: str = typer.Option("401-410", help="Seeds, e.g. 401-410 or 401,402."),

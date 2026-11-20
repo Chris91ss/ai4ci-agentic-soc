@@ -1,12 +1,14 @@
 "use client";
 
-import { IconClockHour4, IconGauge, IconTable } from "@tabler/icons-react";
+import { IconClockHour4, IconFlask2, IconGauge, IconTable } from "@tabler/icons-react";
 import { motion } from "framer-motion";
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
+import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { fmtPercent } from "@/lib/format";
-import type { Evaluation, ModelKind } from "@/lib/types";
+import type { Evaluation, M3Variant, ModelKind } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 import { STAGE_LABEL, STAGES, axis, fmtMinutes, fmtNum, tooltipStyle } from "./shared";
 
@@ -69,7 +71,77 @@ function heat(value: number) {
   return `rgba(16, 185, 129, ${0.08 + value * 0.42})`;
 }
 
-export function Detectors({ models }: { models: NonNullable<Evaluation["models"]> }) {
+// A variant's value with its difference from the promoted M3, green when it is better.
+function Compared({ value, base, digits, lowerIsBetter = false }: { value: number; base: number; digits: number; lowerIsBetter?: boolean }) {
+  const diff = value - base;
+  const better = lowerIsBetter ? diff < 0 : diff > 0;
+  return (
+    <span className="font-mono">
+      {value.toFixed(digits)}
+      {Math.abs(diff) >= 10 ** -digits / 2 ? (
+        <span className={cn("ml-1.5 text-[10px]", better ? "text-ok" : "text-danger")}>
+          {diff > 0 ? "+" : "−"}
+          {Math.abs(diff).toFixed(digits)}
+        </span>
+      ) : null}
+    </span>
+  );
+}
+
+function M3Variants({ m3 }: { m3: NonNullable<Evaluation["m3_variants"]> }) {
+  const promoted: M3Variant = m3.variants[0];
+  return (
+    <Card>
+      <CardHeader
+        icon={<IconFlask2 size={16} />}
+        title="M3 with its window features"
+        subtitle={`Parameter chosen on the validation week (${m3.positives.validation} attack windows), result on the test weeks (${m3.positives.test})`}
+      />
+      <div className="overflow-x-auto">
+        <table className="w-full text-left text-xs">
+          <thead className="text-faint">
+            <tr className="border-b border-line">
+              {["Variant", "Parameter", "Validation PR-AUC", "Test PR-AUC", "Test FP / day", "Test precision"].map((h) => (
+                <th key={h} className="px-4 py-2 font-medium">
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-line/60">
+            {m3.variants.map((v, i) => (
+              <motion.tr key={v.name} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}>
+                <td className="px-4 py-2 text-ink">
+                  {v.name}
+                  {i === 0 ? (
+                    <Badge tone="brand" className="ml-2">
+                      in use
+                    </Badge>
+                  ) : null}
+                </td>
+                <td className="px-4 py-2 font-mono text-dim">{v.parameter || "·"}</td>
+                <td className="px-4 py-2">
+                  <Compared value={v.validation_pr_auc} base={promoted.validation_pr_auc} digits={3} />
+                </td>
+                <td className="px-4 py-2">
+                  <Compared value={v.test.pr_auc} base={promoted.test.pr_auc} digits={3} />
+                </td>
+                <td className="px-4 py-2">
+                  <Compared value={v.test.false_positives_per_day} base={promoted.test.false_positives_per_day} digits={1} lowerIsBetter />
+                </td>
+                <td className="px-4 py-2">
+                  <Compared value={v.test.precision_at_threshold} base={promoted.test.precision_at_threshold} digits={3} />
+                </td>
+              </motion.tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </Card>
+  );
+}
+
+export function Detectors({ models, m3 }: { models: NonNullable<Evaluation["models"]>; m3?: Evaluation["m3_variants"] }) {
   const kinds = Object.keys(models.kinds);
   const chart = kinds.map((kind) => ({
     kind,
@@ -150,6 +222,7 @@ export function Detectors({ models }: { models: NonNullable<Evaluation["models"]
           </div>
         </Card>
       </div>
+      {m3?.variants.length ? <M3Variants m3={m3} /> : null}
     </div>
   );
 }

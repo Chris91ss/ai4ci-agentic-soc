@@ -443,9 +443,18 @@ export interface S2Sample {
   queue: number;
 }
 
+export interface M3Variant {
+  name: string;
+  parameter: string;
+  validation_pr_auc: number;
+  validation_false_positives: number;
+  test: { pr_auc: number; recall_at_threshold: number; false_positives_per_day: number; precision_at_threshold: number };
+}
+
 export interface Evaluation {
   generated: string;
   models?: { test_runs: string[]; test_days: number; kinds: Record<string, ModelKind> };
+  m3_variants?: { validation_runs: string[]; test_runs: string[]; positives: { validation: number; test: number }; variants: M3Variant[] };
   e2e?: { runs: EvalRun[]; summary: Record<string, ConfigSummary>; tests: Record<string, Record<string, { n: number; median_difference: number | null; p_value: number | null }>> };
   llm?: { runs: EvalRun[]; summary: Record<string, ConfigSummary> };
   s1?: { runs: EvalRun[]; summary: Record<string, ConfigSummary> };

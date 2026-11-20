@@ -72,6 +72,26 @@ def _models(models: dict[str, Any]) -> str:
     )
 
 
+def _m3_variants(m3: dict[str, Any]) -> str:
+    rows = []
+    for v in m3["variants"]:
+        t = v["test"]
+        rows.append([v["name"], v["parameter"] or "–", _fmt(v["validation_pr_auc"], 3), str(v["validation_false_positives"]),
+                     _fmt(t["pr_auc"], 3), _fmt(t["recall_at_threshold"], 3), _fmt(t["false_positives_per_day"], 1),
+                     _fmt(t["precision_at_threshold"], 3)])  # fmt: skip
+    header = ["Variant", "Parameter", "Validation PR-AUC", "Validation FP", "Test PR-AUC",
+              "Test recall @threshold", "Test FP / day", "Test precision"]  # fmt: skip
+    intro = (
+        "M3 scores a host window only by how rare its process launches are. Its rows also carry nine window "
+        "features that the score does not use, such as command-line length, encoded commands and LOLBins. "
+        "Each variant adds them in one way. Its parameter is chosen on the validation week "
+        f"({m3['positives']['validation']} attack windows) and its threshold is set at M3's false positive rate "
+        f"on the benign validation windows. The test weeks ({m3['positives']['test']} attack windows) only "
+        "report the result."
+    )
+    return intro + "\n\n" + _table(header, rows)
+
+
 def _e2e(summary: dict[str, Any], order: list[str]) -> str:
     header = ["Configuration", "Runs", "Detected", "MTTD (min, median)", "Contained", "MTTC (min, median)",
               "Stopped before exfiltration", "Exfiltrated (GB, mean)", "Furthest stage (mean of 9)",
@@ -161,6 +181,8 @@ def render(results: dict[str, Any]) -> str:
              f"Generated {results.get('generated', '')}. Raw numbers: [results.json](results.json).", ""]  # fmt: skip
     if "models" in results:
         parts += ["## Model level (M1-M3)", "", _models(results["models"]), ""]
+    if "m3_variants" in results:
+        parts += ["### M3 with its window features", "", _m3_variants(results["m3_variants"]), ""]
     if "e2e" in results:
         e2e = results["e2e"]
         configs = [c for c in ("agent", "detectors", "rules") if c in e2e["summary"]]

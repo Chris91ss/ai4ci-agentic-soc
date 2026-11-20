@@ -84,7 +84,7 @@ export default function EvaluationPage() {
           ) : null}
           {data.models ? (
             <TabPanel value="models">
-              <Detectors models={data.models} />
+              <Detectors models={data.models} m3={data.m3_variants} />
             </TabPanel>
           ) : null}
           {data.s1 ? (

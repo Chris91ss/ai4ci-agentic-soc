@@ -33,7 +33,7 @@ Agentic SOC is a Security Operations Center for a simulated company of 200 peopl
 | **[Triage agent](#the-triage-agent)** | gpt-oss:20b on Ollama in a ReAct loop over seven MCP tools, returning a JSON-schema decision; log fields reach it only as quoted data, dismissals must cite evidence, actions pass a policy gate, and an optional verifier vetoes actions its evidence does not justify | Tests with a planted prompt injection and malformed tool calls; three seeds on the local LLM |
 | **[Evidence and feedback](#the-console)** | Every verdict stored with the events, detector scores, entity baselines and tool calls it cites, filterable by entity, stream, detector and time; analyst feedback feeds per-detector false-positive statistics | Tests that every cited item exists and that feedback reaches the statistics |
 | **[Console](#the-console)** | Next.js 16 with Tabler icons, framer-motion and Recharts: overview, incident queue, timelines, agent trace, evidence, approvals, metrics with the drift monitor, the evaluation and the audit log; live over server-sent events, or a recorded run replayed as a static site | Lint and build in CI; this README's images are regenerated from the static build in headless Chrome |
-| **[Evaluation](#results)** | `soc evaluate`: the detectors on held-out weeks, ten seeds of the agent against rules and against detectors with playbooks, paired Wilcoxon tests, S1 drift, S2 load, and the local LLM | The raw numbers and the report in [docs/evaluation](docs/evaluation/README.md) |
+| **[Evaluation](#results)** | `soc evaluate`: the detectors on held-out weeks with an M3 ablation, ten seeds of the agent against rules and against detectors with playbooks, paired Wilcoxon tests, S1 drift, S2 load, and the local LLM | The raw numbers and the report in [docs/evaluation](docs/evaluation/README.md) |
 
 **Contents:** [Try it](#try-it) · [The console](#the-console) · [How an incident is handled](#how-an-incident-is-handled) · [The simulated enterprise](#the-simulated-enterprise) · [Detectors](#detectors) · [The triage agent](#the-triage-agent) · [Results](#results) · [Running it](#running-it) · [Layout](#repository-layout) · [Tests and CI](#tests-and-ci) · [Credits](#authors-and-credits)
 
@@ -256,6 +256,7 @@ uv run soc pipeline --inventory data/runs/live/inventory.json --api-port 8000
 
 ```bash
 uv run soc evaluate models                           # M1-M3 on the held-out test weeks
+uv run soc evaluate m3-variants                      # M3 with its window features (ablation)
 uv run soc evaluate e2e --seeds 401-410              # agent vs both baselines
 uv run soc evaluate e2e --modes agent+fastblock      # ... and with the spray blocked before triage
 uv run soc evaluate llm --seeds 401-403              # the agent on gpt-oss:20b
