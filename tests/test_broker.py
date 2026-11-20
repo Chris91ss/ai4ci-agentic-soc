@@ -116,6 +116,24 @@ def test_live_simulator_publishes_and_applies_actions() -> None:
     assert sim.finished and live.published == sim.delivery.stats.delivered
 
 
+def test_live_simulator_stands_still_while_held() -> None:
+    cfg = load_config(
+        overrides={"org": {"users": 40}, "duration_h": 0.5, "campaign": {"enabled": False}}
+    )
+    sim = Simulator(cfg)
+    live = LiveSimulator(sim, InMemoryBroker(), speed=0)
+    holding = threading.Event()
+    holding.set()
+    start = sim.clock
+    thread = threading.Thread(target=live.run, kwargs={"max_ticks": 5, "hold": holding.is_set})
+    thread.start()
+    thread.join(timeout=0.5)
+    assert thread.is_alive() and sim.clock == start and live.published == 0
+    holding.clear()
+    thread.join(timeout=10)
+    assert not thread.is_alive() and sim.clock > start and live.published > 0
+
+
 KAFKA_URL = os.environ.get("SOC_KAFKA_URL")
 
 

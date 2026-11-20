@@ -52,7 +52,7 @@ uv run soc demo --speed 120            # simulator, pipeline, console API; attac
 cd web && npm install && npm run dev   # the console, on http://localhost:3000
 ```
 
-The demo uses the scripted analyst; with [Ollama](https://ollama.com) and `ollama pull gpt-oss:20b`, `--llm ollama:gpt-oss:20b` puts the local model in its place, in `soc demo` as in `soc run`.
+The demo uses the scripted analyst. With [Ollama](https://ollama.com) and `ollama pull gpt-oss:20b`, `--llm ollama:gpt-oss:20b` puts the local model in its place, in `soc demo` as in `soc run`. The local model needs about a minute per incident, which is two simulated hours at 120×, so in the demo also add `--pause-for-agent`: the simulation clock then stops while the agent investigates.
 
 ## The console
 

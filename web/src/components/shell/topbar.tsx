@@ -45,7 +45,7 @@ export function Topbar({ onSearch }: { onSearch: () => void }) {
         ) : null}
         {health?.agent_busy ? (
           <Badge tone="brand" icon={<motion.span animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 2, ease: "linear" }}><IconRobot size={12} /></motion.span>}>
-            Agent triaging
+            {health.run?.pause_for_agent ? "Agent triaging · clock paused" : "Agent triaging"}
           </Badge>
         ) : null}
 

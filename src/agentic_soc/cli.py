@@ -650,7 +650,10 @@ def demo(
     attack_after: float = typer.Option(4.0, help="Hours until the campaign starts."),
     speed: float = typer.Option(120.0, help="Simulated seconds per wall-clock second."),
     mode: str = typer.Option("agent", help="agent or detectors (playbooks only)."),
-    llm: str = typer.Option("scripted", help="scripted or ollama[:model] (use a low --speed)."),
+    llm: str = typer.Option("scripted", help="scripted or ollama[:model] (add --pause-for-agent)."),
+    pause_for_agent: bool = typer.Option(
+        False, help="Stop the simulation clock while the agent investigates (for a slow local LLM)."
+    ),
     models: Path = typer.Option(Path("models"), help="Model registry."),
     approval_delay: float | None = typer.Option(
         None, help="Auto-approve held actions after this many simulated seconds (default: analyst)."
@@ -679,13 +682,16 @@ def demo(
                             approval_delay_s=max(1.0, approval_delay or 0.0))  # fmt: skip
     sim = Simulator(cfg)
     (out / "inventory.json").write_text(json.dumps(sim.ent.inventory(), indent=1) + "\n")
-    runner = LiveDemo(sim, ModelRegistry(models).load_set(), config, store, speed=speed)
+    runner = LiveDemo(sim, ModelRegistry(models).load_set(), config, store, speed=speed,
+                      pause_for_agent=pause_for_agent)  # fmt: skip
     service = ConsoleService(store, pipeline=runner.pipeline, broker=runner.broker,
-                             run={"name": "live demo", "mode": mode, "seed": seed, "speed": speed},
+                             run={"name": "live demo", "mode": mode, "seed": seed, "speed": speed,
+                                  "pause_for_agent": pause_for_agent},
                              evaluation_dir=Path("docs/evaluation"))  # fmt: skip
     runner.start()
+    pausing = ", paused while the agent investigates" if pause_for_agent else ""
     console.print(
-        f"live demo at {speed:g}x: console API on http://{host}:{port}/api; Ctrl-C to stop"
+        f"live demo at {speed:g}x{pausing}: console API on http://{host}:{port}/api; Ctrl-C to stop"
     )
     try:
         _serve(service, host, port, cors)

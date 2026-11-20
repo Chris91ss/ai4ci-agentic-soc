@@ -10,6 +10,7 @@ from __future__ import annotations
 import logging
 import threading
 import time
+from collections.abc import Callable
 
 import orjson
 
@@ -65,9 +66,27 @@ class LiveSimulator:
         self.publish(batch)
         return batch
 
-    def run(self, max_ticks: int | None = None, stop: threading.Event | None = None) -> None:
+    def run(
+        self,
+        max_ticks: int | None = None,
+        stop: threading.Event | None = None,
+        hold: Callable[[], bool] | None = None,
+    ) -> None:
+        """Publish tick by tick at ``speed``. While ``hold()`` is true the simulation clock stands
+        still (the demo pauses while the agent investigates)."""
         wall0, sim0, ticks = time.monotonic(), self.sim.clock, 0
         while not self.sim.finished and not (stop is not None and stop.is_set()):
+            if hold is not None and hold():
+                paused = time.monotonic()
+                while hold() and not (stop is not None and stop.is_set()):
+                    if stop is not None:
+                        stop.wait(0.1)
+                    else:
+                        time.sleep(0.1)
+                wall0 += (
+                    time.monotonic() - paused
+                )  # resume the pacing from here, without catching up
+                continue
             self.step()
             ticks += 1
             if max_ticks is not None and ticks >= max_ticks:

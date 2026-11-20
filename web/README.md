@@ -16,6 +16,8 @@ The console talks to the FastAPI backend (`agentic_soc.api`):
 ```bash
 # from the repository root: a live demo (simulator + pipeline + API) ...
 uv run soc demo --speed 120
+# ... the same with the agent on the local LLM, the clock paused while it investigates ...
+uv run soc demo --llm ollama:gpt-oss:20b --pause-for-agent
 # ... or a recorded run (read-only, replayed in the activity feed)
 uv run soc api --run data/soc-runs/agent-seed201
 

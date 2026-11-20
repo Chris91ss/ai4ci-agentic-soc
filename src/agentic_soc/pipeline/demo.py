@@ -28,8 +28,10 @@ class LiveDemo:
         config: PipelineConfig,
         store: Store,
         speed: float = 120.0,
+        pause_for_agent: bool = False,
     ) -> None:
         config.worker = "threaded"
+        self.pause_for_agent = pause_for_agent
         self.sim = sim
         self.broker = InMemoryBroker()
         self.simulator = LiveSimulator(sim, self.broker, speed=speed)
@@ -38,10 +40,17 @@ class LiveDemo:
         self.stop = threading.Event()
         self.threads: list[threading.Thread] = []
 
+    @property
+    def paused(self) -> bool:
+        """The simulation is waiting for the agent (``pause_for_agent``)."""
+        worker = self.pipeline.worker
+        return self.pause_for_agent and worker is not None and worker.busy
+
     def start(self) -> None:
+        hold = (lambda: self.paused) if self.pause_for_agent else None
         self.threads = [
-            threading.Thread(target=self.simulator.run, kwargs={"stop": self.stop}, name="simulator",
-                             daemon=True),
+            threading.Thread(target=self.simulator.run, kwargs={"stop": self.stop, "hold": hold},
+                             name="simulator", daemon=True),
             threading.Thread(target=run_live, args=(self.pipeline,), name="soc-pipeline", daemon=True,
                              kwargs={"stop": self.stop, "poll_timeout": 0.2, "report_every_s": 30.0,
                                      "on_report": lambda _: self.broker.trim()}),
